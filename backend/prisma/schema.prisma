@@ -1,0 +1,234 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//
+// ENUMS
+//
+
+enum FuncaoFuncionario {
+  ADMIN
+  VENDEDOR
+  OPERADOR
+}
+
+enum TipoEntrega {
+  CLIENTE_RETIRA
+  ENTREGA_EMPRESA
+}
+
+enum ResponsavelFrete {
+  CLIENTE
+  EMPRESA
+}
+
+enum StatusPedido {
+  ABERTO
+  EM_PRODUCAO
+  PENDENTE_PECA
+  AGUARDANDO_EXTERNO
+  PARCIAL
+  CONCLUIDO
+  PRONTO_ENTREGA
+  SAIU_ENTREGA
+  ENTREGUE
+  CANCELADO
+}
+
+enum StatusServico {
+  ABERTO
+  INICIADO
+  PAUSADO
+  CONCLUIDO
+  CANCELADO
+}
+
+//
+// CLIENTES
+//
+
+model Cliente {
+  id          String   @id @default(cuid())
+
+  nome        String
+  documento   String?
+  telefone    String?
+  email       String?
+  endereco    String?
+
+  pedidos     Pedido[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+//
+// FUNCIONÁRIOS
+//
+
+model Funcionario {
+  id            String   @id @default(cuid())
+
+  nome          String
+  telefone      String?
+
+  funcao        FuncaoFuncionario
+
+  ativo         Boolean @default(true)
+
+  usuario       Usuario?
+
+  pedidosVenda  Pedido[] @relation("VendedorPedidos")
+
+  servicos      ServicoPlano[] @relation("OperadorServicos")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+//
+// USUÁRIOS
+//
+
+model Usuario {
+  id              String   @id @default(cuid())
+
+  email           String   @unique
+  senha           String
+
+  funcionarioId   String   @unique
+
+  funcionario      Funcionario @relation(fields: [funcionarioId], references: [id])
+
+  createdAt       DateTime @default(now())
+}
+
+//
+// ROTAS DE ENTREGA
+//
+
+model RotaEntrega {
+  id            String   @id @default(cuid())
+
+  nome          String
+
+  valorFrete    Decimal  @db.Decimal(10, 2)
+
+  pedidos       Pedido[]
+
+  createdAt     DateTime @default(now())
+}
+
+//
+// PEDIDOS
+//
+
+model Pedido {
+  id                    String   @id @default(cuid())
+
+  numeroPedido          Int @default(autoincrement())
+
+  clienteId             String
+  cliente               Cliente @relation(fields: [clienteId], references: [id])
+
+  vendedorId            String
+  vendedor              Funcionario @relation("VendedorPedidos", fields: [vendedorId], references: [id])
+
+  dataPedido            DateTime @default(now())
+
+  dataEntrega           DateTime?
+
+  tipoEntrega           TipoEntrega
+
+  responsavelFrete      ResponsavelFrete
+
+  rotaId                String?
+  rota                  RotaEntrega? @relation(fields: [rotaId], references: [id])
+
+  valorFrete            Decimal? @db.Decimal(10, 2)
+
+  nomeRecebedor         String?
+  contatoRecebedor      String?
+  enderecoEntrega       String?
+
+  status                StatusPedido @default(ABERTO)
+
+  observacoes           String?
+
+  valorTotal Decimal? @db.Decimal(10, 2)
+
+  planos                PlanoCorte[]
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+//
+// PLANOS DE CORTE
+//
+
+model PlanoCorte {
+  id                      String   @id @default(cuid())
+
+  pedidoId                String
+  pedido                  Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+
+  numeroPlano             String
+
+  quantidadeChapas        Int @default(0)
+
+  medidaEncabecamento     String?
+
+  compraExterna           Boolean @default(false)
+
+  observacoes             String?
+
+  servicos                ServicoPlano[]
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}
+
+//
+// TIPOS DE SERVIÇO
+//
+
+model TipoServico {
+  id              String   @id @default(cuid())
+
+  nome            String   @unique
+
+  servicos        ServicoPlano[]
+}
+
+//
+// SERVIÇOS EXECUTADOS
+//
+
+model ServicoPlano {
+  id                    String   @id @default(cuid())
+
+  planoId               String
+  plano                 PlanoCorte @relation(fields: [planoId], references: [id], onDelete: Cascade)
+
+  tipoServicoId         String
+  tipoServico           TipoServico @relation(fields: [tipoServicoId], references: [id])
+
+  operadorId            String?
+  operador              Funcionario? @relation("OperadorServicos", fields: [operadorId], references: [id])
+
+  status                StatusServico @default(ABERTO)
+
+  observacoes           String?
+
+  dataInicio            DateTime?
+  dataFim               DateTime?
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
