@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.js"
+import { registrarHistoricoPedido } from "../utils/registrarHistoricoPedido.js"
 
 export async function listarExpedicao(req, res) {
   try {
@@ -54,6 +55,13 @@ export async function alterarStatusExpedicao(req, res) {
       data: {
         status
       }
+    })
+
+    await registrarHistoricoPedido({
+      pedidoId: pedido.id,
+      usuarioId: req.user.id,
+      tipo: "EXPEDICAO_ATUALIZADA",
+      descricao: `Status de expedição alterado para ${pedido.status}`
     })
 
     return res.json(pedido)

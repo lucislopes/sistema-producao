@@ -30,6 +30,12 @@ export function PainelOperador() {
 
   useEffect(() => {
     carregarDados()
+
+    const interval = setInterval(() => {
+      carregarDados()
+    }, 30000)
+
+    return () => clearInterval(interval)
   }, [])
 
   async function assumirServico(id) {

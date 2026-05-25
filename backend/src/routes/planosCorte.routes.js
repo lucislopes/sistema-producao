@@ -16,25 +16,25 @@ router.use(authMiddleware)
 
 router.get(
   "/pedido/:pedidoId",
-  roleMiddleware("ADMIN", "VENDEDOR", "OPERADOR"),
+  roleMiddleware("ADMIN", "VENDEDOR", "OPERADOR", "VENDEDOR_OPERADOR"),
   listarPlanosPorPedido
 )
 
 router.post(
   "/",
-  roleMiddleware("ADMIN", "VENDEDOR"),
+  roleMiddleware("ADMIN", "VENDEDOR", "VENDEDOR_OPERADOR"),
   criarPlanoCorte
 )
 
 router.put(
   "/:id",
-  roleMiddleware("ADMIN", "VENDEDOR"),
+  roleMiddleware("ADMIN", "VENDEDOR", "VENDEDOR_OPERADOR"),
   atualizarPlanoCorte
 )
 
 router.delete(
   "/:id",
-  roleMiddleware("ADMIN"),
+  roleMiddleware("ADMIN", "VENDEDOR", "VENDEDOR_OPERADOR"),
   deletarPlanoCorte
 )
 

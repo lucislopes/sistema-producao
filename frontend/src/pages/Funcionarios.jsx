@@ -106,7 +106,7 @@ export function Funcionarios() {
     setFuncao("OPERADOR")
     setEmail("")
     setSenha("")
-    setEditando(null)
+    setEditandoId(null)
   }
 
   return (
@@ -173,7 +173,6 @@ export function Funcionarios() {
               setFuncao(e.target.value)
             }
           >
-
             <option value="OPERADOR">
               Operador
             </option>
@@ -182,9 +181,15 @@ export function Funcionarios() {
               Vendedor
             </option>
 
+            <option value="VENDEDOR_OPERADOR">
+              Vendedor / Operador
+            </option>
+
             <option value="ADMIN">
               Admin
             </option>
+
+
 
           </select>
 

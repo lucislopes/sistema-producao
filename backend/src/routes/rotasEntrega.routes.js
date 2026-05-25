@@ -16,7 +16,7 @@ router.use(authMiddleware)
 
 router.get(
   "/",
-  roleMiddleware("ADMIN", "VENDEDOR"),
+  roleMiddleware("ADMIN", "VENDEDOR", ),
   listarRotas
 )
 

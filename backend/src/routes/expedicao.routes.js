@@ -14,13 +14,13 @@ router.use(authMiddleware)
 
 router.get(
   "/",
-  roleMiddleware("ADMIN", "VENDEDOR"),
+  roleMiddleware("ADMIN", "VENDEDOR", "VENDEDOR_OPERADOR"),
   listarExpedicao
 )
 
 router.put(
   "/:id/status",
-  roleMiddleware("ADMIN", "VENDEDOR"),
+  roleMiddleware("ADMIN", "VENDEDOR", "VENDEDOR_OPERADOR"),
   alterarStatusExpedicao
 )
 

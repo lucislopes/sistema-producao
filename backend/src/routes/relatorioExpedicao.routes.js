@@ -1,10 +1,8 @@
 import { Router } from "express"
 
 import {
-  listarPedidos,
-  criarPedido,
-  atualizarPedido
-} from "../controllers/pedidos.controller.js"
+  relatorioExpedicao
+} from "../controllers/relatorioExpedicao.controller.js"
 
 import { authMiddleware } from "../middlewares/auth.middleware.js"
 import { roleMiddleware } from "../middlewares/role.middleware.js"
@@ -15,20 +13,8 @@ router.use(authMiddleware)
 
 router.get(
   "/",
-  roleMiddleware("ADMIN", "VENDEDOR", "OPERADOR",  "VENDEDOR_OPERADOR"),
-  listarPedidos
-)
-
-router.post(
-  "/",
-  roleMiddleware("ADMIN", "VENDEDOR",  "VENDEDOR_OPERADOR"),
-  criarPedido
-)
-
-router.put(
-  "/:id",
   roleMiddleware("ADMIN", "VENDEDOR", "VENDEDOR_OPERADOR"),
-  atualizarPedido
+  relatorioExpedicao
 )
 
 export default router

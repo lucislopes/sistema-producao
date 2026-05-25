@@ -99,6 +99,40 @@ export async function criarFuncionario(req, res) {
   }
 }
 
+export async function listarOperadores(req, res) {
+  try {
+
+    const operadores = await prisma.funcionario.findMany({
+
+      where: {
+        ativo: true,
+
+        funcao: {
+          in: [
+            "OPERADOR",
+            "VENDEDOR_OPERADOR"
+          ]
+        }
+      },
+
+      orderBy: {
+        nome: "asc"
+      }
+
+    })
+
+    return res.json(operadores)
+
+  } catch (error) {
+
+    console.log(error)
+
+    return res.status(500).json({
+      error: "Erro ao listar operadores"
+    })
+  }
+}
+
 //
 // ATUALIZAR
 //

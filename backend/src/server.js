@@ -12,6 +12,9 @@ import planosCorteRoutes from "./routes/planosCorte.routes.js"
 import servicosPlanoRoutes from "./routes/servicosPlano.routes.js"
 import kanbanRoutes from "./routes/kanban.routes.js"
 import expedicaoRoutes from "./routes/expedicao.routes.js"
+import dashboardRoutes from "./routes/dashboard.routes.js"
+import relatorioExpedicaoRoutes from "./routes/relatorioExpedicao.routes.js"
+import historicoPedidoRoutes from "./routes/historicoPedido.routes.js"
 
 dotenv.config()
 
@@ -29,6 +32,9 @@ app.use("/planos-corte", planosCorteRoutes)
 app.use("/servicos-plano", servicosPlanoRoutes)
 app.use("/kanban", kanbanRoutes)
 app.use("/expedicao", expedicaoRoutes)
+app.use("/dashboard", dashboardRoutes)
+app.use("/relatorio-expedicao", relatorioExpedicaoRoutes)
+app.use("/historico-pedido", historicoPedidoRoutes)
 
 app.get("/", (req, res) => {
   return res.json({

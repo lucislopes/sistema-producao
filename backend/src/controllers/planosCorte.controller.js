@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.js"
+import { registrarHistoricoPedido } from "../utils/registrarHistoricoPedido.js"
 
 function calcularDataEntregaPorChapas(quantidadeChapas) {
   const data = new Date()
@@ -82,6 +83,13 @@ export async function criarPlanoCorte(req, res) {
       }
     })
 
+    await registrarHistoricoPedido({
+      pedidoId,
+      usuarioId: req.user.id,
+      tipo: "PLANO_CRIADO",
+      descricao: `Plano ${plano.numeroPlano} criado com ${plano.quantidadeChapas} chapas`
+    })
+
     return res.status(201).json(plano)
 
   } catch (error) {
@@ -131,6 +139,13 @@ export async function atualizarPlanoCorte(req, res) {
       }
     })
 
+    await registrarHistoricoPedido({
+      pedidoId: plano.pedidoId,
+      usuarioId: req.user.id,
+      tipo: "PLANO_ATUALIZADO",
+      descricao: `Plano ${plano.numeroPlano} atualizado`
+    })
+
     return res.json(plano)
 
   } catch (error) {
@@ -150,6 +165,13 @@ export async function deletarPlanoCorte(req, res) {
       where: {
         id
       }
+    })
+
+    await registrarHistoricoPedido({
+      pedidoId: plano.pedidoId,
+      usuarioId: req.user.id,
+      tipo: "PLANO_EXCLUIDO",
+      descricao: `Plano ${plano.numeroPlano} excluído`
     })
 
     return res.json({

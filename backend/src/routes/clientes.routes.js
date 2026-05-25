@@ -20,15 +20,15 @@ router.use(authMiddleware)
 //
 //LISTAR
 //
-router.get("/",roleMiddleware("ADMIN", "VENDEDOR", "OPERADOR"), listarClientes)
+router.get("/",roleMiddleware("ADMIN", "VENDEDOR", "OPERADOR",  "VENDEDOR_OPERADOR"), listarClientes)
 //
 // CRIAR
 //
-router.post("/",roleMiddleware("ADMIN", "VENDEDOR"), criarCliente)
+router.post("/",roleMiddleware("ADMIN", "VENDEDOR",  "VENDEDOR_OPERADOR"), criarCliente)
 //
 // EDITAR
 //
-router.put("/:id",roleMiddleware("ADMIN", "VENDEDOR"), atualizarCliente)
+router.put("/:id",roleMiddleware("ADMIN", "VENDEDOR", "VENDEDOR_OPERADOR"), atualizarCliente)
 //
 // EXCLUIR
 //

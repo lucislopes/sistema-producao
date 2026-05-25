@@ -15,6 +15,7 @@ enum FuncaoFuncionario {
   ADMIN
   VENDEDOR
   OPERADOR
+  VENDEDOR_OPERADOR
 }
 
 enum TipoEntrega {
@@ -103,7 +104,9 @@ model Usuario {
 
   funcionarioId   String   @unique
 
-  funcionario      Funcionario @relation(fields: [funcionarioId], references: [id])
+  funcionario     Funcionario @relation(fields: [funcionarioId], references: [id])
+
+  historicos      HistoricoPedido[]
 
   createdAt       DateTime @default(now())
 }
@@ -163,6 +166,8 @@ model Pedido {
   valorTotal Decimal? @db.Decimal(10, 2)
 
   planos                PlanoCorte[]
+
+  historicos            HistoricoPedido[]
 
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
@@ -231,4 +236,35 @@ model ServicoPlano {
 
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+}
+
+enum TipoHistorico {
+  PEDIDO_CRIADO
+  PEDIDO_ATUALIZADO
+  PLANO_CRIADO
+  PLANO_ATUALIZADO
+  PLANO_EXCLUIDO
+  SERVICO_CRIADO
+  SERVICO_ATUALIZADO
+  SERVICO_EXCLUIDO
+  SERVICO_ASSUMIDO
+  STATUS_SERVICO_ALTERADO
+  STATUS_PEDIDO_ALTERADO
+  EXPEDICAO_ATUALIZADA
+}
+
+model HistoricoPedido {
+  id          String        @id @default(cuid())
+
+  pedidoId    String
+  pedido      Pedido        @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+
+  usuarioId   String?
+  usuario     Usuario?      @relation(fields: [usuarioId], references: [id])
+
+  tipo        TipoHistorico
+
+  descricao   String
+
+  createdAt   DateTime      @default(now())
 }

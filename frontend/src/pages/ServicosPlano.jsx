@@ -19,21 +19,22 @@ export function ServicosPlano() {
 
   async function carregarDadosBase() {
     try {
-      const [pedidosRes, tiposRes, funcionariosRes] =
-        await Promise.all([
-          api.get("/pedidos"),
-          api.get("/tipos-servico"),
-          api.get("/funcionarios")
-        ])
+      const [pedidosRes, tiposRes, operadoresRes] = await Promise.all([
 
-      setPedidos(pedidosRes.data)
-      setTiposServico(tiposRes.data)
+    api.get("/pedidos"),
 
-      setOperadores(
-        funcionariosRes.data.filter(
-          (f) => f.funcao === "OPERADOR" && f.ativo
-        )
-      )
+    api.get("/tipos-servico"),
+
+    api.get("/funcionarios/operadores")
+
+  ])
+
+  setPedidos(pedidosRes.data)
+
+  setTiposServico(tiposRes.data)
+
+  setOperadores(operadoresRes.data)
+
     } catch (error) {
       console.log(error)
       alert("Erro ao carregar dados")

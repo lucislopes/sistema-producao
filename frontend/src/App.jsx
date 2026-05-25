@@ -18,6 +18,7 @@ import { ServicosPlano } from "./pages/ServicosPlano"
 import { PainelOperador } from "./pages/PainelOperador"
 import { Kanban } from "./pages/Kanban"
 import { Expedicao } from "./pages/Expedicao"
+import { RelatorioExpedicao } from "./pages/RelatorioExpedicao"
 
 export default function App() {
 
@@ -93,6 +94,11 @@ export default function App() {
           <Route
             path="/expedicao"
             element={<Expedicao />}
+          />
+
+          <Route
+            path="/relatorio-expedicao"
+            element={<RelatorioExpedicao />}
           />
 
 

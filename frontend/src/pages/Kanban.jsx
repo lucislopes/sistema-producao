@@ -28,6 +28,12 @@ export function Kanban() {
 
   useEffect(() => {
     carregarKanban()
+
+    const interval = setInterval(() => {
+      carregarKanban()
+    }, 30000)
+
+    return () => clearInterval(interval)
   }, [])
 
   const colunas = [

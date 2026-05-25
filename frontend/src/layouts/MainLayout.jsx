@@ -1,11 +1,27 @@
-import { Outlet, Link } from "react-router-dom"
+import { Outlet, Link, useNavigate } from "react-router-dom"
 import { useContext } from "react"
+
 import { AuthContext } from "../contexts/AuthContext"
-import { useNavigate } from "react-router-dom"
 
 export function MainLayout() {
-    const { logout, usuario } = useContext(AuthContext)
-    const navigate = useNavigate()
+
+  const { logout, usuario } = useContext(AuthContext)
+
+  const navigate = useNavigate()
+
+  const funcao = usuario?.funcao
+
+  const isAdmin =
+    funcao === "ADMIN"
+
+  const isVendedor =
+    funcao === "VENDEDOR"
+
+  const isOperador =
+    funcao === "OPERADOR"
+
+  const isVendedorOperador =
+    funcao === "VENDEDOR_OPERADOR"
 
   return (
 
@@ -23,62 +39,89 @@ export function MainLayout() {
             Dashboard
           </Link>
 
-          <Link to="/clientes">
-            Clientes
-          </Link>
+          {(isAdmin || isVendedor || isVendedorOperador) && (
+            <>
 
-          <Link to="/funcionarios">
-            Funcionários
-          </Link>
+              <Link to="/clientes">
+                Clientes
+              </Link>
 
-          <Link to="/pedidos">
-            Pedidos
-          </Link>
+              <Link to="/pedidos">
+                Pedidos
+              </Link>
 
-          <Link to="/rotas-entrega">
-            Rotas Entrega
-          </Link>
+              <Link to="/planos-corte">
+                Planos de Corte
+              </Link>
 
-          <Link to="/tipos-servico">
-            Tipos Serviço
-          </Link>
+              <Link to="/servicos-plano">
+                Serviços do Plano
+              </Link>
 
-          <Link to="/planos-corte">
-            Planos de Corte
-          </Link>
+              <Link to="/expedicao">
+                Expedição
+              </Link>
 
-          <Link to="/servicos-plano">
-            Serviços do Plano
-          </Link>
+              <Link to="/relatorio-expedicao">
+                Relatório Expedição
+              </Link>
 
-          <Link to="/painel-operador">
-            Painel Operador
-          </Link>
+            </>
+          )}
 
-          <Link to="/kanban">
-            Kanban
-          </Link>
+          {(isAdmin || isOperador || isVendedorOperador) && (
+            <>
 
-          <Link to="/expedicao">
-            Expedição
-          </Link>          
+              <Link to="/painel-operador">
+                Painel Operador
+              </Link>
+
+              <Link to="/kanban">
+                Kanban
+              </Link>
+
+            </>
+          )}
+
+          {isAdmin && (
+            <>
+
+              <Link to="/funcionarios">
+                Funcionários
+              </Link>
+
+              <Link to="/rotas-entrega">
+                Rotas Entrega
+              </Link>
+
+              <Link to="/tipos-servico">
+                Tipos Serviço
+              </Link>
+
+            </>
+          )}
 
         </nav>
-        <div className="mt-10">
 
-            <p className="mb-4 text-sm">
-                {usuario?.nome}
-            </p>
+        <div className="mt-10 border-t border-gray-700 pt-4">
 
-            <button
-                onClick={() => {
-                logout()
-                navigate("/")
-                }}
-                className="bg-red-500 px-4 py-2 rounded-lg w-full"
-            >
-                Sair
-            </button>
+          <p className="mb-1 text-sm">
+            {usuario?.nome}
+          </p>
+
+          <p className="mb-4 text-xs text-gray-400">
+            {usuario?.funcao}
+          </p>
+
+          <button
+            onClick={() => {
+              logout()
+              navigate("/")
+            }}
+            className="bg-red-500 px-4 py-2 rounded-lg w-full"
+          >
+            Sair
+          </button>
 
         </div>
 

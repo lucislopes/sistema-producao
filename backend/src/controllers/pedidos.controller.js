@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.js"
+import { registrarHistoricoPedido } from "../utils/registrarHistoricoPedido.js"
 
 export async function listarPedidos(req, res) {
   try {
@@ -22,6 +23,7 @@ export async function listarPedidos(req, res) {
 
 export async function criarPedido(req, res) {
   try {
+    
     const {
       clienteId,
       vendedorId,
@@ -37,7 +39,7 @@ export async function criarPedido(req, res) {
       observacoes
     } = req.body
 
-    const pedido = await prisma.pedido.create({
+      const pedido = await prisma.pedido.create({
       data: {
         clienteId,
         vendedorId,
@@ -57,6 +59,13 @@ export async function criarPedido(req, res) {
         vendedor: true,
         rota: true
       }
+    })
+
+    await registrarHistoricoPedido({
+      pedidoId: pedido.id,
+      usuarioId: req.user.id,
+      tipo: "PEDIDO_CRIADO",
+      descricao: `Pedido #${pedido.numeroPedido} criado`
     })
 
     return res.status(201).json(pedido)
@@ -108,6 +117,13 @@ export async function atualizarPedido(req, res) {
         vendedor: true,
         rota: true
       }
+    })
+
+    await registrarHistoricoPedido({
+      pedidoId: pedido.id,
+      usuarioId: req.user.id,
+      tipo: "PEDIDO_ATUALIZADO",
+      descricao: `Pedido #${pedido.numeroPedido} atualizado`
     })
 
     return res.json(pedido)

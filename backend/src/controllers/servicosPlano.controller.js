@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma.js"
 import { recalcularStatusPedido } from "../utils/recalcularStatusPedido.js"
+import { registrarHistoricoPedido } from "../utils/registrarHistoricoPedido.js"
 
 export async function listarServicosPorPlano(req, res) {
   try {
@@ -63,6 +64,13 @@ export async function criarServicoPlano(req, res) {
 
     await recalcularStatusPedido(servico.plano.pedidoId)
 
+    await registrarHistoricoPedido({
+      pedidoId: servico.plano.pedidoId,
+      usuarioId: req.user.id,
+      tipo: "SERVICO_CRIADO",
+      descricao: `Serviço ${servico.tipoServico.nome} criado`
+    })
+
     return res.status(201).json(servico)
   } catch (error) {
     console.log(error)
@@ -113,6 +121,13 @@ export async function atualizarServicoPlano(req, res) {
 
     await recalcularStatusPedido(servico.plano.pedidoId)
 
+    await registrarHistoricoPedido({
+      pedidoId: servico.plano.pedidoId,
+      usuarioId: req.user.id,
+      tipo: "SERVICO_ATUALIZADO",
+      descricao: `Serviço ${servico.tipoServico.nome} atualizado`
+    })
+
     return res.json(servico)
   } catch (error) {
     console.log(error)
@@ -151,6 +166,7 @@ export async function deletarServicoPlano(req, res) {
     })
 
     await recalcularStatusPedido(pedidoId)
+
 
     return res.json({
       message: "Serviço excluído"
@@ -344,6 +360,13 @@ export async function assumirServico(req, res) {
 
     await recalcularStatusPedido(servico.plano.pedidoId)
 
+    await registrarHistoricoPedido({
+      pedidoId: servico.plano.pedidoId,
+      usuarioId: req.user.id,
+      tipo: "SERVICO_ASSUMIDO",
+      descricao: `Serviço assumido pelo operador`
+    })
+
     return res.json(servico)
   } catch (error) {
     console.log(error)
@@ -407,6 +430,13 @@ export async function alterarStatusServico(req, res) {
     })
 
     await recalcularStatusPedido(servico.plano.pedidoId)
+
+    await registrarHistoricoPedido({
+      pedidoId: servico.plano.pedidoId,
+      usuarioId: req.user.id,
+      tipo: "STATUS_SERVICO_ALTERADO",
+      descricao: `Status do serviço alterado para ${status}`
+    })
 
     return res.json(servico)
   } catch (error) {
