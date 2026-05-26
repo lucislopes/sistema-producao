@@ -60,11 +60,6 @@ export function Kanban() {
 
   return (
     <div>
-
-      <h1 className="text-3xl font-bold mb-6">
-        Kanban Produção
-      </h1>
-
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
 
         {colunas.map((coluna) => (
@@ -78,7 +73,7 @@ export function Kanban() {
             <span>{coluna.titulo}</span>
 
             <span className="bg-gray-800 text-white text-sm px-3 py-1 rounded-full">
-                {kanban[coluna.key]?.length || 0}
+                {kanban[coluna.key]?.lengTh || 0}
             </span>
             </h2>
 
@@ -123,7 +118,7 @@ export function Kanban() {
 
               ))}
 
-              {kanban[coluna.key]?.length === 0 && (
+              {kanban[coluna.key]?.lengTh === 0 && (
                 <div className="text-gray-500 text-sm">
                   Nenhum serviço
                 </div>

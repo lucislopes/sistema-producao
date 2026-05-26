@@ -23,7 +23,7 @@ export async function listarPedidos(req, res) {
 
 export async function criarPedido(req, res) {
   try {
-    
+
     const {
       clienteId,
       vendedorId,
@@ -39,7 +39,7 @@ export async function criarPedido(req, res) {
       observacoes
     } = req.body
 
-      const pedido = await prisma.pedido.create({
+    const pedido = await prisma.pedido.create({
       data: {
         clienteId,
         vendedorId,
@@ -95,6 +95,10 @@ export async function atualizarPedido(req, res) {
       observacoes
     } = req.body
 
+    const pedidoAnterior = await prisma.pedido.findUnique({
+      where: { id }
+    })
+
     const pedido = await prisma.pedido.update({
       where: { id },
       data: {
@@ -119,12 +123,21 @@ export async function atualizarPedido(req, res) {
       }
     })
 
-    await registrarHistoricoPedido({
-      pedidoId: pedido.id,
-      usuarioId: req.user.id,
-      tipo: "PEDIDO_ATUALIZADO",
-      descricao: `Pedido #${pedido.numeroPedido} atualizado`
-    })
+    if (pedidoAnterior.status !== pedido.status) {
+      await registrarHistoricoPedido({
+        pedidoId: pedido.id,
+        usuarioId: req.user.id,
+        tipo: "STATUS_PEDIDO_ALTERADO",
+        descricao: `Status alterado de ${pedidoAnterior.status} para ${pedido.status}`
+      })
+    } else {
+      await registrarHistoricoPedido({
+        pedidoId: pedido.id,
+        usuarioId: req.user.id,
+        tipo: "PEDIDO_ATUALIZADO",
+        descricao: `Pedido #${pedido.numeroPedido} atualizado`
+      })
+    }
 
     return res.json(pedido)
   } catch (error) {

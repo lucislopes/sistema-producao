@@ -147,6 +147,7 @@ export async function deletarServicoPlano(req, res) {
         id
       },
       include: {
+        tipoServico: true,
         plano: true
       }
     })
@@ -166,6 +167,12 @@ export async function deletarServicoPlano(req, res) {
     })
 
     await recalcularStatusPedido(pedidoId)
+    await registrarHistoricoPedido({
+      pedidoId: servico.plano.pedidoId,
+      usuarioId: req.user.id,
+      tipo: "SERVICO_EXCLUIDO",
+      descricao: `Serviço ${servico.tipoServico.nome} excluído`
+    })
 
 
     return res.json({
@@ -419,12 +426,23 @@ export async function alterarStatusServico(req, res) {
       })
     }
 
+    const servicoAnterior = await prisma.servicoPlano.findUnique({
+      where: {
+        id
+      },
+      include: {
+        tipoServico: true,
+        plano: true
+      }
+    })
+
     const servico = await prisma.servicoPlano.update({
       where: {
         id
       },
       data: dados,
       include: {
+        tipoServico: true,
         plano: true
       }
     })
@@ -435,7 +453,7 @@ export async function alterarStatusServico(req, res) {
       pedidoId: servico.plano.pedidoId,
       usuarioId: req.user.id,
       tipo: "STATUS_SERVICO_ALTERADO",
-      descricao: `Status do serviço alterado para ${status}`
+      descricao: `Serviço ${servico.tipoServico.nome}: status alterado de ${servicoAnterior.status} para ${servico.status}`
     })
 
     return res.json(servico)

@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react"
 import { api } from "../services/api"
+import { CabecalhoImpressao } from "../components/CabecalhoImpressao"
+import { Button } from "../components/ui/Button"
+import { Input } from "../components/ui/Input"
+import { Select } from "../components/ui/Select"
+import { Table, Th, Td } from "../components/ui/Table"
 
 export function RelatorioPedidos() {
   const [pedidos, setPedidos] = useState([])
   const [vendedores, setVendedores] = useState([])
-
+  const [empresa, setEmpresa] = useState(null)
   const [dataInicio, setDataInicio] = useState("")
   const [dataFim, setDataFim] = useState("")
   const [pedido, setPedido] = useState("")
@@ -87,21 +92,27 @@ export function RelatorioPedidos() {
 
   async function carregarRelatorio(pagina = page) {
     try {
-      const response = await api.get("/relatorio-pedidos", {
-        params: {
-          dataInicio,
-          dataFim,
-          pedido,
-          cliente,
-          vendedorId,
-          status,
-          page: pagina,
-          limit
-        }
-      })
+      const [relatorioResponse, empresaResponse] = await Promise.all([
+        api.get("/relatorio-pedidos", {
+          params: {
+            dataInicio,
+            dataFim,
+            pedido,
+            cliente,
+            vendedorId,
+            status,
+            page: pagina,
+            limit
+          }
+        }),
 
-      setPedidos(response.data.dados)
-      setPaginacao(response.data.paginacao)
+        api.get("/configuracao-empresa")
+      ])
+
+      setPedidos(relatorioResponse.data.dados)
+      setPaginacao(relatorioResponse.data.paginacao)
+
+      setEmpresa(empresaResponse.data)
     } catch (error) {
       console.log(error)
       alert("Erro ao carregar relatório de pedidos")
@@ -154,60 +165,46 @@ export function RelatorioPedidos() {
   return (
     <div>
         <div className="flex justify-between items-center mb-6 no-print">
-        <h1 className="text-3xl font-bold">
-          Relatório de Pedidos
-        </h1>
       <div className="flex gap-2">
-        <button
-            onClick={exportarCSV}
-            className="bg-green-700 text-white px-6 py-3 rounded-lg"
-        >
+        <Button variant="success" onClick={exportarCSV}>
             Exportar CSV
-        </button>
+        </Button>
 
-        <button
-            onClick={imprimir}
-            className="bg-gray-800 text-white px-6 py-3 rounded-lg"
-        >
+        <Button variant="dark" onClick={imprimir}>
             Imprimir
-        </button>
+        </Button>
         </div>
-        </div>
+      </div>
 
       <div className="bg-white p-6 rounded-2xl shadow-md mb-8 no-print">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <input
+          <Input
             type="date"
-            className="border p-3 rounded-lg"
             value={dataInicio}
             onChange={(e) => setDataInicio(e.target.value)}
           />
 
-          <input
+          <Input
             type="date"
-            className="border p-3 rounded-lg"
             value={dataFim}
             onChange={(e) => setDataFim(e.target.value)}
           />
 
-          <input
+          <Input
             type="number"
             placeholder="Número pedido"
-            className="border p-3 rounded-lg"
             value={pedido}
             onChange={(e) => setPedido(e.target.value)}
           />
 
-          <input
+          <Input
             type="text"
             placeholder="Cliente"
-            className="border p-3 rounded-lg"
             value={cliente}
             onChange={(e) => setCliente(e.target.value)}
           />
 
-          <select
-            className="border p-3 rounded-lg"
+          <Select
             value={vendedorId}
             onChange={(e) => setVendedorId(e.target.value)}
           >
@@ -218,10 +215,9 @@ export function RelatorioPedidos() {
                 {vendedor.nome}
               </option>
             ))}
-          </select>
+          </Select>
 
-          <select
-            className="border p-3 rounded-lg"
+          <Select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
           >
@@ -236,10 +232,9 @@ export function RelatorioPedidos() {
             <option value="SAIU_ENTREGA">Saiu Entrega</option>
             <option value="ENTREGUE">Entregue</option>
             <option value="CANCELADO">Cancelado</option>
-          </select>
+          </Select>
 
-          <select
-            className="border p-3 rounded-lg"
+          <Select
             value={limit}
             onChange={(e) => {
               setLimit(Number(e.target.value))
@@ -249,25 +244,31 @@ export function RelatorioPedidos() {
             <option value={25}>25 por página</option>
             <option value={50}>50 por página</option>
             <option value={100}>100 por página</option>
-          </select>
+          </Select>
         </div>
 
         <div className="flex gap-3 mt-4">
-          <button
-            onClick={buscar}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg"
-          >
+          <Button variant="secondary" onClick={buscar}>
             Buscar
-          </button>
+          </Button>
 
-          <button
-            onClick={limparFiltros}
-            className="bg-gray-500 text-white px-6 py-3 rounded-lg"
-          >
+          <Button variant="secondary" onClick={limparFiltros}>
             Limpar
-          </button>
+          </Button>
         </div>
       </div>
+
+      <CabecalhoImpressao
+        empresa={empresa}
+        titulo="Relatório de Pedidos"
+        periodoInicio={dataInicio}
+        periodoFim={dataFim}
+        extra={
+          status
+            ? `Status filtrado: ${status}`
+            : ""
+        }
+      />
 
       <div className="bg-white rounded-2xl shadow-md p-6">
         <div className="mb-6">
@@ -280,16 +281,16 @@ export function RelatorioPedidos() {
           </p>
         </div>
 
-        <table className="w-full border text-sm">
-          <thead className="bg-gray-200">
+        <Table>
+          <thead>
             <tr>
-              <th className="text-left p-3 border">Pedido</th>
-              <th className="text-left p-3 border">Cliente</th>
-              <th className="text-left p-3 border">Vendedor</th>
-              <th className="text-left p-3 border">Data Entrega</th>
-              <th className="text-left p-3 border">Endereço</th>
-              <th className="text-left p-3 border">Status</th>
-              <th className="text-left p-3 border">Valor</th>
+              <Th>Pedido</Th>
+              <Th>Cliente</Th>
+              <Th>Vendedor</Th>
+              <Th>Data Entrega</Th>
+              <Th>Endereço</Th>
+              <Th>Status</Th>
+              <Th>Valor</Th>
             </tr>
           </thead>
 
@@ -334,7 +335,7 @@ export function RelatorioPedidos() {
               </tr>
             )}
           </tbody>
-        </table>
+        </Table>
 
         <div className="flex justify-between items-center mt-4 no-print">
           <p className="text-sm text-gray-600">
@@ -342,21 +343,17 @@ export function RelatorioPedidos() {
           </p>
 
           <div className="flex gap-2">
-            <button
-              disabled={page <= 1}
+            <Button variant="secondary" disabled={page <= 1}
               onClick={() => setPage(page - 1)}
-              className="bg-gray-500 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg"
             >
               Anterior
-            </button>
+            </Button>
 
-            <button
-              disabled={page >= paginacao.totalPages}
+            <Button variant="secondary" disabled={page >= paginacao.totalPages}
               onClick={() => setPage(page + 1)}
-              className="bg-gray-500 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg"
             >
               Próxima
-            </button>
+            </Button>
           </div>
         </div>
       </div>

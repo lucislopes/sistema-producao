@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react"
 import { api } from "../services/api"
+import { Button } from "../components/ui/Button"
+import { Input } from "../components/ui/Input"
+import { Table, Th, Td } from "../components/ui/Table"
 
 export function RotasEntrega() {
   const [rotas, setRotas] = useState([])
@@ -76,15 +79,10 @@ export function RotasEntrega() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">
-        Rotas de Entrega
-      </h1>
-
       <div className="mb-4">
-        <input
+        <Input
           type="text"
           placeholder="Buscar rota..."
-          className="border p-3 rounded-lg w-full"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
@@ -95,51 +93,47 @@ export function RotasEntrega() {
         className="bg-white p-6 rounded-2xl shadow-md mb-8"
       >
         <div className="grid grid-cols-2 gap-4">
-          <input
+          <Input
             type="text"
             placeholder="Nome da rota"
-            className="border p-3 rounded-lg"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
           />
 
-          <input
+          <Input
             type="number"
             step="0.01"
             placeholder="Valor do frete"
-            className="border p-3 rounded-lg"
             value={valorFrete}
             onChange={(e) => setValorFrete(e.target.value)}
           />
         </div>
 
         <div className="mt-4 flex gap-2">
-          <button
+          <Button
             type="submit"
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg"
           >
             {editandoId ? "Atualizar Rota" : "Salvar Rota"}
-          </button>
+          </Button>
 
           {editandoId && (
-            <button
-              type="button"
+            <Button
+              type="Button"
               onClick={limparFormulario}
-              className="bg-gray-500 text-white px-6 py-3 rounded-lg"
             >
               Cancelar
-            </button>
+            </Button>
           )}
         </div>
       </form>
 
       <div className="bg-white rounded-2xl shadow-md overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-200">
+        <Table>
+          <thead>
             <tr>
-              <th className="text-left p-4">Nome</th>
-              <th className="text-left p-4">Valor Frete</th>
-              <th className="text-left p-4">Ações</th>
+              <Th >Nome</Th>
+              <Th >Valor Frete</Th>
+              <Th >Ações</Th>
             </tr>
           </thead>
 
@@ -153,19 +147,17 @@ export function RotasEntrega() {
                 </td>
 
                 <td className="p-4 flex gap-2">
-                  <button
+                  <Button
                     onClick={() => editarRota(rota)}
-                    className="bg-yellow-500 text-white px-4 py-2 rounded-lg"
                   >
                     Editar
-                  </button>
+                  </Button>
 
-                  <button
+                  <Button
                     onClick={() => excluirRota(rota.id)}
-                    className="bg-red-500 text-white px-4 py-2 rounded-lg"
                   >
                     Excluir
-                  </button>
+                  </Button>
                 </td>
               </tr>
             ))}
@@ -178,7 +170,7 @@ export function RotasEntrega() {
               </tr>
             )}
           </tbody>
-        </table>
+        </Table>
       </div>
     </div>
   )

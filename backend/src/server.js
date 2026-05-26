@@ -20,6 +20,9 @@ import detalhePedidoRoutes from "./routes/detalhePedido.routes.js"
 import relatorioProducaoRoutes from "./routes/relatorioProducao.routes.js"
 import alertasRoutes from "./routes/alertas.routes.js"
 import produtividadeRoutes from "./routes/produtividade.routes.js"
+import { buscaGlobalRoutes } from "./routes/buscaGlobal.routes.js"
+import configuracaoEmpresaRoutes from "./routes/configuracaoEmpresa.routes.js"
+
 
 dotenv.config()
 
@@ -45,6 +48,8 @@ app.use("/detalhe-pedido", detalhePedidoRoutes)
 app.use("/relatorio-producao", relatorioProducaoRoutes)
 app.use("/alertas", alertasRoutes)
 app.use("/produtividade", produtividadeRoutes)
+app.use("/busca-global", buscaGlobalRoutes)
+app.use("/configuracao-empresa", configuracaoEmpresaRoutes)
 
 app.get("/", (req, res) => {
   return res.json({

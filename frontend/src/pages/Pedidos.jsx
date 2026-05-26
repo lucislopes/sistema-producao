@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react"
 import { api } from "../services/api"
 import { Link } from "react-router-dom"
+import { Button } from "../components/ui/Button"
+import { Input } from "../components/ui/Input"
+import { Select } from "../components/ui/Select"
+import { BadgeStatus } from "../components/ui/BadgeStatus"
+import { Table, Th, Td } from "../components/ui/Table"
 
 export function Pedidos() {
   const [pedidos, setPedidos] = useState([])
@@ -24,7 +29,7 @@ export function Pedidos() {
   const [status, setStatus] = useState("ABERTO")
   const [observacoes, setObservacoes] = useState("")
 
-  const [historico, setHistorico] = useState([])
+  const [historico, seThistorico] = useState([])
   const [pedidoHistorico, setPedidoHistorico] = useState(null)
 
   const [busca, setBusca] = useState("")
@@ -149,7 +154,7 @@ export function Pedidos() {
     try {
       const response = await api.get(`/historico-pedido/${pedido.id}`)
 
-      setHistorico(response.data)
+      sethistorico(response.data)
       setPedidoHistorico(pedido)
     } catch (error) {
       console.log(error)
@@ -178,10 +183,10 @@ export function Pedidos() {
     }
 
     const hoje = new Date()
-    hoje.setHours(0, 0, 0, 0)
+    hoje.sethours(0, 0, 0, 0)
 
     const entrega = new Date(pedido.dataEntrega)
-    entrega.setHours(0, 0, 0, 0)
+    entrega.sethours(0, 0, 0, 0)
 
     return entrega < hoje
   }
@@ -283,10 +288,6 @@ export function Pedidos() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">
-        Pedidos
-      </h1>
-
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
         <ResumoCard
           titulo="Total"
@@ -325,8 +326,7 @@ export function Pedidos() {
         </h2>
 
         <div className="grid grid-cols-2 gap-4">
-          <select
-            className="border p-3 rounded-lg"
+          <Select
             value={clienteId}
             onChange={(e) => setClienteId(e.target.value)}
             required
@@ -337,10 +337,9 @@ export function Pedidos() {
                 {cliente.nome}
               </option>
             ))}
-          </select>
+          </Select>
 
-          <select
-            className="border p-3 rounded-lg"
+          <Select
             value={vendedorId}
             onChange={(e) => setVendedorId(e.target.value)}
             required
@@ -351,17 +350,15 @@ export function Pedidos() {
                 {vendedor.nome}
               </option>
             ))}
-          </select>
+          </Select>
 
-          <input
+          <Input
             type="date"
-            className="border p-3 rounded-lg"
             value={dataEntrega}
             onChange={(e) => setDataEntrega(e.target.value)}
           />
 
-          <select
-            className="border p-3 rounded-lg"
+          <Select
             value={tipoEntrega}
             onChange={(e) => setTipoEntrega(e.target.value)}
           >
@@ -371,10 +368,9 @@ export function Pedidos() {
             <option value="CLIENTE_RETIRA">
               Cliente Retira
             </option>
-          </select>
+          </Select>
 
-          <select
-            className="border p-3 rounded-lg"
+          <Select
             value={responsavelFrete}
             onChange={(e) => setResponsavelFrete(e.target.value)}
           >
@@ -384,10 +380,9 @@ export function Pedidos() {
             <option value="EMPRESA">
               Frete Empresa
             </option>
-          </select>
+          </Select>
 
-          <select
-            className="border p-3 rounded-lg"
+          <Select
             value={rotaId}
             onChange={(e) => aplicarRotaSelecionada(e.target.value)}
           >
@@ -397,52 +392,46 @@ export function Pedidos() {
                 {rota.nome}
               </option>
             ))}
-          </select>
+          </Select>
 
-          <input
+          <Input
             type="number"
             step="0.01"
             placeholder="Valor frete"
-            className="border p-3 rounded-lg"
             value={valorFrete}
             onChange={(e) => setValorFrete(e.target.value)}
           />
 
-          <input
+          <Input
             type="number"
             step="0.01"
             placeholder="Valor total"
-            className="border p-3 rounded-lg"
             value={valorTotal}
             onChange={(e) => setValorTotal(e.target.value)}
           />
 
-          <input
+          <Input
             type="text"
             placeholder="Nome recebedor"
-            className="border p-3 rounded-lg"
             value={nomeRecebedor}
             onChange={(e) => setNomeRecebedor(e.target.value)}
           />
 
-          <input
+          <Input
             type="text"
             placeholder="Contato recebedor"
-            className="border p-3 rounded-lg"
             value={contatoRecebedor}
             onChange={(e) => setContatoRecebedor(e.target.value)}
           />
 
-          <input
+          <Input
             type="text"
             placeholder="Endereço entrega"
-            className="border p-3 rounded-lg col-span-2"
             value={enderecoEntrega}
             onChange={(e) => setEnderecoEntrega(e.target.value)}
           />
 
-          <select
-            className="border p-3 rounded-lg"
+          <Select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
           >
@@ -452,7 +441,7 @@ export function Pedidos() {
             <option value="CONCLUIDO">Concluído</option>
             <option value="ENTREGUE">Entregue</option>
             <option value="CANCELADO">Cancelado</option>
-          </select>
+          </Select>
 
           <textarea
             placeholder="Observações"
@@ -463,98 +452,92 @@ export function Pedidos() {
         </div>
 
         <div className="mt-4 flex gap-2">
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg"
-          >
-            {editandoId ? "Atualizar Pedido" : "Salvar Pedido"}
-          </button>
+          <Button size="sm"
+            variant="primary" 
+            type="submit">
+              {editandoId ? "Atualizar Pedido" : "Salvar Pedido"}
+          </Button>
 
           {editandoId && (
-            <button
+            <Button size="sm"
               type="button"
+              variant = "secondary"
               onClick={limparFormulario}
-              className="bg-gray-500 text-white px-6 py-3 rounded-lg"
             >
               Cancelar
-            </button>
-
-            
-
-
+            </Button>
           )}
         </div>
       </form>
 
+        <div className="bg-white p-4 rounded-2xl shadow-md mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
 
-      <div className="bg-white p-4 rounded-2xl shadow-md mb-4">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <input
-          type="text"
-          placeholder="Buscar por número ou cliente..."
-          className="border p-3 rounded-lg"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-        />
+            <Input
+              type="text"
+              placeholder="Buscar por número ou cliente..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
 
-        <select
-          className="border p-3 rounded-lg"
-          value={filtroStatus}
-          onChange={(e) => setFiltroStatus(e.target.value)}
-        >
-          <option value="">Todos os status</option>
-          <option value="ABERTO">Aberto</option>
-          <option value="EM_PRODUCAO">Em Produção</option>
-          <option value="PENDENTE_PECA">Pendente Peça</option>
-          <option value="AGUARDANDO_EXTERNO">Aguardando Externo</option>
-          <option value="PARCIAL">Parcial</option>
-          <option value="CONCLUIDO">Concluído</option>
-          <option value="PRONTO_ENTREGA">Pronto Entrega</option>
-          <option value="SAIU_ENTREGA">Saiu Entrega</option>
-          <option value="ENTREGUE">Entregue</option>
-          <option value="CANCELADO">Cancelado</option>
-        </select>
+            <Select
+              value={filtroStatus}
+              onChange={(e) => setFiltroStatus(e.target.value)}
+            >
+              <option value="">Todos os status</option>
+              <option value="ABERTO">Aberto</option>
+              <option value="EM_PRODUCAO">Em Produção</option>
+              <option value="PENDENTE_PECA">Pendente Peça</option>
+              <option value="AGUARDANDO_EXTERNO">Aguardando Externo</option>
+              <option value="PARCIAL">Parcial</option>
+              <option value="CONCLUIDO">Concluído</option>
+              <option value="PRONTO_ENTREGA">Pronto Entrega</option>
+              <option value="SAIU_ENTREGA">Saiu Entrega</option>
+              <option value="ENTREGUE">Entregue</option>
+              <option value="CANCELADO">Cancelado</option>
+            </Select>
 
-        <input
-          type="date"
-          className="border p-3 rounded-lg"
-          value={dataInicio}
-          onChange={(e) => setDataInicio(e.target.value)}
-        />
+            <Input
+              type="date"
+              value={dataInicio}
+              onChange={(e) => setDataInicio(e.target.value)}
+            />
 
-        <input
-          type="date"
-          className="border p-3 rounded-lg"
-          value={dataFim}
-          onChange={(e) => setDataFim(e.target.value)}
-        />
-      </div>
+            <Input
+              type="date"
+              value={dataFim}
+              onChange={(e) => setDataFim(e.target.value)}
+            />
 
-      <button
-        type="button"
-        onClick={() => {
-          setBusca("")
-          setFiltroStatus("")
-          setDataInicio("")
-          setDataFim("")
-        }}
-        className="mt-4 bg-gray-500 text-white px-4 py-2 rounded-lg"
-      >
-        Limpar filtros
-      </button>
-    </div>
+            <Button
+              size="sm"
+              type="button"
+              variant="secondary"
+              className="w-full"
+              onClick={() => {
+                setBusca("")
+                setFiltroStatus("")
+                setDataInicio("")
+                setDataFim("")
+              }}
+            >
+              Limpar
+            </Button>
+
+          </div>
+        </div>
 
       <div className="bg-white rounded-2xl shadow-md overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-200">
+        <Table>
+          <thead>
             <tr>
-              <th className="text-left p-4">Nº</th>
-              <th className="text-left p-4">Cliente</th>
-              <th className="text-left p-4">Vendedor</th>
-              <th className="text-left p-4">Entrega</th>
-              <th className="text-left p-4">Data</th> 
-              <th className="text-left p-4">Status</th>
-              <th className="text-left p-4">Ações</th>
+              <Th>Nº</Th>
+              <Th>Cliente</Th>
+              <Th>Vendedor</Th>
+              <Th>Entrega</Th>
+              <Th>Data</Th> 
+              <Th>Status</Th>
+              <Th>Ações</Th>
             </tr>
           </thead>
 
@@ -588,21 +571,18 @@ export function Pedidos() {
                   {formatarData(pedido.dataEntrega)}
                 </td>
 
-                <td className="p-4">
+                <Td >
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-semibold ${classeStatus(pedido.status)}`}
                   >
-                    {pedido.status}
+                    <BadgeStatus status={pedido.status} />
                   </span>
-                </td>
+                </Td>
 
-                <td className="p-4 flex gap-2">
-                <button
-                  onClick={() => editarPedido(pedido)}
-                  className="bg-yellow-500 text-white px-4 py-2 rounded-lg"
-                >
+                <Td>
+                <Button size="sm" variant="secondary" onClick={() => editarPedido(pedido)}>
                   Editar
-                </button>
+                </Button>
 
                 <Link
                   to={`/pedidos/${pedido.id}`}
@@ -610,7 +590,7 @@ export function Pedidos() {
                 >
                   Detalhes
                 </Link>
-              </td>
+              </Td>
                 
               </tr>
             ))}
@@ -623,7 +603,7 @@ export function Pedidos() {
               </tr>
             )}
           </tbody>
-        </table>
+        </Table>
       </div>
 
       

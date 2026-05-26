@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { api } from "../services/api"
+import { BadgeStatus } from "../components/ui/BadgeStatus"
+import { Table, Th, Td } from "../components/ui/Table"
 
 export function Alertas() {
   const [alertas, setAlertas] = useState(null)
@@ -37,10 +39,6 @@ export function Alertas() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">
-        Alertas Operacionais
-      </h1>
-
       <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-8">
         <ResumoCard
           titulo="Pedidos Atrasados"
@@ -123,7 +121,7 @@ function ResumoCard({ titulo, valor, tipo }) {
         {titulo}
       </p>
 
-      <strong className="text-2xl font-bold">
+      <strong className="text-xl font-bold">
         {valor}
       </strong>
     </div>
@@ -137,61 +135,61 @@ function SecaoPedidos({ titulo, pedidos, formatarData }) {
         {titulo}
       </h2>
 
-      <table className="w-full border text-sm">
-        <thead className="bg-gray-200">
+      <Table>
+        <thead>
           <tr>
-            <th className="text-left p-3 border">Pedido</th>
-            <th className="text-left p-3 border">Cliente</th>
-            <th className="text-left p-3 border">Entrega</th>
-            <th className="text-left p-3 border">Rota</th>
-            <th className="text-left p-3 border">Status</th>
-            <th className="text-left p-3 border">Ação</th>
+            <Th >Pedido</Th>
+            <Th >Cliente</Th>
+            <Th >Entrega</Th>
+            <Th >Rota</Th>
+            <Th >Status</Th>
+            <Th >Ação</Th>
           </tr>
         </thead>
 
         <tbody>
           {pedidos.map((pedido) => (
             <tr key={pedido.id}>
-              <td className="p-3 border font-bold">
+              <Td>
                 #{pedido.numeroPedido}
-              </td>
+              </Td>
 
-              <td className="p-3 border">
+              <Td >
                 {pedido.cliente?.nome}
-              </td>
+              </Td>
 
-              <td className="p-3 border">
+              <Td >
                 {formatarData(pedido.dataEntrega)}
-              </td>
+              </Td>
 
-              <td className="p-3 border">
+              <Td >
                 {pedido.rota?.nome || "-"}
-              </td>
+              </Td>
 
-              <td className="p-3 border">
-                {pedido.status}
-              </td>
+              <Td >
+                <BadgeStatus status={pedido.status} />
+              </Td>
 
-              <td className="p-3 border">
+              <Td >
                 <Link
                   to={`/pedidos/${pedido.id}`}
-                  className="bg-blue-600 text-white px-3 py-2 rounded-lg"
+                  className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm"
                 >
                   Ver
                 </Link>
-              </td>
+              </Td>
             </tr>
           ))}
 
           {pedidos.length === 0 && (
             <tr>
-              <td className="p-4 border" colSpan="6">
+              <Td colSpan="7">
                 Nenhum item encontrado.
-              </td>
+              </Td>
             </tr>
           )}
         </tbody>
-      </table>
+      </Table>
     </div>
   )
 }
@@ -203,66 +201,66 @@ function SecaoServicos({ titulo, servicos }) {
         {titulo}
       </h2>
 
-      <table className="w-full border text-sm">
-        <thead className="bg-gray-200">
+      <Table>
+        <thead>
           <tr>
-            <th className="text-left p-3 border">Pedido</th>
-            <th className="text-left p-3 border">Cliente</th>
-            <th className="text-left p-3 border">Plano</th>
-            <th className="text-left p-3 border">Serviço</th>
-            <th className="text-left p-3 border">Operador</th>
-            <th className="text-left p-3 border">Status</th>
-            <th className="text-left p-3 border">Ação</th>
+            <Th >Pedido</Th>
+            <Th >Cliente</Th>
+            <Th >Plano</Th>
+            <Th >Serviço</Th>
+            <Th >Operador</Th>
+            <Th >Status</Th>
+            <Th >Ação</Th>
           </tr>
         </thead>
 
         <tbody>
           {servicos.map((servico) => (
             <tr key={servico.id}>
-              <td className="p-3 border font-bold">
+              <Td >
                 #{servico.plano?.pedido?.numeroPedido}
-              </td>
+              </Td>
 
-              <td className="p-3 border">
+              <Td>
                 {servico.plano?.pedido?.cliente?.nome}
-              </td>
+              </Td>
 
-              <td className="p-3 border">
+              <Td>
                 {servico.plano?.numeroPlano}
-              </td>
+              </Td>
 
-              <td className="p-3 border">
+              <Td >
                 {servico.tipoServico?.nome}
-              </td>
+              </Td>
 
-              <td className="p-3 border">
+              <Td >
                 {servico.operador?.nome || "-"}
-              </td>
+              </Td>
 
-              <td className="p-3 border">
-                {servico.status}
-              </td>
+              <Td >
+                <BadgeStatus status={servico.status} />
+              </Td>
 
-              <td className="p-3 border">
+              <Td >
                 <Link
                   to={`/pedidos/${servico.plano?.pedido?.id}`}
-                  className="bg-blue-600 text-white px-3 py-2 rounded-lg"
+                  className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm"
                 >
                   Ver
                 </Link>
-              </td>
+              </Td>
             </tr>
           ))}
 
           {servicos.length === 0 && (
             <tr>
-              <td className="p-4 border" colSpan="7">
+              <Td colSpan="7">
                 Nenhum item encontrado.
-              </td>
+              </Td>
             </tr>
           )}
         </tbody>
-      </table>
+      </Table>
     </div>
   )
 }

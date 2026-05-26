@@ -1,18 +1,25 @@
 import { useEffect, useState } from "react"
 import { api } from "../services/api"
+import { Input } from "../components/ui/Input"
+import { Select } from "../components/ui/Select"
+import { Table, Th, Td } from "../components/ui/Table"
+import { Button } from "../components/ui/Button"
+import { Modal } from "../components/ui/Modal"
+import { ConfirmModal } from "../components/ui/ConfirmModal"
 
 export function PlanosCorte() {
   const [pedidos, setPedidos] = useState([])
   const [planos, setPlanos] = useState([])
-
   const [pedidoId, setPedidoId] = useState("")
   const [editandoId, setEditandoId] = useState(null)
-
   const [numeroPlano, setNumeroPlano] = useState("")
   const [quantidadeChapas, setQuantidadeChapas] = useState("")
   const [medidaEncabecamento, setMedidaEncabecamento] = useState("")
   const [compraExterna, setCompraExterna] = useState(false)
   const [observacoes, setObservacoes] = useState("")
+  const [modalExcluirAberto, setModalExcluirAberto] = useState(false)
+  const [planoParaExcluir, setPlanoParaExcluir] = useState(null)
+
 
   async function carregarPedidos() {
     const response = await api.get("/pedidos")
@@ -74,13 +81,15 @@ export function PlanosCorte() {
     setObservacoes(plano.observacoes || "")
   }
 
-  async function excluirPlano(id) {
-    const confirmar = confirm("Deseja excluir este plano?")
-
-    if (!confirmar) return
+  async function excluirPlano() {
+    if (!planoParaExcluir) return
 
     try {
-      await api.delete(`/planos-corte/${id}`)
+      await api.delete(`/planos-corte/${planoParaExcluir.id}`)
+
+      setModalExcluirAberto(false)
+      setPlanoParaExcluir(null)
+
       carregarPlanos(pedidoId)
     } catch (error) {
       console.log(error)
@@ -103,17 +112,12 @@ export function PlanosCorte() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">
-        Planos de Corte
-      </h1>
-
       <div className="bg-white p-6 rounded-2xl shadow-md mb-8">
         <label className="block mb-2 font-semibold">
           Selecione o pedido
         </label>
 
-        <select
-          className="border p-3 rounded-lg w-full"
+        <Select
           value={pedidoId}
           onChange={(e) => {
             setPedidoId(e.target.value)
@@ -127,7 +131,7 @@ export function PlanosCorte() {
               Pedido #{pedido.numeroPedido} - {pedido.cliente?.nome}
             </option>
           ))}
-        </select>
+        </Select>
 
         {pedidoSelecionado && (
           <div className="mt-4 text-sm text-gray-700">
@@ -154,34 +158,32 @@ export function PlanosCorte() {
           </h2>
 
           <div className="grid grid-cols-2 gap-4">
-            <input
+            <Input
               type="text"
               placeholder="Número do plano"
-              className="border p-3 rounded-lg"
+              
               value={numeroPlano}
               onChange={(e) => setNumeroPlano(e.target.value)}
               required
             />
 
-            <input
+            <Input
               type="number"
               placeholder="Quantidade de chapas"
-              className="border p-3 rounded-lg"
               value={quantidadeChapas}
               onChange={(e) => setQuantidadeChapas(e.target.value)}
               required
             />
 
-            <input
+            <Input
               type="text"
               placeholder="Medida encabeçamento"
-              className="border p-3 rounded-lg"
               value={medidaEncabecamento}
               onChange={(e) => setMedidaEncabecamento(e.target.value)}
             />
 
             <label className="flex items-center gap-2">
-              <input
+              <Input
                 type="checkbox"
                 checked={compraExterna}
                 onChange={(e) => setCompraExterna(e.target.checked)}
@@ -198,21 +200,21 @@ export function PlanosCorte() {
           </div>
 
           <div className="mt-4 flex gap-2">
-            <button
+            <Button
               type="submit"
               className="bg-blue-600 text-white px-6 py-3 rounded-lg"
             >
               {editandoId ? "Atualizar Plano" : "Salvar Plano"}
-            </button>
+            </Button>
 
             {editandoId && (
-              <button
+              <Button
                 type="button"
                 onClick={limparFormulario}
                 className="bg-gray-500 text-white px-6 py-3 rounded-lg"
               >
                 Cancelar
-              </button>
+              </Button>
             )}
           </div>
         </form>
@@ -220,14 +222,14 @@ export function PlanosCorte() {
 
       {pedidoId && (
         <div className="bg-white rounded-2xl shadow-md overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-200">
+          <Table>
+            <thead>
               <tr>
-                <th className="text-left p-4">Plano</th>
-                <th className="text-left p-4">Chapas</th>
-                <th className="text-left p-4">Encabeçamento</th>
-                <th className="text-left p-4">Compra Externa</th>
-                <th className="text-left p-4">Ações</th>
+                <Th>Plano</Th>
+                <Th>Chapas</Th>
+                <Th>Encabeçamento</Th>
+                <Th>Compra Externa</Th>
+                <Th>Ações</Th>
               </tr>
             </thead>
 
@@ -243,34 +245,51 @@ export function PlanosCorte() {
                     {plano.compraExterna ? "Sim" : "Não"}
                   </td>
                   <td className="p-4 flex gap-2">
-                    <button
+                    <Button
                       onClick={() => editarPlano(plano)}
                       className="bg-yellow-500 text-white px-4 py-2 rounded-lg"
                     >
                       Editar
-                    </button>
+                    </Button>
 
-                    <button
-                      onClick={() => excluirPlano(plano.id)}
-                      className="bg-red-500 text-white px-4 py-2 rounded-lg"
+                    <Button 
+                      variant="danger"
+                      onClick={() => {
+                        setPlanoParaExcluir(plano)
+                        setModalExcluirAberto(true)
+                      }}
                     >
                       Excluir
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}
 
               {planos.length === 0 && (
                 <tr>
-                  <td className="p-4" colSpan="5">
+                  <td>
                     Nenhum plano cadastrado para este pedido.
                   </td>
                 </tr>
               )}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
+
+      <ConfirmModal
+        open={modalExcluirAberto}
+        title="Excluir plano"
+        message={`Deseja excluir o plano "${planoParaExcluir?.numeroPlano}"?`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="danger"
+        onConfirm={excluirPlano}
+        onCancel={() => {
+          setModalExcluirAberto(false)
+          setPlanoParaExcluir(null)
+        }}
+      />
     </div>
   )
 }

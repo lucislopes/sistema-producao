@@ -50,6 +50,25 @@ enum StatusServico {
 }
 
 //
+// EMPRESA
+//
+
+model ConfiguracaoEmpresa {
+  id        String   @id @default(cuid())
+
+  nome      String
+  telefone  String?
+  email     String?
+  endereco  String?
+  cidade    String?
+  estado    String?
+  cnpj      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+//
 // CLIENTES
 //
 

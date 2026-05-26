@@ -44,8 +44,13 @@ export async function alterarStatusExpedicao(req, res) {
   try {
 
     const { id } = req.params
-
     const { status } = req.body
+
+    const pedidoAnterior = await prisma.pedido.findUnique({
+      where: {
+        id
+      }
+    })
 
     const pedido = await prisma.pedido.update({
       where: {
@@ -61,7 +66,7 @@ export async function alterarStatusExpedicao(req, res) {
       pedidoId: pedido.id,
       usuarioId: req.user.id,
       tipo: "EXPEDICAO_ATUALIZADA",
-      descricao: `Status de expedição alterado para ${pedido.status}`
+      descricao: `Expedição: status alterado de ${pedidoAnterior.status} para ${pedido.status}`
     })
 
     return res.json(pedido)

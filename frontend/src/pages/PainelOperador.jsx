@@ -100,11 +100,6 @@ export function PainelOperador() {
 
   return (
     <div>
-
-      <h1 className="text-3xl font-bold mb-6">
-        Painel Operador
-      </h1>
-
       {/* SERVIÇOS DISPONÍVEIS */}
 
       <div className="mb-10">

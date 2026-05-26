@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react"
 import { api } from "../services/api"
+import { CabecalhoImpressao } from "../components/CabecalhoImpressao"
+import { Input } from "../components/ui/Input"
+import { Select } from "../components/ui/Select"
+import { Table, Th, Td } from "../components/ui/Table"
 
 export function RelatorioExpedicao() {
   const [pedidos, setPedidos] = useState([])
   const [rotas, setRotas] = useState([])
-
+  const [empresa, setEmpresa] = useState(null)
   const hoje = new Date().toISOString().substring(0, 10)
 
   const [dataInicio, setDataInicio] = useState(hoje)
@@ -14,29 +18,35 @@ export function RelatorioExpedicao() {
   const [status, setStatus] = useState("")
   const [busca, setBusca] = useState("")
 
-  async function carregarRotas() {
-    const response = await api.get("/rotas-entrega")
-    setRotas(response.data)
-  }
-
-  async function carregarRelatorio() {
-    try {
-      const response = await api.get("/relatorio-expedicao", {
-        params: {
-        dataInicio,
-        dataFim,
-        rotaId,
-        status,
-        busca
-      }
-      })
-
-      setPedidos(response.data)
-    } catch (error) {
-      console.log(error)
-      alert("Erro ao carregar relatório")
+    async function carregarRotas() {
+      const response = await api.get("/rotas-entrega")
+      setRotas(response.data)
     }
-  }
+
+    async function carregarRelatorio() {
+      try {
+        const [relatorioResponse, empresaResponse] = await Promise.all([
+          api.get("/relatorio-expedicao", {
+            params: {
+              dataInicio,
+              dataFim,
+              rotaId,
+              status,
+              busca
+            }
+          }),
+
+          api.get("/configuracao-empresa")
+        ])
+
+        setPedidos(relatorioResponse.data)
+        setEmpresa(empresaResponse.data)
+
+      } catch (error) {
+        console.log(error)
+        alert("Erro ao carregar relatório")
+      }
+    }
 
   function exportarCSV() {
     const cabecalho = [
@@ -129,10 +139,10 @@ export function RelatorioExpedicao() {
     if (!dataEntrega) return ""
 
     const hojeData = new Date()
-    hojeData.setHours(0, 0, 0, 0)
+    hojeData.sethours(0, 0, 0, 0)
 
     const entrega = new Date(dataEntrega)
-    entrega.setHours(0, 0, 0, 0)
+    entrega.sethours(0, 0, 0, 0)
 
     if (entrega < hojeData) {
       return "bg-red-50"
@@ -148,9 +158,6 @@ export function RelatorioExpedicao() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6 no-print">
-        <h1 className="text-3xl font-bold">
-          Relatório de Expedição
-        </h1>
       <div className="flex gap-2">
         <button
           onClick={exportarCSV}
@@ -170,22 +177,19 @@ export function RelatorioExpedicao() {
 
       <div className="bg-white p-6 rounded-2xl shadow-md mb-8 no-print">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <input
+          <Input
             type="date"
-            className="border p-3 rounded-lg"
             value={dataInicio}
             onChange={(e) => setDataInicio(e.target.value)}
           />
 
-          <input
+          <Input
             type="date"
-            className="border p-3 rounded-lg"
             value={dataFim}
             onChange={(e) => setDataFim(e.target.value)}
           />
 
-          <select
-            className="border p-3 rounded-lg"
+          <Select
             value={rotaId}
             onChange={(e) => setRotaId(e.target.value)}
           >
@@ -196,22 +200,20 @@ export function RelatorioExpedicao() {
                 {rota.nome}
               </option>
             ))}
-          </select>
+          </Select>
 
-          <select
-            className="border p-3 rounded-lg"
+          <Select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
           >
             <option value="">Todos os status</option>
             <option value="PRONTO_ENTREGA">Pronto Entrega</option>
             <option value="SAIU_ENTREGA">Saiu Entrega</option>
-          </select>
+          </Select>
 
-          <input
+          <Input
             type="text"
             placeholder="Buscar pedido ou cliente..."
-            className="border p-3 rounded-lg"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
           />
@@ -241,6 +243,13 @@ export function RelatorioExpedicao() {
         </div>
       </div>
 
+      <CabecalhoImpressao
+        empresa={empresa}
+        titulo="Relatório de Produção"
+        periodoInicio={dataInicio}
+        periodoFim={dataFim}
+      />
+
       <div className="bg-white rounded-2xl shadow-md p-6">
         <div className="mb-6">
           <h2 className="text-2xl font-bold">
@@ -252,21 +261,21 @@ export function RelatorioExpedicao() {
           </p>
 
           <p className="text-gray-600">
-            Total de entregas: {pedidos.length}
+            Total de entregas: {pedidos.lengTh}
           </p>
         </div>
 
-        <table className="w-full border text-sm">
-          <thead className="bg-gray-200">
+        <Table>
+          <thead>
             <tr>
-              <th className="text-left p-3 border">Pedido</th>
-              <th className="text-left p-3 border">Cliente</th>
-              <th className="text-left p-3 border">Data</th>
-              <th className="text-left p-3 border">Rota</th>
-              <th className="text-left p-3 border">Recebedor</th>
-              <th className="text-left p-3 border">Contato</th>
-              <th className="text-left p-3 border">Endereço</th>
-              <th className="text-left p-3 border">Status</th>
+              <Th>Pedido</Th>
+              <Th>Cliente</Th>
+              <Th>Data</Th>
+              <Th>Rota</Th>
+              <Th>Recebedor</Th>
+              <Th>Contato</Th>
+              <Th>Endereço</Th>
+              <Th>Status</Th>
             </tr>
           </thead>
 
@@ -318,7 +327,7 @@ export function RelatorioExpedicao() {
               </tr>
             )}
           </tbody>
-        </table>
+        </Table>
       </div>
     </div>
   )
