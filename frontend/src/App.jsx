@@ -19,6 +19,11 @@ import { PainelOperador } from "./pages/PainelOperador"
 import { Kanban } from "./pages/Kanban"
 import { Expedicao } from "./pages/Expedicao"
 import { RelatorioExpedicao } from "./pages/RelatorioExpedicao"
+import { RelatorioPedidos } from "./pages/RelatorioPedidos"
+import { DetalhePedido } from "./pages/DetalhePedido"
+import { RelatorioProducao } from "./pages/RelatorioProducao"
+import { Alertas } from "./pages/Alertas"
+import { ProdutividadeOperadores } from "./pages/ProdutividadeOperadores"
 
 export default function App() {
 
@@ -100,8 +105,35 @@ export default function App() {
             path="/relatorio-expedicao"
             element={<RelatorioExpedicao />}
           />
+          <Route
+            path="/relatorio-pedidos"
+            element={<RelatorioPedidos />}
+          />
 
+          <Route
+            path="/pedidos/:id"
+            element={<DetalhePedido />}
+          />
 
+          <Route
+            path="/relatorio-producao"
+            element={<RelatorioProducao />}
+          />
+
+          <Route
+            path="/alertas"
+            element={<Alertas />}
+          />
+
+          <Route
+            path="/alertas"
+            element={<Alertas />}
+          />
+
+          <Route
+            path="/produtividade-operadores"
+            element={<ProdutividadeOperadores />}
+          />
 
         </Route>
 

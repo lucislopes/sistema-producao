@@ -2,35 +2,32 @@ import { prisma } from "../lib/prisma.js"
 
 export async function relatorioExpedicao(req, res) {
   try {
-    const { data, rotaId, status, busca } = req.query
-    const dataFiltro = data ? new Date(data) : new Date()
+    const {
+      dataInicio,
+      dataFim,
+      rotaId,
+      status,
+      busca
+    } = req.query
 
-    const inicioDia = new Date(dataFiltro)
-    inicioDia.setHours(0, 0, 0, 0)
-
-    const fimDia = new Date(dataFiltro)
-    fimDia.setHours(23, 59, 59, 999)
-
-    const pedidos = await prisma.pedido.findMany({
-      where: {
-        status: status
+    const where = {
+      status: status
         ? status
         : {
-            in: ["PRONTO_ENTREGA", "SAIU_ENTREGA"]
-        },
+            in: [
+              "CONCLUIDO",
+              "PRONTO_ENTREGA",
+              "SAIU_ENTREGA"
+            ]
+          },
 
-        dataEntrega: {
-          gte: inicioDia,
-          lte: fimDia
-        },
+      ...(rotaId
+        ? {
+            rotaId
+          }
+        : {}),
 
-        ...(rotaId
-          ? {
-              rotaId
-            }
-          : {}),
-        
-        ...(busca
+      ...(busca
         ? {
             OR: [
               {
@@ -50,8 +47,29 @@ export async function relatorioExpedicao(req, res) {
                 : [])
             ]
           }
-        : {})          
-      },
+        : {})
+    }
+
+    if (dataInicio || dataFim) {
+      where.dataEntrega = {}
+
+      if (dataInicio) {
+        const inicio = new Date(dataInicio)
+        inicio.setHours(0, 0, 0, 0)
+
+        where.dataEntrega.gte = inicio
+      }
+
+      if (dataFim) {
+        const fim = new Date(dataFim)
+        fim.setHours(23, 59, 59, 999)
+
+        where.dataEntrega.lte = fim
+      }
+    }
+
+    const pedidos = await prisma.pedido.findMany({
+      where,
 
       include: {
         cliente: true,
@@ -60,6 +78,9 @@ export async function relatorioExpedicao(req, res) {
       },
 
       orderBy: [
+        {
+          dataEntrega: "asc"
+        },
         {
           rota: {
             nome: "asc"

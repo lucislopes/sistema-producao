@@ -66,6 +66,22 @@ export function MainLayout() {
                 Relatório Expedição
               </Link>
 
+              <Link to="/relatorio-pedidos">
+                Relatório Pedidos
+              </Link>
+
+              <Link to="/relatorio-producao">
+                Relatório Produção
+              </Link>
+
+              <Link to="/alertas">
+                Alertas
+              </Link>
+
+              <Link to="/produtividade-operadores">
+                Produtividade
+              </Link>
+
             </>
           )}
 

@@ -15,6 +15,11 @@ import expedicaoRoutes from "./routes/expedicao.routes.js"
 import dashboardRoutes from "./routes/dashboard.routes.js"
 import relatorioExpedicaoRoutes from "./routes/relatorioExpedicao.routes.js"
 import historicoPedidoRoutes from "./routes/historicoPedido.routes.js"
+import relatorioPedidosRoutes from "./routes/relatorioPedidos.routes.js"
+import detalhePedidoRoutes from "./routes/detalhePedido.routes.js"
+import relatorioProducaoRoutes from "./routes/relatorioProducao.routes.js"
+import alertasRoutes from "./routes/alertas.routes.js"
+import produtividadeRoutes from "./routes/produtividade.routes.js"
 
 dotenv.config()
 
@@ -35,6 +40,11 @@ app.use("/expedicao", expedicaoRoutes)
 app.use("/dashboard", dashboardRoutes)
 app.use("/relatorio-expedicao", relatorioExpedicaoRoutes)
 app.use("/historico-pedido", historicoPedidoRoutes)
+app.use("/relatorio-pedidos", relatorioPedidosRoutes)
+app.use("/detalhe-pedido", detalhePedidoRoutes)
+app.use("/relatorio-producao", relatorioProducaoRoutes)
+app.use("/alertas", alertasRoutes)
+app.use("/produtividade", produtividadeRoutes)
 
 app.get("/", (req, res) => {
   return res.json({

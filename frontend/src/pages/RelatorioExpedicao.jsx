@@ -7,7 +7,9 @@ export function RelatorioExpedicao() {
 
   const hoje = new Date().toISOString().substring(0, 10)
 
-  const [data, setData] = useState(hoje)
+  const [dataInicio, setDataInicio] = useState(hoje)
+  const [dataFim, setDataFim] = useState(hoje)
+  
   const [rotaId, setRotaId] = useState("")
   const [status, setStatus] = useState("")
   const [busca, setBusca] = useState("")
@@ -21,11 +23,12 @@ export function RelatorioExpedicao() {
     try {
       const response = await api.get("/relatorio-expedicao", {
         params: {
-          data,
-          rotaId,
-          status,
-          busca
-        }
+        dataInicio,
+        dataFim,
+        rotaId,
+        status,
+        busca
+      }
       })
 
       setPedidos(response.data)
@@ -34,6 +37,57 @@ export function RelatorioExpedicao() {
       alert("Erro ao carregar relatório")
     }
   }
+
+  function exportarCSV() {
+    const cabecalho = [
+      "Pedido",
+      "Cliente",
+      "Data",
+      "Rota",
+      "Recebedor",
+      "Contato",
+      "Endereco",
+      "Status"
+    ]
+
+    const linhas = pedidos.map((pedido) => [
+      `#${pedido.numeroPedido}`,
+      pedido.cliente?.nome || "",
+      formatarData(pedido.dataEntrega),
+      pedido.rota?.nome || "",
+      pedido.nomeRecebedor || "",
+      pedido.contatoRecebedor || "",
+      pedido.enderecoEntrega || "",
+      obterStatus(pedido.status)
+    ])
+
+    const csv = [
+      cabecalho,
+      ...linhas
+    ]
+      .map((linha) =>
+        linha
+          .map((campo) =>
+            `"${String(campo).replace(/"/g, '""')}"`
+          )
+          .join(";")
+      )
+      .join("\n")
+
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;"
+    })
+
+    const url = URL.createObjectURL(blob)
+
+    const link = document.createElement("a")
+    link.href = url
+    link.download = "relatorio-expedicao.csv"
+    link.click()
+
+    URL.revokeObjectURL(url)
+  }
+
 
   useEffect(() => {
 
@@ -97,6 +151,13 @@ export function RelatorioExpedicao() {
         <h1 className="text-3xl font-bold">
           Relatório de Expedição
         </h1>
+      <div className="flex gap-2">
+        <button
+          onClick={exportarCSV}
+          className="bg-green-700 text-white px-6 py-3 rounded-lg"
+        >
+          Exportar CSV
+        </button>
 
         <button
           onClick={imprimir}
@@ -105,14 +166,22 @@ export function RelatorioExpedicao() {
           Imprimir
         </button>
       </div>
+      </div>
 
       <div className="bg-white p-6 rounded-2xl shadow-md mb-8 no-print">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <input
             type="date"
             className="border p-3 rounded-lg"
-            value={data}
-            onChange={(e) => setData(e.target.value)}
+            value={dataInicio}
+            onChange={(e) => setDataInicio(e.target.value)}
+          />
+
+          <input
+            type="date"
+            className="border p-3 rounded-lg"
+            value={dataFim}
+            onChange={(e) => setDataFim(e.target.value)}
           />
 
           <select
@@ -156,7 +225,8 @@ export function RelatorioExpedicao() {
           <button
             type="button"
             onClick={() => {
-              setData(hoje)
+              setDataInicio(hoje)
+              setDataFim(hoje)
               setRotaId("")
               setStatus("")
               setBusca("")
@@ -178,7 +248,7 @@ export function RelatorioExpedicao() {
           </h2>
 
           <p className="text-gray-600">
-            Data: {formatarData(data)}
+            Período: {formatarData(dataInicio)} até {formatarData(dataFim)}
           </p>
 
           <p className="text-gray-600">

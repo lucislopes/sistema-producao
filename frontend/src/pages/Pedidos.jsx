@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { api } from "../services/api"
+import { Link } from "react-router-dom"
 
 export function Pedidos() {
   const [pedidos, setPedidos] = useState([])
@@ -477,6 +478,10 @@ export function Pedidos() {
             >
               Cancelar
             </button>
+
+            
+
+
           )}
         </div>
       </form>
@@ -599,12 +604,12 @@ export function Pedidos() {
                   Editar
                 </button>
 
-                <button
-                  onClick={() => carregarHistorico(pedido)}
-                  className="bg-gray-800 text-white px-4 py-2 rounded-lg"
+                <Link
+                  to={`/pedidos/${pedido.id}`}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg"
                 >
-                  Histórico
-                </button>
+                  Detalhes
+                </Link>
               </td>
                 
               </tr>
@@ -621,75 +626,7 @@ export function Pedidos() {
         </table>
       </div>
 
-      {pedidoHistorico && (
-        <div className="bg-white rounded-2xl shadow-md p-6 mt-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">
-              Histórico do Pedido #{pedidoHistorico.numeroPedido}
-            </h2>
-
-            <button
-              onClick={() => {
-                setPedidoHistorico(null)
-                setHistorico([])
-              }}
-              className="bg-gray-500 text-white px-4 py-2 rounded-lg"
-            >
-              Fechar
-            </button>
-          </div>
-
-          <div className="relative border-l-2 border-gray-300 ml-3 pl-6 flex flex-col gap-6">
-
-            {historico.map((item) => (
-
-              <div
-                key={item.id}
-                className="relative"
-              >
-
-                <div className="absolute -left-[34px] top-1 w-4 h-4 rounded-full bg-blue-600 border-4 border-white shadow">
-                </div>
-
-                <div className="bg-gray-50 border rounded-2xl p-4 shadow-sm">
-
-                  <div className="flex justify-between items-start mb-2">
-
-                    <p className="font-bold">
-                      {item.descricao}
-                    </p>
-
-                    <span className="text-xs text-gray-500">
-                      {formatarDataHora(item.createdAt)}
-                    </span>
-
-                  </div>
-
-                  <p className="text-sm text-gray-600">
-                    Tipo: {item.tipo}
-                  </p>
-
-                  <p className="text-sm text-gray-600">
-                    Usuário: {
-                      item.usuario?.funcionario?.nome || "-"
-                    }
-                  </p>
-
-                </div>
-
-              </div>
-
-            ))}
-
-            {historico.length === 0 && (
-              <p className="text-gray-500">
-                Nenhum histórico encontrado.
-              </p>
-            )}
-
-          </div>
-        </div>
-      )}
+      
 
 
     </div>
