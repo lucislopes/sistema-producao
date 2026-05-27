@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useSearchParams } from "react-router-dom"
 import { api } from "../services/api"
 import { Button } from "../components/ui/Button"
 import { Select } from "../components/ui/Select"
@@ -21,11 +22,21 @@ export function ServicosPlano() {
   const [status, setStatus] = useState("ABERTO")
   const [observacoes, setObservacoes] = useState("")
 
+  const [searchParams] = useSearchParams()
+  const pedidoIdUrl = searchParams.get("pedidoId")
+  const planoIdUrl = searchParams.get("planoId")
+
   async function carregarDadosBase() {
     try {
       const [pedidosRes, tiposRes, operadoresRes] = await Promise.all([
 
-    api.get("/pedidos"),
+    api.get("/pedidos", {
+      params: {
+        page: 1,
+        limit: 100,
+        somenteAtivos: true
+      }
+    }),
 
     api.get("/tipos-servico"),
 
@@ -33,7 +44,7 @@ export function ServicosPlano() {
 
   ])
 
-  setPedidos(pedidosRes.data)
+  setPedidos(pedidosRes.data.dados || pedidosRes.data)
 
   setTiposServico(tiposRes.data)
 
@@ -57,7 +68,7 @@ export function ServicosPlano() {
       const response = await api.get(
         `/planos-corte/pedido/${idPedido}`
       )
-
+      
       setPlanos(response.data)
     } catch (error) {
       console.log(error)
@@ -84,11 +95,31 @@ export function ServicosPlano() {
   }
 
   useEffect(() => {
-    carregarDadosBase()
+    async function carregarInicial() {
+      await carregarDadosBase()
+
+      if (pedidoIdUrl) {
+        setPedidoId(pedidoIdUrl)
+
+        const response = await api.get(
+          `/planos-corte/pedido/${pedidoIdUrl}`
+        )
+
+        setPlanos(response.data)
+
+        if (planoIdUrl) {
+          setPlanoId(planoIdUrl)
+        }
+      }
+    }
+
+    carregarInicial()
   }, [])
 
   useEffect(() => {
-    carregarPlanos(pedidoId)
+    if (pedidoId && pedidoId !== pedidoIdUrl) {
+      carregarPlanos(pedidoId)
+    }
   }, [pedidoId])
 
   useEffect(() => {
@@ -96,7 +127,7 @@ export function ServicosPlano() {
   }, [planoId])
 
   async function handleSubmit(e) {
-    e.prevenTdefault()
+    e.preventDefault()
 
     const dados = {
       planoId,
@@ -276,8 +307,9 @@ export function ServicosPlano() {
             >
               <option value="ABERTO">Aberto</option>
               <option value="INICIADO">Iniciado</option>
-              <option value="PAUSADO">Pausado</option>
+              <option value="EM_SEPARACAO">Em Separação</option>
               <option value="CONCLUIDO">Concluído</option>
+              <option value="FINALIZADO">Finalizado</option>
               <option value="CANCELADO">Cancelado</option>
             </Select>
 
@@ -298,7 +330,7 @@ export function ServicosPlano() {
 
             {editandoId && (
               <Button
-                type="Button"
+                type="button"
                 onClick={limparFormulario}
               >
                 Cancelar
@@ -336,15 +368,11 @@ export function ServicosPlano() {
                   </Td>
 
                   <Td >
-                    <Button
-                      onClick={() => editarServico(servico)}
-                    >
+                    <Button size="sm" onClick={() => editarServico(servico)}>
                       Editar
                     </Button>
 
-                    <Button
-                      onClick={() => excluirServico(servico.id)}
-                    >
+                    <Button size="sm" variant="danger" onClick={() => excluirServico(servico.id)}>
                       Excluir
                     </Button>
                   </Td>

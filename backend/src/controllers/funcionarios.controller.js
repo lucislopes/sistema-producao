@@ -7,36 +7,42 @@ import { prisma } from "../lib/prisma.js"
 //
 
 export async function listarFuncionarios(req, res) {
-
   try {
-
     const { busca } = req.query
 
-    const funcionarios =
-      await prisma.funcionario.findMany({
-
-        where: busca
-          ? {
-              nome: {
-                contains: busca,
-                mode: "insensitive"
+    const funcionarios = await prisma.funcionario.findMany({
+      where: busca
+        ? {
+            OR: [
+              {
+                nome: {
+                  contains: busca,
+                  mode: "insensitive"
+                }
+              },
+              {
+                usuario: {
+                  email: {
+                    contains: busca,
+                    mode: "insensitive"
+                  }
+                }
               }
-            }
-          : {},
+            ]
+          }
+        : {},
 
-        include: {
-          usuario: true
-        },
+      include: {
+        usuario: true
+      },
 
-        orderBy: {
-          nome: "asc"
-        }
-      })
+      orderBy: {
+        nome: "asc"
+      }
+    })
 
     return res.json(funcionarios)
-
   } catch (error) {
-
     console.log(error)
 
     return res.status(500).json({
@@ -50,9 +56,7 @@ export async function listarFuncionarios(req, res) {
 //
 
 export async function criarFuncionario(req, res) {
-
   try {
-
     const {
       nome,
       telefone,
@@ -61,36 +65,83 @@ export async function criarFuncionario(req, res) {
       senha
     } = req.body
 
-    const senhaHash =
-      await bcrypt.hash(senha, 10)
-
-    const funcionario =
-      await prisma.funcionario.create({
-
-        data: {
-
-          nome,
-          telefone,
-          funcao,
-
-          usuario: {
-
-            create: {
-              email,
-              senha: senhaHash
-            }
-          }
-        },
-
-        include: {
-          usuario: true
-        }
+    if (!nome || !nome.trim()) {
+      return res.status(400).json({
+        error: "Nome do funcionário é obrigatório"
       })
+    }
+
+    if (!funcao || !funcao.trim()) {
+      return res.status(400).json({
+        error: "Função do funcionário é obrigatória"
+      })
+    }
+
+    if (!email || !email.trim()) {
+      return res.status(400).json({
+        error: "E-mail do usuário é obrigatório"
+      })
+    }
+
+    if (!senha || !senha.trim()) {
+      return res.status(400).json({
+        error: "Senha do usuário é obrigatória"
+      })
+    }
+
+    const nomeTratado = nome.trim()
+    const emailTratado = email.trim().toLowerCase()
+
+    const usuarioExistente = await prisma.usuario.findUnique({
+      where: {
+        email: emailTratado
+      }
+    })
+
+    if (usuarioExistente) {
+      return res.status(400).json({
+        error: "Já existe um usuário com este e-mail"
+      })
+    }
+
+    const funcionarioExistente = await prisma.funcionario.findFirst({
+      where: {
+        nome: {
+          equals: nomeTratado,
+          mode: "insensitive"
+        }
+      }
+    })
+
+    if (funcionarioExistente) {
+      return res.status(400).json({
+        error: "Já existe um funcionário com este nome"
+      })
+    }
+
+    const senhaHash = await bcrypt.hash(senha, 10)
+
+    const funcionario = await prisma.funcionario.create({
+      data: {
+        nome: nomeTratado,
+        telefone,
+        funcao,
+
+        usuario: {
+          create: {
+            email: emailTratado,
+            senha: senhaHash
+          }
+        }
+      },
+
+      include: {
+        usuario: true
+      }
+    })
 
     return res.status(201).json(funcionario)
-
   } catch (error) {
-
     console.log(error)
 
     return res.status(500).json({
@@ -99,11 +150,13 @@ export async function criarFuncionario(req, res) {
   }
 }
 
+//
+// LISTAR OPERADORES
+//
+
 export async function listarOperadores(req, res) {
   try {
-
     const operadores = await prisma.funcionario.findMany({
-
       where: {
         ativo: true,
 
@@ -118,13 +171,10 @@ export async function listarOperadores(req, res) {
       orderBy: {
         nome: "asc"
       }
-
     })
 
     return res.json(operadores)
-
   } catch (error) {
-
     console.log(error)
 
     return res.status(500).json({
@@ -138,9 +188,7 @@ export async function listarOperadores(req, res) {
 //
 
 export async function atualizarFuncionario(req, res) {
-
   try {
-
     const { id } = req.params
 
     const {
@@ -150,25 +198,53 @@ export async function atualizarFuncionario(req, res) {
       ativo
     } = req.body
 
-    const funcionario =
-      await prisma.funcionario.update({
-
-        where: {
-          id
-        },
-
-        data: {
-          nome,
-          telefone,
-          funcao,
-          ativo
-        }
+    if (!nome || !nome.trim()) {
+      return res.status(400).json({
+        error: "Nome do funcionário é obrigatório"
       })
+    }
+
+    if (!funcao || !funcao.trim()) {
+      return res.status(400).json({
+        error: "Função do funcionário é obrigatória"
+      })
+    }
+
+    const nomeTratado = nome.trim()
+
+    const funcionarioExistente = await prisma.funcionario.findFirst({
+      where: {
+        nome: {
+          equals: nomeTratado,
+          mode: "insensitive"
+        },
+        id: {
+          not: id
+        }
+      }
+    })
+
+    if (funcionarioExistente) {
+      return res.status(400).json({
+        error: "Já existe outro funcionário com este nome"
+      })
+    }
+
+    const funcionario = await prisma.funcionario.update({
+      where: {
+        id
+      },
+
+      data: {
+        nome: nomeTratado,
+        telefone,
+        funcao,
+        ativo
+      }
+    })
 
     return res.json(funcionario)
-
   } catch (error) {
-
     console.log(error)
 
     return res.status(500).json({

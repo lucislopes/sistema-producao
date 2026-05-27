@@ -2,14 +2,25 @@ import { prisma } from "../lib/prisma.js"
 import { recalcularStatusPedido } from "../utils/recalcularStatusPedido.js"
 import { registrarHistoricoPedido } from "../utils/registrarHistoricoPedido.js"
 
+const STATUS_SERVICO_PERMITIDOS = [
+  "ABERTO",
+  "INICIADO",
+  "EM_SEPARACAO",
+  "CONCLUIDO",
+  "FINALIZADO",
+  "CANCELADO"
+]
+
+function validarStatusServico(status) {
+  return STATUS_SERVICO_PERMITIDOS.includes(status)
+}
+
 export async function listarServicosPorPlano(req, res) {
   try {
     const { planoId } = req.params
 
     const servicos = await prisma.servicoPlano.findMany({
-      where: {
-        planoId
-      },
+      where: { planoId },
       include: {
         tipoServico: true,
         operador: true,
@@ -46,6 +57,78 @@ export async function criarServicoPlano(req, res) {
       operadorId,
       observacoes
     } = req.body
+
+    if (!planoId) {
+      return res.status(400).json({
+        error: "Plano é obrigatório"
+      })
+    }
+
+    if (!tipoServicoId) {
+      return res.status(400).json({
+        error: "Tipo de serviço é obrigatório"
+      })
+    }
+
+    const plano = await prisma.planoCorte.findUnique({
+      where: { id: planoId },
+      include: {
+        pedido: true
+      }
+    })
+
+    if (!plano) {
+      return res.status(400).json({
+        error: "Plano não encontrado"
+      })
+    }
+
+    if (["ENTREGUE", "CANCELADO"].includes(plano.pedido.status)) {
+      return res.status(400).json({
+        error: "Pedido já encerrado"
+      })
+    }
+
+    const tipoServico = await prisma.tipoServico.findUnique({
+      where: { id: tipoServicoId }
+    })
+
+    if (!tipoServico) {
+      return res.status(400).json({
+        error: "Tipo de serviço não encontrado"
+      })
+    }
+
+    if (operadorId) {
+      const operador = await prisma.funcionario.findUnique({
+        where: { id: operadorId }
+      })
+
+      if (!operador) {
+        return res.status(400).json({
+          error: "Operador não encontrado"
+        })
+      }
+
+      if (!operador.ativo) {
+        return res.status(400).json({
+          error: "Operador inativo"
+        })
+      }
+    }
+
+    const servicoDuplicado = await prisma.servicoPlano.findFirst({
+      where: {
+        planoId,
+        tipoServicoId
+      }
+    })
+
+    if (servicoDuplicado) {
+      return res.status(400).json({
+        error: "Este serviço já existe neste plano"
+      })
+    }
 
     const servico = await prisma.servicoPlano.create({
       data: {
@@ -92,6 +175,85 @@ export async function atualizarServicoPlano(req, res) {
       observacoes
     } = req.body
 
+    if (!tipoServicoId) {
+      return res.status(400).json({
+        error: "Tipo de serviço é obrigatório"
+      })
+    }
+
+    if (!status || !validarStatusServico(status)) {
+      return res.status(400).json({
+        error: "Status inválido"
+      })
+    }
+
+    const servicoAtual = await prisma.servicoPlano.findUnique({
+      where: { id },
+      include: {
+        plano: {
+          include: {
+            pedido: true
+          }
+        }
+      }
+    })
+
+    if (!servicoAtual) {
+      return res.status(404).json({
+        error: "Serviço não encontrado"
+      })
+    }
+
+    if (["ENTREGUE", "CANCELADO"].includes(servicoAtual.plano.pedido.status)) {
+      return res.status(400).json({
+        error: "Pedido já encerrado"
+      })
+    }
+
+    const tipoServico = await prisma.tipoServico.findUnique({
+      where: { id: tipoServicoId }
+    })
+
+    if (!tipoServico) {
+      return res.status(400).json({
+        error: "Tipo de serviço não encontrado"
+      })
+    }
+
+    if (operadorId) {
+      const operador = await prisma.funcionario.findUnique({
+        where: { id: operadorId }
+      })
+
+      if (!operador) {
+        return res.status(400).json({
+          error: "Operador não encontrado"
+        })
+      }
+
+      if (!operador.ativo) {
+        return res.status(400).json({
+          error: "Operador inativo"
+        })
+      }
+    }
+
+    const servicoDuplicado = await prisma.servicoPlano.findFirst({
+      where: {
+        planoId: servicoAtual.planoId,
+        tipoServicoId,
+        id: {
+          not: id
+        }
+      }
+    })
+
+    if (servicoDuplicado) {
+      return res.status(400).json({
+        error: "Já existe este serviço no plano"
+      })
+    }
+
     const dados = {
       tipoServicoId,
       operadorId: operadorId || null,
@@ -99,18 +261,19 @@ export async function atualizarServicoPlano(req, res) {
       observacoes
     }
 
-    if (status === "INICIADO") {
+    if (status === "INICIADO" && !servicoAtual.dataInicio) {
       dados.dataInicio = new Date()
     }
 
-    if (status === "CONCLUIDO") {
+    if (
+      ["CONCLUIDO", "FINALIZADO"].includes(status) &&
+      !servicoAtual.dataFim
+    ) {
       dados.dataFim = new Date()
     }
 
     const servico = await prisma.servicoPlano.update({
-      where: {
-        id
-      },
+      where: { id },
       data: dados,
       include: {
         tipoServico: true,
@@ -143,12 +306,14 @@ export async function deletarServicoPlano(req, res) {
     const { id } = req.params
 
     const servico = await prisma.servicoPlano.findUnique({
-      where: {
-        id
-      },
+      where: { id },
       include: {
         tipoServico: true,
-        plano: true
+        plano: {
+          include: {
+            pedido: true
+          }
+        }
       }
     })
 
@@ -158,22 +323,34 @@ export async function deletarServicoPlano(req, res) {
       })
     }
 
+    if (["ENTREGUE", "CANCELADO"].includes(servico.plano.pedido.status)) {
+      return res.status(400).json({
+        error: "Pedido já encerrado"
+      })
+    }
+
+    if (
+      ["CONCLUIDO", "FINALIZADO"].includes(servico.status)
+    ) {
+      return res.status(400).json({
+        error: "Não é possível excluir serviço concluído"
+      })
+    }
+
     const pedidoId = servico.plano.pedidoId
 
     await prisma.servicoPlano.delete({
-      where: {
-        id
-      }
+      where: { id }
     })
 
     await recalcularStatusPedido(pedidoId)
+
     await registrarHistoricoPedido({
-      pedidoId: servico.plano.pedidoId,
+      pedidoId,
       usuarioId: req.user.id,
       tipo: "SERVICO_EXCLUIDO",
       descricao: `Serviço ${servico.tipoServico.nome} excluído`
     })
-
 
     return res.json({
       message: "Serviço excluído"
@@ -233,9 +410,7 @@ export async function listarMeusServicos(req, res) {
     const usuarioId = req.user.id
 
     const usuario = await prisma.usuario.findUnique({
-      where: {
-        id: usuarioId
-      },
+      where: { id: usuarioId },
       include: {
         funcionario: true
       }
@@ -306,9 +481,7 @@ export async function assumirServico(req, res) {
     const usuarioId = req.user.id
 
     const usuario = await prisma.usuario.findUnique({
-      where: {
-        id: usuarioId
-      },
+      where: { id: usuarioId },
       include: {
         funcionario: true
       }
@@ -320,10 +493,14 @@ export async function assumirServico(req, res) {
       })
     }
 
+    if (!usuario.funcionario.ativo) {
+      return res.status(400).json({
+        error: "Funcionário inativo"
+      })
+    }
+
     const servicoAtual = await prisma.servicoPlano.findUnique({
-      where: {
-        id
-      },
+      where: { id },
       include: {
         plano: {
           include: {
@@ -351,10 +528,14 @@ export async function assumirServico(req, res) {
       })
     }
 
+    if (servicoAtual.status !== "ABERTO") {
+      return res.status(400).json({
+        error: "Somente serviços abertos podem ser assumidos"
+      })
+    }
+
     const servico = await prisma.servicoPlano.update({
-      where: {
-        id
-      },
+      where: { id },
       data: {
         operadorId: usuario.funcionario.id,
         status: "INICIADO",
@@ -371,7 +552,7 @@ export async function assumirServico(req, res) {
       pedidoId: servico.plano.pedidoId,
       usuarioId: req.user.id,
       tipo: "SERVICO_ASSUMIDO",
-      descricao: `Serviço assumido pelo operador`
+      descricao: "Serviço assumido pelo operador"
     })
 
     return res.json(servico)
@@ -389,23 +570,16 @@ export async function alterarStatusServico(req, res) {
     const { id } = req.params
     const { status } = req.body
 
-    const dados = {
-      status
-    }
-
-    if (status === "INICIADO") {
-      dados.dataInicio = new Date()
-    }
-
-    if (status === "CONCLUIDO") {
-      dados.dataFim = new Date()
+    if (!status || !validarStatusServico(status)) {
+      return res.status(400).json({
+        error: "Status inválido"
+      })
     }
 
     const servicoAtual = await prisma.servicoPlano.findUnique({
-      where: {
-        id
-      },
+      where: { id },
       include: {
+        tipoServico: true,
         plano: {
           include: {
             pedido: true
@@ -426,20 +600,20 @@ export async function alterarStatusServico(req, res) {
       })
     }
 
-    const servicoAnterior = await prisma.servicoPlano.findUnique({
-      where: {
-        id
-      },
-      include: {
-        tipoServico: true,
-        plano: true
-      }
-    })
+    const dados = {
+      status
+    }
+
+    if (status === "INICIADO" && !servicoAtual.dataInicio) {
+      dados.dataInicio = new Date()
+    }
+
+    if (status === "CONCLUIDO" && !servicoAtual.dataFim) {
+      dados.dataFim = new Date()
+    }
 
     const servico = await prisma.servicoPlano.update({
-      where: {
-        id
-      },
+      where: { id },
       data: dados,
       include: {
         tipoServico: true,
@@ -453,7 +627,7 @@ export async function alterarStatusServico(req, res) {
       pedidoId: servico.plano.pedidoId,
       usuarioId: req.user.id,
       tipo: "STATUS_SERVICO_ALTERADO",
-      descricao: `Serviço ${servico.tipoServico.nome}: status alterado de ${servicoAnterior.status} para ${servico.status}`
+      descricao: `Serviço ${servico.tipoServico.nome}: status alterado de ${servicoAtual.status} para ${servico.status}`
     })
 
     return res.json(servico)

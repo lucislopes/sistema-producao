@@ -15,6 +15,31 @@ function calcularDataEntregaPorChapas(quantidadeChapas) {
   return data
 }
 
+function validarPlano({
+  pedidoId,
+  numeroPlano,
+  quantidadeChapas
+}) {
+  if (!pedidoId) {
+    return "Pedido é obrigatório"
+  }
+
+  if (!numeroPlano || !numeroPlano.trim()) {
+    return "Número do plano é obrigatório"
+  }
+
+  const qtdChapas = Number(quantidadeChapas)
+
+  if (
+    Number.isNaN(qtdChapas) ||
+    qtdChapas <= 0
+  ) {
+    return "Quantidade de chapas deve ser maior que zero"
+  }
+
+  return null
+}
+
 export async function listarPlanosPorPedido(req, res) {
   try {
     const { pedidoId } = req.params
@@ -58,12 +83,59 @@ export async function criarPlanoCorte(req, res) {
       observacoes
     } = req.body
 
-    const qtdChapas = Number(quantidadeChapas || 0)
+    const erroValidacao = validarPlano({
+      pedidoId,
+      numeroPlano,
+      quantidadeChapas
+    })
+
+    if (erroValidacao) {
+      return res.status(400).json({
+        error: erroValidacao
+      })
+    }
+
+    const pedido = await prisma.pedido.findUnique({
+      where: {
+        id: pedidoId
+      }
+    })
+
+    if (!pedido) {
+      return res.status(400).json({
+        error: "Pedido informado não existe"
+      })
+    }
+
+    if (["ENTREGUE", "CANCELADO"].includes(pedido.status)) {
+      return res.status(400).json({
+        error: "Não é possível criar plano para pedido encerrado"
+      })
+    }
+
+    const numeroPlanoTratado = numeroPlano.trim()
+    const qtdChapas = Number(quantidadeChapas)
+
+    const planoExistente = await prisma.planoCorte.findFirst({
+      where: {
+        pedidoId,
+        numeroPlano: {
+          equals: numeroPlanoTratado,
+          mode: "insensitive"
+        }
+      }
+    })
+
+    if (planoExistente) {
+      return res.status(400).json({
+        error: "Já existe um plano com este número neste pedido"
+      })
+    }
 
     const plano = await prisma.planoCorte.create({
       data: {
         pedidoId,
-        numeroPlano,
+        numeroPlano: numeroPlanoTratado,
         quantidadeChapas: qtdChapas,
         medidaEncabecamento,
         compraExterna: Boolean(compraExterna),
@@ -113,14 +185,80 @@ export async function atualizarPlanoCorte(req, res) {
       observacoes
     } = req.body
 
-    const qtdChapas = Number(quantidadeChapas || 0)
+    if (!numeroPlano || !numeroPlano.trim()) {
+      return res.status(400).json({
+        error: "Número do plano é obrigatório"
+      })
+    }
+
+    const qtdChapas = Number(quantidadeChapas)
+
+    if (
+      Number.isNaN(qtdChapas) ||
+      qtdChapas <= 0
+    ) {
+      return res.status(400).json({
+        error: "Quantidade de chapas deve ser maior que zero"
+      })
+    }
+
+    const planoAnterior = await prisma.planoCorte.findUnique({
+      where: {
+        id
+      }
+    })
+
+    if (!planoAnterior) {
+      return res.status(404).json({
+        error: "Plano de corte não encontrado"
+      })
+    }
+
+    const pedido = await prisma.pedido.findUnique({
+      where: {
+        id: planoAnterior.pedidoId
+      }
+    })
+
+    if (!pedido) {
+      return res.status(400).json({
+        error: "Pedido do plano não encontrado"
+      })
+    }
+
+    if (["ENTREGUE", "CANCELADO"].includes(pedido.status)) {
+      return res.status(400).json({
+        error: "Não é possível alterar plano de pedido encerrado"
+      })
+    }
+
+    const numeroPlanoTratado = numeroPlano.trim()
+
+    const planoExistente = await prisma.planoCorte.findFirst({
+      where: {
+        pedidoId: planoAnterior.pedidoId,
+        numeroPlano: {
+          equals: numeroPlanoTratado,
+          mode: "insensitive"
+        },
+        id: {
+          not: id
+        }
+      }
+    })
+
+    if (planoExistente) {
+      return res.status(400).json({
+        error: "Já existe outro plano com este número neste pedido"
+      })
+    }
 
     const plano = await prisma.planoCorte.update({
       where: {
         id
       },
       data: {
-        numeroPlano,
+        numeroPlano: numeroPlanoTratado,
         quantidadeChapas: qtdChapas,
         medidaEncabecamento,
         compraExterna: Boolean(compraExterna),
@@ -160,6 +298,27 @@ export async function atualizarPlanoCorte(req, res) {
 export async function deletarPlanoCorte(req, res) {
   try {
     const { id } = req.params
+
+    const plano = await prisma.planoCorte.findUnique({
+      where: {
+        id
+      },
+      include: {
+        servicos: true
+      }
+    })
+
+    if (!plano) {
+      return res.status(404).json({
+        error: "Plano de corte não encontrado"
+      })
+    }
+
+    if (plano.servicos.length > 0) {
+      return res.status(400).json({
+        error: "Não é possível excluir plano com serviços cadastrados"
+      })
+    }
 
     await prisma.planoCorte.delete({
       where: {

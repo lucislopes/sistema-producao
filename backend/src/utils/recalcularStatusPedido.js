@@ -1,40 +1,24 @@
 import { prisma } from "../lib/prisma.js"
 
 export async function recalcularStatusPedido(pedidoId) {
-
-  //
-  // BUSCA PLANOS
-  //
-
   const planos = await prisma.planoCorte.findMany({
     where: {
       pedidoId
     },
-
     include: {
       servicos: true
     }
   })
 
-  //
-  // TODOS SERVIÇOS
-  //
-
   const servicos = planos.flatMap(
     (plano) => plano.servicos
   )
 
-  //
-  // SEM SERVIÇOS
-  //
-
   if (servicos.length === 0) {
-
     await prisma.pedido.update({
       where: {
         id: pedidoId
       },
-
       data: {
         status: "ABERTO"
       }
@@ -43,21 +27,34 @@ export async function recalcularStatusPedido(pedidoId) {
     return
   }
 
-  //
-  // TODOS CONCLUÍDOS
-  //
-
-  const todosConcluidos = servicos.every(
-    (s) => s.status === "CONCLUIDO"
+  const todosCancelados = servicos.every(
+    (s) => s.status === "CANCELADO"
   )
 
-  if (todosConcluidos) {
-
+  if (todosCancelados) {
     await prisma.pedido.update({
       where: {
         id: pedidoId
       },
+      data: {
+        status: "CANCELADO"
+      }
+    })
 
+    return
+  }
+
+  const todosConcluidosOuFinalizados = servicos.every(
+    (s) =>
+      s.status === "CONCLUIDO" ||
+      s.status === "FINALIZADO"
+  )
+
+  if (todosConcluidosOuFinalizados) {
+    await prisma.pedido.update({
+      where: {
+        id: pedidoId
+      },
       data: {
         status: "CONCLUIDO"
       }
@@ -66,40 +63,33 @@ export async function recalcularStatusPedido(pedidoId) {
     return
   }
 
-  //
-  // AGUARDANDO EXTERNO
-  //
-
-  const aguardandoExterno = servicos.some(
-    (s) => s.status === "PAUSADO"
+  const algumIniciado = servicos.some(
+    (s) =>
+      s.status === "INICIADO" ||
+      s.status === "EM_SEPARACAO" ||
+      s.status === "CONCLUIDO" ||
+      s.status === "FINALIZADO"
   )
 
-  if (aguardandoExterno) {
-
+  if (algumIniciado) {
     await prisma.pedido.update({
       where: {
         id: pedidoId
       },
-
       data: {
-        status: "AGUARDANDO_EXTERNO"
+        status: "EM_PRODUCAO"
       }
     })
 
     return
   }
 
-  //
-  // PRODUÇÃO
-  //
-
   await prisma.pedido.update({
     where: {
       id: pedidoId
     },
-
     data: {
-      status: "EM_PRODUCAO"
+      status: "ABERTO"
     }
   })
 }

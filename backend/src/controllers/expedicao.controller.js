@@ -1,11 +1,16 @@
 import { prisma } from "../lib/prisma.js"
 import { registrarHistoricoPedido } from "../utils/registrarHistoricoPedido.js"
 
+const STATUS_EXPEDICAO_PERMITIDOS = [
+  "CONCLUIDO",
+  "PRONTO_ENTREGA",
+  "SAIU_ENTREGA",
+  "ENTREGUE"
+]
+
 export async function listarExpedicao(req, res) {
   try {
-
     const pedidos = await prisma.pedido.findMany({
-
       where: {
         status: {
           in: [
@@ -25,13 +30,10 @@ export async function listarExpedicao(req, res) {
       orderBy: {
         dataEntrega: "asc"
       }
-
     })
 
     return res.json(pedidos)
-
   } catch (error) {
-
     console.log(error)
 
     return res.status(500).json({
@@ -42,15 +44,50 @@ export async function listarExpedicao(req, res) {
 
 export async function alterarStatusExpedicao(req, res) {
   try {
-
     const { id } = req.params
     const { status } = req.body
+
+    if (!status || !STATUS_EXPEDICAO_PERMITIDOS.includes(status)) {
+      return res.status(400).json({
+        error: "Status de expedição inválido"
+      })
+    }
 
     const pedidoAnterior = await prisma.pedido.findUnique({
       where: {
         id
       }
     })
+
+    if (!pedidoAnterior) {
+      return res.status(404).json({
+        error: "Pedido não encontrado"
+      })
+    }
+
+    if (pedidoAnterior.status === "CANCELADO") {
+      return res.status(400).json({
+        error: "Pedido cancelado não pode ir para expedição"
+      })
+    }
+
+    if (pedidoAnterior.status === "ENTREGUE") {
+      return res.status(400).json({
+        error: "Pedido já foi entregue"
+      })
+    }
+
+    const statusPermitidosNaExpedicao = [
+      "CONCLUIDO",
+      "PRONTO_ENTREGA",
+      "SAIU_ENTREGA"
+    ]
+
+    if (!statusPermitidosNaExpedicao.includes(pedidoAnterior.status)) {
+      return res.status(400).json({
+        error: "Pedido ainda não está disponível para expedição"
+      })
+    }
 
     const pedido = await prisma.pedido.update({
       where: {
@@ -70,9 +107,7 @@ export async function alterarStatusExpedicao(req, res) {
     })
 
     return res.json(pedido)
-
   } catch (error) {
-
     console.log(error)
 
     return res.status(500).json({

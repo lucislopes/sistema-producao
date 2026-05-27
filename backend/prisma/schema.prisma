@@ -44,8 +44,9 @@ enum StatusPedido {
 enum StatusServico {
   ABERTO
   INICIADO
-  PAUSADO
+  EM_SEPARACAO
   CONCLUIDO
+  FINALIZADO
   CANCELADO
 }
 

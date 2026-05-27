@@ -240,7 +240,7 @@ export function PainelOperador() {
 
                         <div className="flex gap-2">
 
-                            {servico.status !== "INICIADO" && (
+                            {servico.status === "ABERTO" && (
                             <button
                                 onClick={() =>
                                 alterarStatus(servico.id, "INICIADO")
@@ -251,18 +251,18 @@ export function PainelOperador() {
                             </button>
                             )}
 
-                            {servico.status !== "PAUSADO" && (
+                            {["INICIADO", "ABERTO"].includes(servico.status) && (
                             <button
                                 onClick={() =>
-                                alterarStatus(servico.id, "PAUSADO")
+                                alterarStatus(servico.id, "EM_SEPARACAO")
                                 }
                                 className="bg-yellow-500 text-white px-4 py-2 rounded-lg"
                             >
-                                Pausar
+                                Em Separação
                             </button>
                             )}
 
-                            {servico.status !== "CONCLUIDO" && (
+                            {["INICIADO", "EM_SEPARACAO"].includes(servico.status) && (
                             <button
                                 onClick={() =>
                                 alterarStatus(servico.id, "CONCLUIDO")
@@ -272,6 +272,18 @@ export function PainelOperador() {
                                 Concluir
                             </button>
                             )}
+
+                            {servico.status === "CONCLUIDO" && (
+                            <button
+                                onClick={() =>
+                                alterarStatus(servico.id, "FINALIZADO")
+                                }
+                                className="bg-green-700 text-white px-4 py-2 rounded-lg"
+                            >
+                                Finalizar
+                            </button>
+                            )}
+
 
                         </div>
 

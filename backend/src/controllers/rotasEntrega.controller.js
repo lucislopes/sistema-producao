@@ -19,7 +19,6 @@ export async function listarRotas(req, res) {
     })
 
     return res.json(rotas)
-
   } catch (error) {
     console.log(error)
 
@@ -33,15 +32,44 @@ export async function criarRota(req, res) {
   try {
     const { nome, valorFrete } = req.body
 
+    if (!nome || !nome.trim()) {
+      return res.status(400).json({
+        error: "Nome da rota é obrigatório"
+      })
+    }
+
+    const nomeTratado = nome.trim()
+    const valorFreteTratado = Number(valorFrete || 0)
+
+    if (Number.isNaN(valorFreteTratado) || valorFreteTratado < 0) {
+      return res.status(400).json({
+        error: "Valor do frete inválido"
+      })
+    }
+
+    const rotaExistente = await prisma.rotaEntrega.findFirst({
+      where: {
+        nome: {
+          equals: nomeTratado,
+          mode: "insensitive"
+        }
+      }
+    })
+
+    if (rotaExistente) {
+      return res.status(400).json({
+        error: "Já existe uma rota com este nome"
+      })
+    }
+
     const rota = await prisma.rotaEntrega.create({
       data: {
-        nome,
-        valorFrete: Number(valorFrete)
+        nome: nomeTratado,
+        valorFrete: valorFreteTratado
       }
     })
 
     return res.status(201).json(rota)
-
   } catch (error) {
     console.log(error)
 
@@ -56,16 +84,50 @@ export async function atualizarRota(req, res) {
     const { id } = req.params
     const { nome, valorFrete } = req.body
 
+    if (!nome || !nome.trim()) {
+      return res.status(400).json({
+        error: "Nome da rota é obrigatório"
+      })
+    }
+
+    const nomeTratado = nome.trim()
+    const valorFreteTratado = Number(valorFrete || 0)
+
+    if (Number.isNaN(valorFreteTratado) || valorFreteTratado < 0) {
+      return res.status(400).json({
+        error: "Valor do frete inválido"
+      })
+    }
+
+    const rotaExistente = await prisma.rotaEntrega.findFirst({
+      where: {
+        nome: {
+          equals: nomeTratado,
+          mode: "insensitive"
+        },
+        id: {
+          not: id
+        }
+      }
+    })
+
+    if (rotaExistente) {
+      return res.status(400).json({
+        error: "Já existe outra rota com este nome"
+      })
+    }
+
     const rota = await prisma.rotaEntrega.update({
-      where: { id },
+      where: {
+        id
+      },
       data: {
-        nome,
-        valorFrete: Number(valorFrete)
+        nome: nomeTratado,
+        valorFrete: valorFreteTratado
       }
     })
 
     return res.json(rota)
-
   } catch (error) {
     console.log(error)
 
@@ -80,13 +142,14 @@ export async function deletarRota(req, res) {
     const { id } = req.params
 
     await prisma.rotaEntrega.delete({
-      where: { id }
+      where: {
+        id
+      }
     })
 
     return res.json({
       message: "Rota excluída"
     })
-
   } catch (error) {
     console.log(error)
 

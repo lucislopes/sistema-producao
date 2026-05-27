@@ -1,43 +1,190 @@
 import { prisma } from "../lib/prisma.js"
 import { registrarHistoricoPedido } from "../utils/registrarHistoricoPedido.js"
 
-export async function listarPedidos(req, res) {
-  try {
-    const pedidos = await prisma.pedido.findMany({
-      include: {
-        cliente: true,
-        vendedor: true,
-        rota: true
-      },
-      orderBy: {
-        createdAt: "desc"
+function validarPedido({
+  clienteId,
+  vendedorId,
+  dataEntrega,
+  tipoEntrega,
+  responsavelFrete,
+  valorFrete,
+  valorTotal
+  }) {
+  if (!clienteId) {
+    return "Cliente é obrigatório"
+  }
+
+  if (!vendedorId) {
+    return "Vendedor é obrigatório"
+  }
+
+  if (!tipoEntrega) {
+    return "Tipo de entrega é obrigatório"
+  }
+
+  if (!responsavelFrete) {
+    return "Responsável pelo frete é obrigatório"
+  }
+
+  if (dataEntrega) {
+    const data = new Date(dataEntrega)
+
+    if (Number.isNaN(data.getTime())) {
+      return "Data de entrega inválida"
+    }
+  }
+
+  if (
+    valorFrete !== "" &&
+    valorFrete !== null &&
+    valorFrete !== undefined
+  ) {
+    const valor = Number(valorFrete)
+
+    if (Number.isNaN(valor) || valor < 0) {
+      return "Valor do frete inválido"
+    }
+  }
+
+  if (
+    valorTotal !== "" &&
+    valorTotal !== null &&
+    valorTotal !== undefined
+  ) {
+    const valor = Number(valorTotal)
+
+    if (Number.isNaN(valor) || valor < 0) {
+      return "Valor total inválido"
+    }
+  }
+
+  return null
+  }
+
+  export async function listarPedidos(req, res) {
+      try {
+        const page = Number(req.query.page) || 1
+        const limit = Number(req.query.limit) || 50
+        const { status, somenteAtivos } = req.query
+        
+        const skip = (page - 1) * limit
+        const where = {}
+        if (somenteAtivos === "true") {
+          where.status = {
+            notIn: ["ENTREGUE", "CANCELADO"]
+          }
+        }
+
+        if (status) {
+          where.status = status
+        }
+                
+        const [total, pedidos] = await Promise.all([
+          prisma.pedido.count(),
+
+          prisma.pedido.findMany({
+            where,
+            skip,
+            take: limit,
+            include: {
+              cliente: true,
+              vendedor: true,
+              rota: true
+            },
+            orderBy: {
+              createdAt: "desc"
+            }
+          })
+        ])
+
+        return res.json({
+          dados: pedidos,
+          paginacao: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+          }
+        })
+      } catch (error) {
+        console.log(error)
+
+        return res.status(500).json({
+          error: "Erro ao listar pedidos"
+        })
+      }
+    }
+
+    export async function criarPedido(req, res) {
+      try {
+        const {
+          clienteId,
+          vendedorId,
+          dataEntrega,
+          tipoEntrega,
+          responsavelFrete,
+          rotaId,
+          valorFrete,
+          valorTotal,
+          nomeRecebedor,
+          contatoRecebedor,
+          enderecoEntrega,
+          observacoes
+        } = req.body
+
+        const erroValidacao = validarPedido({
+          clienteId,
+          vendedorId,
+          dataEntrega,
+          tipoEntrega,
+          responsavelFrete,
+          valorFrete,
+          valorTotal
+        })
+
+      if (erroValidacao) {
+        return res.status(400).json({
+          error: erroValidacao
+        })
+      }
+
+      const cliente = await prisma.cliente.findUnique({
+        where: {
+          id: clienteId
+        }
+      })
+
+    if (!cliente) {
+      return res.status(400).json({
+        error: "Cliente informado não existe"
+      })
+    }
+
+    const vendedor = await prisma.funcionario.findUnique({
+      where: {
+        id: vendedorId
       }
     })
 
-    return res.json(pedidos)
-  } catch (error) {
-    console.log(error)
-    return res.status(500).json({ error: "Erro ao listar pedidos" })
-  }
-}
+    if (!vendedor) {
+      return res.status(400).json({
+        error: "Vendedor informado não existe"
+      })
+    }
 
-export async function criarPedido(req, res) {
-  try {
+    if (rotaId) {
+      const rota = await prisma.rotaEntrega.findUnique({
+        where: {
+          id: rotaId
+        }
+      })
 
-    const {
-      clienteId,
-      vendedorId,
-      dataEntrega,
-      tipoEntrega,
-      responsavelFrete,
-      rotaId,
-      valorFrete,
-      valorTotal,
-      nomeRecebedor,
-      contatoRecebedor,
-      enderecoEntrega,
-      observacoes
-    } = req.body
+      if (!rota) {
+        return res.status(400).json({
+          error: "Rota informada não existe"
+        })
+      }
+    }
 
     const pedido = await prisma.pedido.create({
       data: {
@@ -47,8 +194,18 @@ export async function criarPedido(req, res) {
         tipoEntrega,
         responsavelFrete,
         rotaId: rotaId || null,
-        valorFrete: valorFrete ? Number(valorFrete) : null,
-        valorTotal: valorTotal ? Number(valorTotal) : null,
+        valorFrete:
+          valorFrete !== "" &&
+          valorFrete !== null &&
+          valorFrete !== undefined
+            ? Number(valorFrete)
+            : null,
+        valorTotal:
+          valorTotal !== "" &&
+          valorTotal !== null &&
+          valorTotal !== undefined
+            ? Number(valorTotal)
+            : null,
         nomeRecebedor,
         contatoRecebedor,
         enderecoEntrega,
@@ -71,7 +228,10 @@ export async function criarPedido(req, res) {
     return res.status(201).json(pedido)
   } catch (error) {
     console.log(error)
-    return res.status(500).json({ error: "Erro ao criar pedido" })
+
+    return res.status(500).json({
+      error: "Erro ao criar pedido"
+    })
   }
 }
 
@@ -96,11 +256,75 @@ export async function atualizarPedido(req, res) {
     } = req.body
 
     const pedidoAnterior = await prisma.pedido.findUnique({
-      where: { id }
+      where: {
+        id
+      }
     })
 
+    if (!pedidoAnterior) {
+      return res.status(404).json({
+        error: "Pedido não encontrado"
+      })
+    }
+
+    const erroValidacao = validarPedido({
+      clienteId,
+      vendedorId,
+      dataEntrega,
+      tipoEntrega,
+      responsavelFrete,
+      valorFrete,
+      valorTotal
+    })
+
+    if (erroValidacao) {
+      return res.status(400).json({
+        error: erroValidacao
+      })
+    }
+
+    const cliente = await prisma.cliente.findUnique({
+      where: {
+        id: clienteId
+      }
+    })
+
+    if (!cliente) {
+      return res.status(400).json({
+        error: "Cliente informado não existe"
+      })
+    }
+
+    const vendedor = await prisma.funcionario.findUnique({
+      where: {
+        id: vendedorId
+      }
+    })
+
+    if (!vendedor) {
+      return res.status(400).json({
+        error: "Vendedor informado não existe"
+      })
+    }
+
+    if (rotaId) {
+      const rota = await prisma.rotaEntrega.findUnique({
+        where: {
+          id: rotaId
+        }
+      })
+
+      if (!rota) {
+        return res.status(400).json({
+          error: "Rota informada não existe"
+        })
+      }
+    }
+
     const pedido = await prisma.pedido.update({
-      where: { id },
+      where: {
+        id
+      },
       data: {
         clienteId,
         vendedorId,
@@ -108,8 +332,18 @@ export async function atualizarPedido(req, res) {
         tipoEntrega,
         responsavelFrete,
         rotaId: rotaId || null,
-        valorFrete: valorFrete ? Number(valorFrete) : null,
-        valorTotal: valorTotal ? Number(valorTotal) : null,
+        valorFrete:
+          valorFrete !== "" &&
+          valorFrete !== null &&
+          valorFrete !== undefined
+            ? Number(valorFrete)
+            : null,
+        valorTotal:
+          valorTotal !== "" &&
+          valorTotal !== null &&
+          valorTotal !== undefined
+            ? Number(valorTotal)
+            : null,
         nomeRecebedor,
         contatoRecebedor,
         enderecoEntrega,
@@ -142,6 +376,9 @@ export async function atualizarPedido(req, res) {
     return res.json(pedido)
   } catch (error) {
     console.log(error)
-    return res.status(500).json({ error: "Erro ao atualizar pedido" })
+
+    return res.status(500).json({
+      error: "Erro ao atualizar pedido"
+    })
   }
 }

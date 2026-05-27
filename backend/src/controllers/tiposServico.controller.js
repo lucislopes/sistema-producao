@@ -19,7 +19,6 @@ export async function listarTiposServico(req, res) {
     })
 
     return res.json(tipos)
-
   } catch (error) {
     console.log(error)
 
@@ -33,14 +32,36 @@ export async function criarTipoServico(req, res) {
   try {
     const { nome } = req.body
 
+    if (!nome || !nome.trim()) {
+      return res.status(400).json({
+        error: "Nome do tipo de serviço é obrigatório"
+      })
+    }
+
+    const nomeTratado = nome.trim()
+
+    const tipoExistente = await prisma.tipoServico.findFirst({
+      where: {
+        nome: {
+          equals: nomeTratado,
+          mode: "insensitive"
+        }
+      }
+    })
+
+    if (tipoExistente) {
+      return res.status(400).json({
+        error: "Já existe um tipo de serviço com este nome"
+      })
+    }
+
     const tipo = await prisma.tipoServico.create({
       data: {
-        nome
+        nome: nomeTratado
       }
     })
 
     return res.status(201).json(tipo)
-
   } catch (error) {
     console.log(error)
 
@@ -55,13 +76,42 @@ export async function atualizarTipoServico(req, res) {
     const { id } = req.params
     const { nome } = req.body
 
+    if (!nome || !nome.trim()) {
+      return res.status(400).json({
+        error: "Nome do tipo de serviço é obrigatório"
+      })
+    }
+
+    const nomeTratado = nome.trim()
+
+    const tipoExistente = await prisma.tipoServico.findFirst({
+      where: {
+        nome: {
+          equals: nomeTratado,
+          mode: "insensitive"
+        },
+        id: {
+          not: id
+        }
+      }
+    })
+
+    if (tipoExistente) {
+      return res.status(400).json({
+        error: "Já existe outro tipo de serviço com este nome"
+      })
+    }
+
     const tipo = await prisma.tipoServico.update({
-      where: { id },
-      data: { nome }
+      where: {
+        id
+      },
+      data: {
+        nome: nomeTratado
+      }
     })
 
     return res.json(tipo)
-
   } catch (error) {
     console.log(error)
 
@@ -76,13 +126,14 @@ export async function deletarTipoServico(req, res) {
     const { id } = req.params
 
     await prisma.tipoServico.delete({
-      where: { id }
+      where: {
+        id
+      }
     })
 
     return res.json({
       message: "Tipo de serviço excluído"
     })
-
   } catch (error) {
     console.log(error)
 

@@ -5,39 +5,42 @@ import { prisma } from "../lib/prisma.js"
 //
 
 export async function listarClientes(req, res) {
-    try{
-        const {busca} = req.query
+  try {
+    const { busca } = req.query
 
-        const clientes = await prisma.cliente.findMany({
-            where: busca
-            ?{
+    const clientes = await prisma.cliente.findMany({
+      where: busca
+        ? {
+            OR: [
+              {
                 nome: {
-                    contains: busca,
-                    mode: "insensitive"
+                  contains: busca,
+                  mode: "insensitive"
                 }
-            }
-            :{},
-            orderBy: {
-                nome: "asc"
-            }
-        })
+              },
+              {
+                documento: {
+                  contains: busca,
+                  mode: "insensitive"
+                }
+              }
+            ]
+          }
+        : {},
+      orderBy: {
+        nome: "asc"
+      },
+      take: 20
+    })
 
-        return res.json(clientes)
+    return res.json(clientes)
+  } catch (error) {
+    console.log(error)
 
-    } catch (erro) {
-        console.log(error)
-        return res.status(500).json({
-            error: "Erro ao listar clientes"
-        })
-    }
-
-  const clientes = await prisma.cliente.findMany({
-    orderBy: {
-      nome: "asc"
-    }
-  })
-
-  return res.json(clientes)
+    return res.status(500).json({
+      error: "Erro ao listar clientes"
+    })
+  }
 }
 
 //
@@ -45,9 +48,7 @@ export async function listarClientes(req, res) {
 //
 
 export async function criarCliente(req, res) {
-
   try {
-
     const {
       nome,
       documento,
@@ -55,19 +56,58 @@ export async function criarCliente(req, res) {
       endereco
     } = req.body
 
+    if (!nome || !nome.trim()) {
+      return res.status(400).json({
+        error: "Nome do cliente é obrigatório"
+      })
+    }
+
+    const nomeTratado = nome.trim()
+    const documentoTratado = documento?.trim() || null
+
+    if (documentoTratado) {
+      const clienteDocumentoExistente =
+        await prisma.cliente.findFirst({
+          where: {
+            documento: documentoTratado
+          }
+        })
+
+      if (clienteDocumentoExistente) {
+        return res.status(400).json({
+          error: "Já existe um cliente com este documento"
+        })
+      }
+    }
+
+    const clienteNomeDocumentoExistente =
+      await prisma.cliente.findFirst({
+        where: {
+          nome: {
+            equals: nomeTratado,
+            mode: "insensitive"
+          },
+          documento: documentoTratado
+        }
+      })
+
+    if (clienteNomeDocumentoExistente) {
+      return res.status(400).json({
+        error: "Já existe um cliente com este nome e documento"
+      })
+    }
+
     const cliente = await prisma.cliente.create({
       data: {
-        nome,
-        documento,
+        nome: nomeTratado,
+        documento: documentoTratado,
         telefone,
         endereco
       }
     })
 
     return res.status(201).json(cliente)
-
   } catch (error) {
-
     console.log(error)
 
     return res.status(500).json({
@@ -81,9 +121,7 @@ export async function criarCliente(req, res) {
 //
 
 export async function atualizarCliente(req, res) {
-
   try {
-
     const { id } = req.params
 
     const {
@@ -93,22 +131,67 @@ export async function atualizarCliente(req, res) {
       endereco
     } = req.body
 
+    if (!nome || !nome.trim()) {
+      return res.status(400).json({
+        error: "Nome do cliente é obrigatório"
+      })
+    }
+
+    const nomeTratado = nome.trim()
+    const documentoTratado = documento?.trim() || null
+
+    if (documentoTratado) {
+      const clienteDocumentoExistente =
+        await prisma.cliente.findFirst({
+          where: {
+            documento: documentoTratado,
+            id: {
+              not: id
+            }
+          }
+        })
+
+      if (clienteDocumentoExistente) {
+        return res.status(400).json({
+          error: "Já existe outro cliente com este documento"
+        })
+      }
+    }
+
+    const clienteNomeDocumentoExistente =
+      await prisma.cliente.findFirst({
+        where: {
+          nome: {
+            equals: nomeTratado,
+            mode: "insensitive"
+          },
+          documento: documentoTratado,
+          id: {
+            not: id
+          }
+        }
+      })
+
+    if (clienteNomeDocumentoExistente) {
+      return res.status(400).json({
+        error: "Já existe outro cliente com este nome e documento"
+      })
+    }
+
     const cliente = await prisma.cliente.update({
       where: {
         id
       },
       data: {
-        nome,
-        documento,
+        nome: nomeTratado,
+        documento: documentoTratado,
         telefone,
         endereco
       }
     })
 
     return res.json(cliente)
-
   } catch (error) {
-
     console.log(error)
 
     return res.status(500).json({
@@ -122,9 +205,7 @@ export async function atualizarCliente(req, res) {
 //
 
 export async function deletarCliente(req, res) {
-
   try {
-
     const { id } = req.params
 
     await prisma.cliente.delete({
@@ -136,9 +217,7 @@ export async function deletarCliente(req, res) {
     return res.json({
       message: "Cliente deletado"
     })
-
   } catch (error) {
-
     console.log(error)
 
     return res.status(500).json({

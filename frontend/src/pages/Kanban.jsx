@@ -6,8 +6,9 @@ export function Kanban() {
   const [kanban, setKanban] = useState({
     ABERTO: [],
     INICIADO: [],
-    PAUSADO: [],
+    EM_SEPARACAO: [],
     CONCLUIDO: [],
+    FINALIZADO: [],
     CANCELADO: []
   })
 
@@ -41,26 +42,27 @@ export function Kanban() {
       key: "ABERTO",
       titulo: "Abertos"
     },
-
     {
       key: "INICIADO",
       titulo: "Iniciados"
     },
-
     {
-      key: "PAUSADO",
-      titulo: "Pausados"
+      key: "EM_SEPARACAO",
+      titulo: "Em Separação"
     },
-
     {
       key: "CONCLUIDO",
       titulo: "Concluídos"
+    },
+    {
+      key: "FINALIZADO",
+      titulo: "Finalizados"
     }
   ]
 
   return (
     <div>
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
 
         {colunas.map((coluna) => (
 
@@ -73,7 +75,7 @@ export function Kanban() {
             <span>{coluna.titulo}</span>
 
             <span className="bg-gray-800 text-white text-sm px-3 py-1 rounded-full">
-                {kanban[coluna.key]?.lengTh || 0}
+                {kanban[coluna.key]?.length || 0}
             </span>
             </h2>
 
@@ -118,7 +120,7 @@ export function Kanban() {
 
               ))}
 
-              {kanban[coluna.key]?.lengTh === 0 && (
+              {kanban[coluna.key]?.length === 0 && (
                 <div className="text-gray-500 text-sm">
                   Nenhum serviço
                 </div>

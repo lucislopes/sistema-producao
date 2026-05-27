@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react"
+import { Link, useSearchParams } from "react-router-dom"
 import { api } from "../services/api"
 import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
 import { Table, Th, Td } from "../components/ui/Table"
 import { Button } from "../components/ui/Button"
-import { Modal } from "../components/ui/Modal"
 import { ConfirmModal } from "../components/ui/ConfirmModal"
 
 export function PlanosCorte() {
@@ -19,11 +19,20 @@ export function PlanosCorte() {
   const [observacoes, setObservacoes] = useState("")
   const [modalExcluirAberto, setModalExcluirAberto] = useState(false)
   const [planoParaExcluir, setPlanoParaExcluir] = useState(null)
+  const [searchParams] = useSearchParams()
+  const pedidoIdUrl = searchParams.get("pedidoId")
 
 
   async function carregarPedidos() {
-    const response = await api.get("/pedidos")
-    setPedidos(response.data)
+    const response = await api.get("/pedidos", {
+      params: {
+        page: 1,
+        limit: 100,
+        somenteAtivos: true
+      }
+    })
+
+    setPedidos(response.data.dados || response.data)
   }
 
   async function carregarPlanos(idPedido) {
@@ -39,6 +48,12 @@ export function PlanosCorte() {
   useEffect(() => {
     carregarPedidos()
   }, [])
+
+  useEffect(() => {
+    if (pedidoIdUrl) {
+      setPedidoId(pedidoIdUrl)
+    }
+  }, [pedidoIdUrl])
 
   useEffect(() => {
     carregarPlanos(pedidoId)
@@ -236,40 +251,49 @@ export function PlanosCorte() {
             <tbody>
               {planos.map((plano) => (
                 <tr key={plano.id} className="border-t">
-                  <td className="p-4">{plano.numeroPlano}</td>
-                  <td className="p-4">{plano.quantidadeChapas}</td>
-                  <td className="p-4">
+                  <Td >{plano.numeroPlano}</Td>
+                  <Td >{plano.quantidadeChapas}</Td>
+                  <Td >
                     {plano.medidaEncabecamento || "-"}
-                  </td>
-                  <td className="p-4">
+                  </Td>
+                  <Td >
                     {plano.compraExterna ? "Sim" : "Não"}
-                  </td>
-                  <td className="p-4 flex gap-2">
-                    <Button
-                      onClick={() => editarPlano(plano)}
-                      className="bg-yellow-500 text-white px-4 py-2 rounded-lg"
-                    >
-                      Editar
-                    </Button>
+                  </Td>
+                  <Td>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => editarPlano(plano)}
+                        className="bg-yellow-500 text-white px-4 py-2 rounded-lg"
+                      >
+                        Editar
+                      </Button>
 
-                    <Button 
-                      variant="danger"
-                      onClick={() => {
-                        setPlanoParaExcluir(plano)
-                        setModalExcluirAberto(true)
-                      }}
-                    >
-                      Excluir
-                    </Button>
-                  </td>
+                      <Link
+                        to={`/servicos-plano?pedidoId=${pedidoId}&planoId=${plano.id}`}
+                        className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm"
+                      >
+                        Serviços
+                      </Link>
+
+                      <Button 
+                        variant="danger"
+                        onClick={() => {
+                          setPlanoParaExcluir(plano)
+                          setModalExcluirAberto(true)
+                        }}
+                      >
+                        Excluir
+                      </Button>
+                    </div>
+                  </Td>
                 </tr>
               ))}
 
               {planos.length === 0 && (
                 <tr>
-                  <td>
+                  <Td colSpan="5">
                     Nenhum plano cadastrado para este pedido.
-                  </td>
+                  </Td>
                 </tr>
               )}
             </tbody>

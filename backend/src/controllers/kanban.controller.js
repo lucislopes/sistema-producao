@@ -42,13 +42,16 @@ export async function obterKanban(req, res) {
     const kanban = {
       ABERTO: [],
       INICIADO: [],
-      PAUSADO: [],
+      EM_SEPARACAO: [],
       CONCLUIDO: [],
+      FINALIZADO:[],
       CANCELADO: []
     }
 
     servicos.forEach((servico) => {
-      kanban[servico.status].push(servico)
+      if (kanban[servico.status]) {
+        kanban[servico.status].push(servico)
+      }
     })
 
     return res.json(kanban)

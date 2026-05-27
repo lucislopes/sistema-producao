@@ -2,27 +2,25 @@ export function BadgeStatus({ status }) {
   const classes = {
     ABERTO: "bg-gray-100 text-gray-700",
     EM_PRODUCAO: "bg-blue-100 text-blue-700",
-    PENDENTE_PECA: "bg-orange-100 text-orange-700",
-    AGUARDANDO_EXTERNO: "bg-purple-100 text-purple-700",
     PARCIAL: "bg-yellow-100 text-yellow-700",
-    INICIADO: "bg-blue-100 text-blue-700",
-    PAUSADO: "bg-yellow-100 text-yellow-700",
+    INICIADO: "bg-sky-100 text-sky-700",
+    EM_SEPARACAO: "bg-orange-100 text-orange-700",
     CONCLUIDO: "bg-green-100 text-green-700",
+    FINALIZADO: "bg-emerald-100 text-emerald-700",
     PRONTO_ENTREGA: "bg-cyan-100 text-cyan-700",
     SAIU_ENTREGA: "bg-indigo-100 text-indigo-700",
-    ENTREGUE: "bg-emerald-100 text-emerald-700",
+    ENTREGUE: "bg-teal-100 text-teal-700",
     CANCELADO: "bg-red-100 text-red-700"
   }
 
   const labels = {
     ABERTO: "Aberto",
     EM_PRODUCAO: "Em Produção",
-    PENDENTE_PECA: "Pendente Peça",
-    AGUARDANDO_EXTERNO: "Aguardando Externo",
     PARCIAL: "Parcial",
     INICIADO: "Iniciado",
-    PAUSADO: "Pausado",
+    EM_SEPARACAO: "Em Separação",
     CONCLUIDO: "Concluído",
+    FINALIZADO: "Finalizado",
     PRONTO_ENTREGA: "Pronto Entrega",
     SAIU_ENTREGA: "Saiu Entrega",
     ENTREGUE: "Entregue",

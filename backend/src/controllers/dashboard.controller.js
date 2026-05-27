@@ -44,7 +44,7 @@ export async function obterDashboard(req, res) {
 
       servicosAbertos,
       servicosIniciados,
-      servicosPausados,
+      servicosEmSeparacao,
       servicosConcluidos,
 
       leaderboard,
@@ -63,35 +63,31 @@ export async function obterDashboard(req, res) {
       prisma.pedido.count({
         where: {
           status: "ABERTO",
-          ...filtroPeriodoPedido
         }
       }),
 
       prisma.pedido.count({
         where: {
           status: "EM_PRODUCAO",
-          ...filtroPeriodoPedido
         }
       }),
 
       prisma.pedido.count({
         where: { 
           status: "CONCLUIDO",
-          ...filtroPeriodoPedido
         }
       }),
 
       prisma.pedido.count({
         where: { 
           status: "PRONTO_ENTREGA",
-          ...filtroPeriodoPedido
         }
       }),
 
       prisma.pedido.count({
         where: { 
           status: "SAIU_ENTREGA",
-          ...filtroPeriodoPedido
+
         }
       }),
 
@@ -133,7 +129,7 @@ export async function obterDashboard(req, res) {
 
       prisma.servicoPlano.count({
         where: { 
-          status: "PAUSADO",
+          status: "EM_SEPARACAO",
           ...filtroPeriodoServico
         }
       }),
@@ -149,7 +145,7 @@ export async function obterDashboard(req, res) {
         by: ["operadorId"],
 
         where: {
-          status: "CONCLUIDO",
+          status: "FINALIZADO",
           operadorId: {
             not: null
           },
@@ -283,7 +279,7 @@ export async function obterDashboard(req, res) {
       servicos: {
         abertos: servicosAbertos,
         iniciados: servicosIniciados,
-        pausados: servicosPausados,
+        emSeparacao: servicosEmSeparacao,
         concluidos: servicosConcluidos
       },
 

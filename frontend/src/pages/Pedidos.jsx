@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react"
 import { api } from "../services/api"
 import { Link } from "react-router-dom"
+import { AutocompleteCliente } from "../components/AutocompleteCliente"
 import { Button } from "../components/ui/Button"
 import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
 import { Table, Th, Td } from "../components/ui/Table"
+
 
 export function Pedidos() {
   const [pedidos, setPedidos] = useState([])
@@ -29,7 +31,7 @@ export function Pedidos() {
   const [status, setStatus] = useState("ABERTO")
   const [observacoes, setObservacoes] = useState("")
 
-  const [historico, seThistorico] = useState([])
+  const [historico, setHistorico] = useState([])
   const [pedidoHistorico, setPedidoHistorico] = useState(null)
 
   const [busca, setBusca] = useState("")
@@ -37,19 +39,29 @@ export function Pedidos() {
   const [dataInicio, setDataInicio] = useState("")
   const [dataFim, setDataFim] = useState("")
 
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(50)
+  const [paginacao, setPaginacao] = useState({
+    total: 0,
+    page: 1,
+    limit: 50,
+    totalPages: 1
+  })
+
   async function carregarDados() {
     try {
       const [pedidosRes, clientesRes, funcionariosRes, rotasRes] =
         await Promise.all([
-          api.get("/pedidos"),
+          api.get("/pedidos", {params: {page, limit}}),
           api.get("/clientes"),
           api.get("/funcionarios"),
           api.get("/rotas-entrega")
         ])
 
-      setPedidos(pedidosRes.data)
-      setClientes(clientesRes.data)
-      setVendedores(
+        setPedidos(pedidosRes.data.dados)
+        setPaginacao(pedidosRes.data.paginacao)
+        setClientes(clientesRes.data)
+        setVendedores(
         funcionariosRes.data.filter(
           (f) =>
             (f.funcao === "VENDEDOR" ||
@@ -67,6 +79,10 @@ export function Pedidos() {
   useEffect(() => {
     carregarDados()
   }, [])
+
+  useEffect(() => {
+    carregarDados()
+  }, [page, limit])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -154,7 +170,7 @@ export function Pedidos() {
     try {
       const response = await api.get(`/historico-pedido/${pedido.id}`)
 
-      sethistorico(response.data)
+      setHistorico(response.data)
       setPedidoHistorico(pedido)
     } catch (error) {
       console.log(error)
@@ -183,10 +199,10 @@ export function Pedidos() {
     }
 
     const hoje = new Date()
-    hoje.sethours(0, 0, 0, 0)
+    hoje.setHours(0, 0, 0, 0)
 
     const entrega = new Date(pedido.dataEntrega)
-    entrega.sethours(0, 0, 0, 0)
+    entrega.setHours(0, 0, 0, 0)
 
     return entrega < hoje
   }
@@ -326,18 +342,12 @@ export function Pedidos() {
         </h2>
 
         <div className="grid grid-cols-2 gap-4">
-          <Select
-            value={clienteId}
-            onChange={(e) => setClienteId(e.target.value)}
-            required
-          >
-            <option value="">Selecione o cliente</option>
-            {clientes.map((cliente) => (
-              <option key={cliente.id} value={cliente.id}>
-                {cliente.nome}
-              </option>
-            ))}
-          </Select>
+          <AutocompleteCliente
+            clienteId={clienteId}
+            onSelecionar={(cliente) => {
+              setClienteId(cliente ? cliente.id : "")
+            }}
+          />
 
           <Select
             value={vendedorId}
@@ -509,6 +519,18 @@ export function Pedidos() {
               onChange={(e) => setDataFim(e.target.value)}
             />
 
+            <Select
+              value={limit}
+              onChange={(e) => {
+                setLimit(Number(e.target.value))
+                setPage(1)
+              }}
+            >
+              <option value={25}>25 por página</option>
+              <option value={50}>50 por página</option>
+              <option value={100}>100 por página</option>
+            </Select>
+
             <Button
               size="sm"
               type="button"
@@ -549,27 +571,27 @@ export function Pedidos() {
                   pedidoAtrasado(pedido) ? "bg-red-50" : ""
                 }`}
               >
-                <td className="p-4">
+                <Td >
                   {pedido.numeroPedido}
-                </td>
+                </Td>
 
-                <td className="p-4">
+                <Td>
                   {pedido.cliente?.nome}
-                </td>
+                </Td>
 
-                <td className="p-4">
+                <Td>
                   {pedido.vendedor?.nome}
-                </td>
+                </Td>
 
-                <td className="p-4">
+                <Td>
                   {pedido.tipoEntrega === "CLIENTE_RETIRA"
                     ? "Cliente Retira"
                     : "Empresa Entrega"}
-                </td>
+                </Td>
 
-                <td className="p-4">
+                <Td>
                   {formatarData(pedido.dataEntrega)}
-                </td>
+                </Td>
 
                 <Td >
                   <span
@@ -580,34 +602,71 @@ export function Pedidos() {
                 </Td>
 
                 <Td>
-                <Button size="sm" variant="secondary" onClick={() => editarPedido(pedido)}>
-                  Editar
-                </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => editarPedido(pedido)}
+                    >
+                      Editar
+                    </Button>
 
-                <Link
-                  to={`/pedidos/${pedido.id}`}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg"
-                >
-                  Detalhes
-                </Link>
-              </Td>
+                    <Link
+                      to={`/pedidos/${pedido.id}`}
+                      className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm"
+                    >
+                      Detalhes
+                    </Link>
+
+                    <Link
+                      to={`/planos-corte?pedidoId=${pedido.id}`}
+                      className="bg-purple-600 text-white px-3 py-1 rounded-lg text-sm"
+                    >
+                      Planos
+                    </Link>
+                  </div>
+                </Td>
                 
               </tr>
             ))}
 
             {pedidosFiltrados.length === 0 && (
               <tr>
-                <td className="p-4" colSpan="7">
+                <Td colSpan="7">
                   Nenhum pedido encontrado.
-                </td>
+                </Td>
               </tr>
             )}
           </tbody>
         </Table>
+        <div className="flex justify-between items-center p-4 no-print">
+          <p className="text-sm text-gray-600">
+            Página {paginacao.page} de {paginacao.totalPages} — Total: {paginacao.total}
+          </p>
+
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={page <= 1}
+              onClick={() => setPage(page - 1)}
+            >
+              Anterior
+            </Button>
+
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={page >= paginacao.totalPages}
+              onClick={() => setPage(page + 1)}
+            >
+              Próxima
+            </Button>
+          </div>
+        </div>
+
+
       </div>
-
-      
-
 
     </div>
   )

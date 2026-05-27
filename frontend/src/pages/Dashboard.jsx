@@ -114,7 +114,7 @@ export function Dashboard() {
   const totalServicos =
     dados.servicos.abertos +
     dados.servicos.iniciados +
-    dados.servicos.pausados +
+    dados.servicos.emSeparacao +
     dados.servicos.concluidos
 
   return (
@@ -254,9 +254,9 @@ export function Dashboard() {
         />
 
         <Card
-          titulo="Pausados"
-          valor={dados.servicos.pausados}
-          tipo={dados.servicos.pausados > 0 ? "alerta" : "normal"}
+          titulo="Em Separacao"
+          valor={dados.servicos.emSeparacao}
+          tipo={dados.servicos.emSeparacao > 0 ? "alerta" : "normal"}
           link="/alertas"
         />
 
@@ -363,7 +363,7 @@ export function Dashboard() {
           itens={[
             { nome: "Abertos", valor: dados.servicos.abertos },
             { nome: "Iniciados", valor: dados.servicos.iniciados },
-            { nome: "Pausados", valor: dados.servicos.pausados },
+            { nome: "Em Separação", valor: dados.servicos.emSeparacao },
             { nome: "Concluídos", valor: dados.servicos.concluidos }
           ]}
         />
