@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react"
 import { api } from "../services/api"
+import { CabecalhoImpressao } from "../components/CabecalhoImpressao"
+import { Button } from "../components/ui/Button"
+import { Input } from "../components/ui/Input"
+import { Select } from "../components/ui/Select"
+import { Table, Th, Td } from "../components/ui/Table"
 
 export function RelatorioProducao() {
   const [servicos, setServicos] = useState([])
   const [operadores, setOperadores] = useState([])
   const [tiposServico, setTiposServico] = useState([])
-
+  const [empresa, setEmpresa] = useState(null)
   const [dataInicio, setDataInicio] = useState("")
   const [dataFim, setDataFim] = useState("")
   const [operadorId, setOperadorId] = useState("")
@@ -89,21 +94,27 @@ export function RelatorioProducao() {
 
   async function carregarRelatorio(pagina = page) {
     try {
-      const response = await api.get("/relatorio-producao", {
-        params: {
-          dataInicio,
-          dataFim,
-          operadorId,
-          tipoServicoId,
-          status,
-          busca,
-          page: pagina,
-          limit
-        }
-      })
+      const [relatorioResponse, empresaResponse] = await Promise.all([
+        api.get("/relatorio-producao", {
+          params: {
+            dataInicio,
+            dataFim,
+            operadorId,
+            tipoServicoId,
+            status,
+            busca,
+            page: pagina,
+            limit
+          }
+        }),
 
-      setServicos(response.data.dados)
-      setPaginacao(response.data.paginacao)
+        api.get("/configuracao-empresa")
+      ])
+
+      setServicos(relatorioResponse.data.dados)
+      setPaginacao(relatorioResponse.data.paginacao)
+
+      setEmpresa(empresaResponse.data)
     } catch (error) {
       console.log(error)
       alert("Erro ao carregar relatório de produção")
@@ -147,52 +158,45 @@ export function RelatorioProducao() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6 no-print">
-        <h1 className="text-3xl font-bold">
-          Relatório de Produção
-        </h1>
         <div className="flex gap-2">
-        <button
+        <Button
             onClick={exportarCSV}
             className="bg-green-700 text-white px-6 py-3 rounded-lg"
         >
             Exportar CSV
-        </button>
+        </Button>
 
-        <button
+        <Button
             onClick={imprimir}
             className="bg-gray-800 text-white px-6 py-3 rounded-lg"
         >
             Imprimir
-        </button>
+        </Button>
         </div>
       </div>
 
       <div className="bg-white p-6 rounded-2xl shadow-md mb-8 no-print">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <input
+          <Input
             type="date"
-            className="border p-3 rounded-lg"
             value={dataInicio}
             onChange={(e) => setDataInicio(e.target.value)}
           />
 
-          <input
+          <Input
             type="date"
-            className="border p-3 rounded-lg"
             value={dataFim}
             onChange={(e) => setDataFim(e.target.value)}
           />
 
-          <input
+          <Input
             type="text"
             placeholder="Buscar pedido ou cliente..."
-            className="border p-3 rounded-lg"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
           />
 
-          <select
-            className="border p-3 rounded-lg"
+          <Select
             value={operadorId}
             onChange={(e) => setOperadorId(e.target.value)}
           >
@@ -203,10 +207,9 @@ export function RelatorioProducao() {
                 {operador.nome}
               </option>
             ))}
-          </select>
+          </Select>
 
-          <select
-            className="border p-3 rounded-lg"
+          <Select
             value={tipoServicoId}
             onChange={(e) => setTipoServicoId(e.target.value)}
           >
@@ -217,10 +220,9 @@ export function RelatorioProducao() {
                 {tipo.nome}
               </option>
             ))}
-          </select>
+          </Select>
 
-          <select
-            className="border p-3 rounded-lg"
+          <Select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
           >
@@ -230,10 +232,9 @@ export function RelatorioProducao() {
             <option value="PAUSADO">Pausado</option>
             <option value="CONCLUIDO">Concluído</option>
             <option value="CANCELADO">Cancelado</option>
-          </select>
+          </Select>
 
-          <select
-            className="border p-3 rounded-lg"
+          <Select
             value={limit}
             onChange={(e) => {
               setLimit(Number(e.target.value))
@@ -243,26 +244,33 @@ export function RelatorioProducao() {
             <option value={25}>25 por página</option>
             <option value={50}>50 por página</option>
             <option value={100}>100 por página</option>
-          </select>
+          </Select>
         </div>
 
         <div className="flex gap-3 mt-4">
-          <button
+          <Button
             onClick={buscar}
             className="bg-blue-600 text-white px-6 py-3 rounded-lg"
           >
             Buscar
-          </button>
+          </Button>
 
-          <button
+          <Button variant="secondary"
             onClick={limparFiltros}
             className="bg-gray-500 text-white px-6 py-3 rounded-lg"
           >
             Limpar
-          </button>
+          </Button>
         </div>
       </div>
 
+      <CabecalhoImpressao
+        empresa={empresa}
+        titulo="Relatório de Produção"
+        periodoInicio={dataInicio}
+        periodoFim={dataFim}
+      />
+      
       <div className="bg-white rounded-2xl shadow-md p-6">
         <div className="mb-6">
           <h2 className="text-2xl font-bold">
@@ -274,17 +282,17 @@ export function RelatorioProducao() {
           </p>
         </div>
 
-        <table className="w-full border text-sm">
-          <thead className="bg-gray-200">
-            <tr>
-              <th className="text-left p-3 border">Pedido</th>
-              <th className="text-left p-3 border">Cliente</th>
-              <th className="text-left p-3 border">Plano</th>
-              <th className="text-left p-3 border">Serviço</th>
-              <th className="text-left p-3 border">Operador</th>
-              <th className="text-left p-3 border">Status</th>
-              <th className="text-left p-3 border">Início</th>
-              <th className="text-left p-3 border">Fim</th>
+        <Table>
+          <thead>
+            <tr className="p-3 border font-bold" >
+              <th className="p-3 border font-bold" >Pedido</th>
+              <th className="p-3 border font-bold" >Cliente</th>
+              <th className="p-3 border font-bold" >Plano</th>
+              <th className="p-3 border font-bold" >Serviço</th>
+              <th className="p-3 border font-bold" >Operador</th>
+              <th className="p-3 border font-bold" >Status</th>
+              <th className="p-3 border font-bold" >Início</th>
+              <th className="p-3 border font-bold" >Fim</th>
             </tr>
           </thead>
 
@@ -327,13 +335,13 @@ export function RelatorioProducao() {
 
             {servicos.length === 0 && (
               <tr>
-                <td className="p-4 border" colSpan="8">
+                <td>
                   Nenhum serviço encontrado.
                 </td>
               </tr>
             )}
           </tbody>
-        </table>
+        </Table>
 
         <div className="flex justify-between items-center mt-4 no-print">
           <p className="text-sm text-gray-600">
@@ -341,21 +349,21 @@ export function RelatorioProducao() {
           </p>
 
           <div className="flex gap-2">
-            <button
+            <Button variant="secondary"
               disabled={page <= 1}
               onClick={() => setPage(page - 1)}
               className="bg-gray-500 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg"
             >
               Anterior
-            </button>
+            </Button>
 
-            <button
+            <Button
               disabled={page >= paginacao.totalPages}
               onClick={() => setPage(page + 1)}
               className="bg-gray-500 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg"
             >
               Próxima
-            </button>
+            </Button>
           </div>
         </div>
       </div>

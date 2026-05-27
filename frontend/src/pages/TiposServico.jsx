@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react"
 import { api } from "../services/api"
+import { Button } from "../components/ui/Button"
+import { Input } from "../components/ui/Input"
+import { Table, Th, Td } from "../components/ui/Table"
 
 export function TiposServico() {
   const [tipos, setTipos] = useState([])
@@ -24,7 +27,7 @@ export function TiposServico() {
   }, [busca])
 
   async function handleSubmit(e) {
-    e.preventDefault()
+    e.prevenTdefault()
 
     try {
       if (editandoId) {
@@ -71,15 +74,10 @@ export function TiposServico() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">
-        Tipos de Serviço
-      </h1>
-
       <div className="mb-4">
-        <input
+        <Input
           type="text"
           placeholder="Buscar serviço..."
-          className="border p-3 rounded-lg w-full"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
@@ -89,75 +87,70 @@ export function TiposServico() {
         onSubmit={handleSubmit}
         className="bg-white p-6 rounded-2xl shadow-md mb-8"
       >
-        <input
+        <Input
           type="text"
           placeholder="Nome do serviço"
-          className="border p-3 rounded-lg w-full"
           value={nome}
           onChange={(e) => setNome(e.target.value)}
         />
 
         <div className="mt-4 flex gap-2">
-          <button
+          <Button
             type="submit"
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg"
           >
             {editandoId ? "Atualizar Serviço" : "Salvar Serviço"}
-          </button>
+          </Button>
 
           {editandoId && (
-            <button
+            <Button variant="danger"
               type="button"
               onClick={limparFormulario}
-              className="bg-gray-500 text-white px-6 py-3 rounded-lg"
             >
               Cancelar
-            </button>
+            </Button>
           )}
         </div>
       </form>
 
       <div className="bg-white rounded-2xl shadow-md overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-200">
+        <Table >
+          <thead >
             <tr>
-              <th className="text-left p-4">Nome</th>
-              <th className="text-left p-4">Ações</th>
+              <Th>Nome</Th>
+              <Th>Ações</Th>
             </tr>
           </thead>
 
           <tbody>
             {tipos.map((tipo) => (
               <tr key={tipo.id} className="border-t">
-                <td className="p-4">{tipo.nome}</td>
+                <Td>{tipo.nome}</Td>
 
-                <td className="p-4 flex gap-2">
-                  <button
+                <Td >
+                  <Button variant="warning"
                     onClick={() => editarTipo(tipo)}
-                    className="bg-yellow-500 text-white px-4 py-2 rounded-lg"
                   >
                     Editar
-                  </button>
+                  </Button>
 
-                  <button
+                  <Button variant="danger"
                     onClick={() => excluirTipo(tipo.id)}
-                    className="bg-red-500 text-white px-4 py-2 rounded-lg"
                   >
                     Excluir
-                  </button>
-                </td>
+                  </Button>
+                </Td>
               </tr>
             ))}
 
             {tipos.length === 0 && (
               <tr>
-                <td className="p-4" colSpan="2">
+                <Td>
                   Nenhum tipo de serviço encontrado.
-                </td>
+                </Td>
               </tr>
             )}
           </tbody>
-        </table>
+        </Table>
       </div>
     </div>
   )

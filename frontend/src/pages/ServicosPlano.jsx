@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react"
 import { api } from "../services/api"
+import { Button } from "../components/ui/Button"
+import { Select } from "../components/ui/Select"
+import { Table, Th, Td } from "../components/ui/Table"
+import { BadgeStatus } from "../components/ui/BadgeStatus"
 
 export function ServicosPlano() {
   const [pedidos, setPedidos] = useState([])
@@ -92,7 +96,7 @@ export function ServicosPlano() {
   }, [planoId])
 
   async function handleSubmit(e) {
-    e.preventDefault()
+    e.prevenTdefault()
 
     const dados = {
       planoId,
@@ -157,10 +161,6 @@ export function ServicosPlano() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">
-        Serviços do Plano
-      </h1>
-
       <div className="bg-white p-6 rounded-2xl shadow-md mb-8">
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -168,8 +168,7 @@ export function ServicosPlano() {
               Pedido
             </label>
 
-            <select
-              className="border p-3 rounded-lg w-full"
+            <Select
               value={pedidoId}
               onChange={(e) => {
                 setPedidoId(e.target.value)
@@ -184,7 +183,7 @@ export function ServicosPlano() {
                   Pedido #{pedido.numeroPedido} - {pedido.cliente?.nome}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <div>
@@ -192,8 +191,7 @@ export function ServicosPlano() {
               Plano de Corte
             </label>
 
-            <select
-              className="border p-3 rounded-lg w-full"
+            <Select
               value={planoId}
               onChange={(e) => {
                 setPlanoId(e.target.value)
@@ -208,7 +206,7 @@ export function ServicosPlano() {
                   {plano.numeroPlano} - {plano.quantidadeChapas} chapas
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         </div>
 
@@ -245,8 +243,7 @@ export function ServicosPlano() {
           </h2>
 
           <div className="grid grid-cols-2 gap-4">
-            <select
-              className="border p-3 rounded-lg"
+            <Select
               value={tipoServicoId}
               onChange={(e) => setTipoServicoId(e.target.value)}
               required
@@ -258,10 +255,9 @@ export function ServicosPlano() {
                   {tipo.nome}
                 </option>
               ))}
-            </select>
+            </Select>
 
-            <select
-              className="border p-3 rounded-lg"
+            <Select
               value={operadorId}
               onChange={(e) => setOperadorId(e.target.value)}
             >
@@ -272,10 +268,9 @@ export function ServicosPlano() {
                   {operador.nome}
                 </option>
               ))}
-            </select>
+            </Select>
 
-            <select
-              className="border p-3 rounded-lg"
+            <Select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
             >
@@ -284,7 +279,7 @@ export function ServicosPlano() {
               <option value="PAUSADO">Pausado</option>
               <option value="CONCLUIDO">Concluído</option>
               <option value="CANCELADO">Cancelado</option>
-            </select>
+            </Select>
 
             <textarea
               placeholder="Observações"
@@ -295,21 +290,19 @@ export function ServicosPlano() {
           </div>
 
           <div className="mt-4 flex gap-2">
-            <button
+            <Button
               type="submit"
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg"
             >
               {editandoId ? "Atualizar Serviço" : "Salvar Serviço"}
-            </button>
+            </Button>
 
             {editandoId && (
-              <button
-                type="button"
+              <Button
+                type="Button"
                 onClick={limparFormulario}
-                className="bg-gray-500 text-white px-6 py-3 rounded-lg"
               >
                 Cancelar
-              </button>
+              </Button>
             )}
           </div>
         </form>
@@ -317,58 +310,56 @@ export function ServicosPlano() {
 
       {planoId && (
         <div className="bg-white rounded-2xl shadow-md overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-200">
+          <Table >
+            <thead >
               <tr>
-                <th className="text-left p-4">Serviço</th>
-                <th className="text-left p-4">Operador</th>
-                <th className="text-left p-4">Status</th>
-                <th className="text-left p-4">Ações</th>
+                <Th >Serviço</Th>
+                <Th >Operador</Th>
+                <Th >Status</Th>
+                <Th >Ações</Th>
               </tr>
             </thead>
 
             <tbody>
               {servicos.map((servico) => (
                 <tr key={servico.id} className="border-t">
-                  <td className="p-4">
+                  <Td>
                     {servico.tipoServico?.nome}
-                  </td>
+                  </Td>
 
-                  <td className="p-4">
+                  <Td>
                     {servico.operador?.nome || "-"}
-                  </td>
+                  </Td>
 
-                  <td className="p-4">
-                    {servico.status}
-                  </td>
+                  <Td >
+                    <BadgeStatus status={servico.status} />
+                  </Td>
 
-                  <td className="p-4 flex gap-2">
-                    <button
+                  <Td >
+                    <Button
                       onClick={() => editarServico(servico)}
-                      className="bg-yellow-500 text-white px-4 py-2 rounded-lg"
                     >
                       Editar
-                    </button>
+                    </Button>
 
-                    <button
+                    <Button
                       onClick={() => excluirServico(servico.id)}
-                      className="bg-red-500 text-white px-4 py-2 rounded-lg"
                     >
                       Excluir
-                    </button>
-                  </td>
+                    </Button>
+                  </Td>
                 </tr>
               ))}
 
               {servicos.length === 0 && (
                 <tr>
-                  <td className="p-4" colSpan="4">
+                  <Td>
                     Nenhum serviço cadastrado para este plano.
-                  </td>
+                  </Td>
                 </tr>
               )}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
     </div>

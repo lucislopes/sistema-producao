@@ -1,15 +1,24 @@
 import { useEffect, useState } from "react"
 import { useParams, Link } from "react-router-dom"
 import { api } from "../services/api"
+import { CabecalhoImpressao } from "../components/CabecalhoImpressao"
+import { Button } from "../components/ui/Button"
+import { BadgeStatus } from "../components/ui/BadgeStatus"
 
 export function DetalhePedido() {
   const { id } = useParams()
   const [pedido, setPedido] = useState(null)
-
+  const [empresa, setEmpresa] = useState(null)
+  
   async function carregarDetalhe() {
     try {
-      const response = await api.get(`/detalhe-pedido/${id}`)
-      setPedido(response.data)
+      const [pedidoResponse, empresaResponse] = await Promise.all([
+        api.get(`/detalhe-pedido/${id}`),
+        api.get("/configuracao-empresa")
+      ])
+
+      setPedido(pedidoResponse.data)
+      setEmpresa(empresaResponse.data)
     } catch (error) {
       console.log(error)
       alert("Erro ao carregar detalhe do pedido")
@@ -62,6 +71,26 @@ export function DetalhePedido() {
     return classes[status] || "bg-gray-100 text-gray-700"
   }
 
+    function classeHistorico(tipo) {
+    if (tipo.includes("EXCLUIDO")) {
+      return "bg-red-100 text-red-700 border-red-400"
+    }
+
+    if (tipo.includes("STATUS")) {
+      return "bg-yellow-100 text-yellow-700 border-yellow-400"
+    }
+
+    if (tipo.includes("CRIADO")) {
+      return "bg-blue-100 text-blue-700 border-blue-400"
+    }
+
+    if (tipo.includes("ATUALIZADO")) {
+      return "bg-purple-100 text-purple-700 border-purple-400"
+    }
+
+    return "bg-gray-100 text-gray-700 border-gray-300"
+  }
+
   if (!pedido) {
     return <div>Carregando...</div>
   }
@@ -77,17 +106,17 @@ export function DetalhePedido() {
           <span
             className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold ${classeStatus(pedido.status)}`}
           >
-            {pedido.status}
+            <BadgeStatus status={pedido.status} />
           </span>
         </div>
 
         <div className="flex gap-2">
-          <button
+          <Button
             onClick={imprimir}
             className="bg-gray-800 text-white px-4 py-2 rounded-lg"
           >
             Imprimir
-          </button>
+          </Button>
 
           <Link
             to="/pedidos"
@@ -98,15 +127,11 @@ export function DetalhePedido() {
         </div>
       </div>
 
-      <div className="print:block hidden mb-6">
-        <h1 className="text-2xl font-bold">
-          Pedido #{pedido.numeroPedido}
-        </h1>
-
-        <p>
-          Status: {pedido.status}
-        </p>
-      </div>
+      <CabecalhoImpressao
+        empresa={empresa}
+        titulo={`Detalhe do Pedido #${pedido.numeroPedido}`}
+        extra={`Status: $<BadgeStatus status={pedido.status} />`}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <Card titulo="Cliente" valor={pedido.cliente?.nome} />
@@ -142,10 +167,6 @@ export function DetalhePedido() {
       </div>
 
       <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
-        <h2 className="text-xl font-bold mb-4">
-          Planos e Serviços
-        </h2>
-
         <div className="flex flex-col gap-4">
           {pedido.planos.map((plano) => (
             <div
@@ -194,7 +215,7 @@ export function DetalhePedido() {
                   </div>
                 ))}
 
-                {plano.servicos.length === 0 && (
+                {plano.servicos.lengTh === 0 && (
                   <p className="text-gray-500">
                     Nenhum serviço neste plano.
                   </p>
@@ -203,7 +224,7 @@ export function DetalhePedido() {
             </div>
           ))}
 
-          {pedido.planos.length === 0 && (
+          {pedido.planos.lengTh === 0 && (
             <p className="text-gray-500">
               Nenhum plano cadastrado.
             </p>
@@ -222,28 +243,32 @@ export function DetalhePedido() {
               <div className="absolute -left-[34px] top-1 w-4 h-4 rounded-full bg-blue-600 border-4 border-white shadow" />
 
               <div className="bg-gray-50 border rounded-2xl p-4 shadow-sm">
-                <div className="flex justify-between items-start mb-2">
+              <div className="flex justify-between items-start gap-4 mb-3">
+                <div>
+                  <span
+                    className={`inline-block mb-2 px-3 py-1 rounded-full border text-xs font-semibold ${classeHistorico(item.tipo)}`}
+                  >
+                    {item.tipo}
+                  </span>
+
                   <p className="font-bold">
                     {item.descricao}
                   </p>
-
-                  <span className="text-xs text-gray-500">
-                    {formatarDataHora(item.createdAt)}
-                  </span>
                 </div>
 
-                <p className="text-sm text-gray-600">
-                  Usuário: {item.usuario?.funcionario?.nome || "-"}
-                </p>
-
-                <p className="text-sm text-gray-600">
-                  Tipo: {item.tipo}
-                </p>
+                <span className="text-xs text-gray-500 whitespace-nowrap">
+                  {formatarDataHora(item.createdAt)}
+                </span>
               </div>
+
+              <p className="text-sm text-gray-600">
+                Usuário: {item.usuario?.funcionario?.nome || "-"}
+              </p>
+            </div>
             </div>
           ))}
 
-          {pedido.historicos.length === 0 && (
+          {pedido.historicos.lengTh === 0 && (
             <p className="text-gray-500">
               Nenhum histórico encontrado.
             </p>

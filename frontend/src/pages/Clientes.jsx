@@ -4,6 +4,12 @@ import {
 } from "react"
 
 import { api } from "../services/api"
+import { Button } from "../components/ui/Button"
+import { Input } from "../components/ui/Input"
+import { Table, Th, Td } from "../components/ui/Table"
+import { Modal } from "../components/ui/Modal"
+import { ConfirmModal } from "../components/ui/ConfirmModal"
+
 
 export function Clientes() {
 
@@ -16,13 +22,15 @@ export function Clientes() {
   const [editandoId, setEditandoId] = useState(null)
 
   const [busca, setBusca] = useState("")
+  const [modalExcluirAberto, setModalExcluirAberto] = useState(false)
+  const [clienteParaExcluir, setClienteParaExcluir] = useState(null)
 
   async function carregarClientes() {
 
     try {
 
       const response = await api.get("/clientes", {
-        param:{
+        params: {
             busca}
         }
        )
@@ -78,95 +86,80 @@ export function Clientes() {
     }
     }
 
-  function editarCliente(cliente) {
+    function editarCliente(cliente) {
 
-    setEditandoId(cliente.id)
+      setEditandoId(cliente.id)
 
-    setNome(cliente.nome)
-    setDocumento(cliente.documento)
-    setTelefone(cliente.telefone)
-    setEndereco(cliente.endereco)
-    }
+      setNome(cliente.nome)
+      setDocumento(cliente.documento)
+      setTelefone(cliente.telefone)
+      setEndereco(cliente.endereco)
+      }
 
-  function limparFormulario() {
-    setNome("")
-    setDocumento("")
-    setTelefone("")
-    setEndereco("")
+      function limparFormulario() {
+        setNome("")
+        setDocumento("")
+        setTelefone("")
+        setEndereco("")
 
-    setEditandoId(null)
-    }
+        setEditandoId(null)
+        }
 
-  async function deletarCliente(id) {
+        async function deletarCliente() {
+          if (!clienteParaExcluir) return
 
-    const confirmar =
-      confirm("Deseja excluir?")
+          try {
+            await api.delete(`/clientes/${clienteParaExcluir.id}`)
 
-    if (!confirmar) return
+            setModalExcluirAberto(false)
+            setClienteParaExcluir(null)
 
-    try {
-
-      await api.delete(`/clientes/${id}`)
-
-      carregarClientes()
-
-    } catch (error) {
-
-      console.log(error)
-
-      alert("Erro ao excluir")
-    }
-  }
-
+            carregarClientes()
+          } catch (error) {
+            console.log(error)
+            alert("Erro ao excluir")
+          }
+        }
   return (
 
     <div>
-
-      <h1 className="text-3xl font-bold mb-6">
-        Clientes
-      </h1>
-
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-6 rounded-2xl shadow-md mb-8"
+        className="bg-white p-4 rounded-2xl shadow-md mb-8"
       >
-
         <div className="grid grid-cols-2 gap-4">
 
-          <input
+          <Input
             type="text"
             placeholder="Nome"
-            className="border p-3 rounded-lg"
+            required
             value={nome}
             onChange={(e) =>
               setNome(e.target.value)
             }
           />
 
-          <input
+          <Input
             type="text"
             placeholder="CPF/CNPJ"
-            className="border p-3 rounded-lg"
             value={documento}
             onChange={(e) =>
               setDocumento(e.target.value)
             }
           />
 
-          <input
+          <Input
             type="text"
             placeholder="Telefone"
-            className="border p-3 rounded-lg"
             value={telefone}
             onChange={(e) =>
               setTelefone(e.target.value)
             }
           />
 
-          <input
+          <Input
             type="text"
             placeholder="Endereço"
-            className="border p-3 rounded-lg"
             value={endereco}
             onChange={(e) =>
               setEndereco(e.target.value)
@@ -175,21 +168,19 @@ export function Clientes() {
 
         </div>
 
-        <button
+        <Button
           type="submit"
-          className="mt-4 bg-blue-600 text-white px-6 py-3 rounded-lg"
         >
           Salvar Cliente
-        </button>
+        </Button>
 
       </form>
 
       <div className="bg-white rounded-2xl shadow-md overflow-hidden">
         <div className="my-2">
-        <input
+        <Input
             type="text"
             placeholder="Buscar cliente..."
-            className="border p-3 rounded-lg w-full"
 
             value={busca}
 
@@ -200,27 +191,27 @@ export function Clientes() {
 
         </div>
 
-        <table className="w-full">
+        <Table>
 
-          <thead className="bg-gray-200">
+          <thead>
 
             <tr>
 
-              <th className="text-left p-4">
+              <Th>
                 Nome
-              </th>
+              </Th>
 
-              <th className="text-left p-4">
+              <Th>
                 Documento
-              </th>
+              </Th>
 
-              <th className="text-left p-4">
+              <Th>
                 Telefone
-              </th>
+              </Th>
 
-              <th className="text-left p-4">
+              <Th>
                 Ações
-              </th>
+              </Th>
 
             </tr>
 
@@ -235,35 +226,43 @@ export function Clientes() {
                 className="border-t"
               >
 
-                <td className="p-4">
+                <td className="px-4 py-2">
+                  <div className="flex gap-2">
                   {cliente.nome}
+                  </div>
                 </td>
 
-                <td className="p-4">
+                <td className="px-4 py-2">
+                  <div className="flex gap-2">
                   {cliente.documento}
+                  </div>
                 </td>
 
-                <td className="p-4">
+                <td className="px-4 py-2">
+                  <div className="flex gap-2">
                   {cliente.telefone}
+                  </div>
                 </td>
 
-                <td className="p-4">
+                <td className="px-4 py-2">
+                   <div className="flex gap-2">
 
-                    <button
+                    <Button variant="warning"
                     onClick={() => editarCliente(cliente)}
-                    className="bg-yellow-500 text-white px-4 py-2 rounded-lg mr-2"
                     >
                     Editar
-                    </button>
+                    </Button>
 
-                  <button
-                    onClick={() =>
-                      deletarCliente(cliente.id)
-                    }
-                    className="bg-red-500 text-white px-4 py-2 rounded-lg"
+                  <Button
+                    variant="danger"
+                    onClick={() => {
+                      setClienteParaExcluir(cliente)
+                      setModalExcluirAberto(true)
+                    }}
                   >
                     Excluir
-                  </button>
+                  </Button>
+                  </div>
 
                 </td>
 
@@ -273,10 +272,26 @@ export function Clientes() {
 
           </tbody>
 
-        </table>
+        </Table>
 
       </div>
 
+        <ConfirmModal
+          open={modalExcluirAberto}
+          title="Excluir cliente"
+          message={`Deseja excluir o cliente "${clienteParaExcluir?.nome}"?`}
+          confirmText="Excluir"
+          cancelText="Cancelar"
+          variant="danger"
+          onConfirm={deletarCliente}
+          onCancel={() => {
+            setModalExcluirAberto(false)
+            setClienteParaExcluir(null)
+          }}
+        />
+
+
     </div>
+  
   )
 }

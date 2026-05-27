@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { api } from "../services/api"
+import { BuscaGlobal } from "../components/BuscaGlobal"
+import { Table, Th, Td } from "../components/ui/Table"
 
 export function Dashboard() {
   const [dados, setDados] = useState(null)
@@ -117,10 +119,6 @@ export function Dashboard() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">
-        Dashboard
-      </h1>
-
       <div className="bg-white rounded-2xl shadow-md border p-4 mb-6">
         <div className="flex flex-wrap gap-3 items-center">
           <input
@@ -376,12 +374,12 @@ export function Dashboard() {
       </h2>
 
       <div className="bg-white rounded-2xl shadow-md overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-200">
+        <Table>
+          <thead>
             <tr>
-              <th className="text-left p-4">Posição</th>
-              <th className="text-left p-4">Operador</th>
-              <th className="text-left p-4">Serviços Concluídos</th>
+              <Th>Posição</Th>
+              <Th>Operador</Th>
+              <Th>Serviços Concluídos</Th>
             </tr>
           </thead>
 
@@ -408,7 +406,7 @@ export function Dashboard() {
               </tr>
             ))}
 
-            {dados.leaderboard?.length === 0 && (
+            {dados.leaderboard?.lenth === 0 && (
               <tr>
                 <td className="p-4" colSpan="3">
                   Nenhum serviço concluído ainda.
@@ -416,7 +414,7 @@ export function Dashboard() {
               </tr>
             )}
           </tbody>
-        </table>
+        </Table>
       </div>
     </div>
   )

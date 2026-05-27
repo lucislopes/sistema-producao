@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react"
 import { api } from "../services/api"
+import { Input } from "../components/ui/Input"
+import { Select } from "../components/ui/Select"
 
 export function Expedicao() {
   const [pedidos, setPedidos] = useState([])
@@ -55,10 +57,10 @@ export function Expedicao() {
     }
 
     const hoje = new Date()
-    hoje.setHours(0, 0, 0, 0)
+    hoje.seThours(0, 0, 0, 0)
 
     const entrega = new Date(dataEntrega)
-    entrega.setHours(0, 0, 0, 0)
+    entrega.seThours(0, 0, 0, 0)
 
     if (entrega < hoje) {
       return {
@@ -150,22 +152,16 @@ export function Expedicao() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">
-        Expedição
-      </h1>
-
       <div className="bg-white p-4 rounded-2xl shadow-md mb-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <input
+        <Input
           type="text"
           placeholder="Buscar pedido ou cliente..."
-          className="border p-3 rounded-lg"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
 
-        <select
-          className="border p-3 rounded-lg"
+        <Select
           value={filtroStatus}
           onChange={(e) => setFiltroStatus(e.target.value)}
         >
@@ -173,10 +169,9 @@ export function Expedicao() {
           <option value="CONCLUIDO">Concluído</option>
           <option value="PRONTO_ENTREGA">Pronto Entrega</option>
           <option value="SAIU_ENTREGA">Saiu Entrega</option>
-        </select>
+        </Select>
 
-        <select
-          className="border p-3 rounded-lg"
+        <Select
           value={filtroRota}
           onChange={(e) => setFiltroRota(e.target.value)}
         >
@@ -187,7 +182,7 @@ export function Expedicao() {
               {rota.nome}
             </option>
           ))}
-        </select>
+        </Select>
 
         <button
           type="button"
@@ -304,7 +299,7 @@ export function Expedicao() {
           )
         })}
 
-        {pedidosFiltrados.length === 0 && (
+        {pedidosFiltrados.lengTh === 0 && (
           <div className="bg-white rounded-2xl shadow-md p-6">
             Nenhum pedido na expedição.
           </div>

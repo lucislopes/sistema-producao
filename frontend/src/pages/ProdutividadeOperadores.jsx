@@ -1,23 +1,31 @@
 import { useEffect, useState } from "react"
 import { api } from "../services/api"
+import { Input } from "../components/ui/Input"
+import { Table, Th, Td } from "../components/ui/Table"
 
 
 export function ProdutividadeOperadores() {
   const [dados, setDados] = useState([])
-
+  const [empresa, setEmpresa] = useState(null)
   const [dataInicio, setDataInicio] = useState("")
   const [dataFim, setDataFim] = useState("")
 
   async function carregarProdutividade() {
     try {
-      const response = await api.get("/produtividade/operadores", {
-        params: {
-          dataInicio,
-          dataFim
-        }
-      })
+      const [produtividadeResponse, empresaResponse] = await Promise.all([
+        api.get("/produtividade/operadores", {
+          params: {
+            dataInicio,
+            dataFim
+          }
+        }),
 
-      setDados(response.data)
+        api.get("/configuracao-empresa")
+      ])
+
+      setDados(produtividadeResponse.data)
+      setEmpresa(empresaResponse.data)
+
     } catch (error) {
       console.log(error)
       alert("Erro ao carregar produtividade")
@@ -103,9 +111,6 @@ export function ProdutividadeOperadores() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6 no-print">
-        <h1 className="text-3xl font-bold">
-          Produtividade por Operador
-        </h1>
         <div className="flex gap-2">
         <button
             onClick={exportarCSV}
@@ -122,6 +127,8 @@ export function ProdutividadeOperadores() {
         </button>
         </div>
       </div>
+
+      
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
         <ResumoCard
@@ -145,16 +152,14 @@ export function ProdutividadeOperadores() {
 
       <div className="bg-white p-6 rounded-2xl shadow-md mb-8 no-print">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <input
+          <Input
             type="date"
-            className="border p-3 rounded-lg"
             value={dataInicio}
             onChange={(e) => setDataInicio(e.target.value)}
           />
 
-          <input
+          <Input
             type="date"
-            className="border p-3 rounded-lg"
             value={dataFim}
             onChange={(e) => setDataFim(e.target.value)}
           />
@@ -177,6 +182,42 @@ export function ProdutividadeOperadores() {
         </div>
       </div>
 
+      <div className="hidden print:block mb-8 border-b pb-4">
+      <h1 className="text-2xl font-bold">
+        {empresa?.nome || "Empresa"}
+      </h1>
+
+      <p className="text-sm">
+        CNPJ: {empresa?.cnpj || "-"}
+      </p>
+
+      <p className="text-sm">
+        {empresa?.cidade || "-"} / {empresa?.estado || "-"}
+      </p>
+
+      <p className="text-sm">
+        Tel: {empresa?.telefone || "-"}
+      </p>
+
+      <h2 className="text-xl font-bold mt-4">
+        Relatório de Produtividade
+      </h2>
+
+      <p>
+        Período:
+        {" "}
+        {dataInicio || "Início"}
+        {" "}até{" "}
+        {dataFim || "Hoje"}
+      </p>
+
+      <p>
+        Emitido em:
+        {" "}
+        {new Date().toLocaleString("pt-BR")}
+      </p>
+    </div>
+
       <div className="bg-white rounded-2xl shadow-md p-6">
         <div className="mb-6">
           <h2 className="text-2xl font-bold">
@@ -188,16 +229,16 @@ export function ProdutividadeOperadores() {
           </p>
         </div>
 
-        <table className="w-full border text-sm">
-          <thead className="bg-gray-200">
+        <Table>
+          <thead>
             <tr>
-              <th className="text-left p-3 border">#</th>
-              <th className="text-left p-3 border">Operador</th>
-              <th className="text-left p-3 border">Total</th>
-              <th className="text-left p-3 border">Iniciados</th>
-              <th className="text-left p-3 border">Pausados</th>
-              <th className="text-left p-3 border">Concluídos</th>
-              <th className="text-left p-3 border">Cancelados</th>
+              <Th>#</Th>
+              <Th>Operador</Th>
+              <Th>Total</Th>
+              <Th>Iniciados</Th>
+              <Th>Pausados</Th>
+              <Th>Concluídos</Th>
+              <Th>Cancelados</Th>
             </tr>
           </thead>
 
@@ -242,7 +283,7 @@ export function ProdutividadeOperadores() {
               </tr>
             )}
           </tbody>
-        </table>
+        </Table>
       </div>
     </div>
   )

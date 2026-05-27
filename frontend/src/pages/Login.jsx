@@ -1,6 +1,8 @@
 import { useContext, useState } from "react"
 import { AuthContext } from "../contexts/AuthContext"
 import { useNavigate } from "react-router-dom"
+import { Button } from "../components/ui/Button"
+import { Input } from "../components/ui/Input"
 
 export function Login() {
 
@@ -38,28 +40,26 @@ export function Login() {
           Sistema Produção
         </h1>
 
-        <input
+        <Input
           type="email"
           placeholder="Email"
-          className="w-full border p-3 rounded-lg mb-4"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
 
-        <input
+        <Input
           type="password"
           placeholder="Senha"
-          className="w-full border p-3 rounded-lg mb-4"
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
         />
 
-        <button
+        <Button
           type="submit"
           className="w-full bg-blue-600 text-white p-3 rounded-lg"
         >
           Entrar
-        </button>
+        </Button>
 
       </form>
 

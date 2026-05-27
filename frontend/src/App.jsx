@@ -24,6 +24,7 @@ import { DetalhePedido } from "./pages/DetalhePedido"
 import { RelatorioProducao } from "./pages/RelatorioProducao"
 import { Alertas } from "./pages/Alertas"
 import { ProdutividadeOperadores } from "./pages/ProdutividadeOperadores"
+import { ConfiguracaoEmpresa } from "./pages/ConfiguracaoEmpresa"
 
 export default function App() {
 
@@ -133,6 +134,11 @@ export default function App() {
           <Route
             path="/produtividade-operadores"
             element={<ProdutividadeOperadores />}
+          />
+
+          <Route
+            path="/configuracao-empresa"
+            element={<ConfiguracaoEmpresa />}
           />
 
         </Route>
