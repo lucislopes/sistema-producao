@@ -132,7 +132,7 @@ export function ServicosPlano() {
     const dados = {
       planoId,
       tipoServicoId,
-      operadorId,
+      operadorId: operadorId || null,
       status,
       observacoes
     }
@@ -145,10 +145,13 @@ export function ServicosPlano() {
       }
 
       limparFormulario()
-      carregarServicos(planoId)
+      await carregarServicos(planoId)
     } catch (error) {
       console.log(error)
-      alert("Erro ao salvar serviço")
+      alert(
+        error.response?.data?.error ||
+        "Erro ao salvar serviço"
+      )
     }
   }
 
@@ -307,9 +310,7 @@ export function ServicosPlano() {
             >
               <option value="ABERTO">Aberto</option>
               <option value="INICIADO">Iniciado</option>
-              <option value="EM_SEPARACAO">Em Separação</option>
               <option value="CONCLUIDO">Concluído</option>
-              <option value="FINALIZADO">Finalizado</option>
               <option value="CANCELADO">Cancelado</option>
             </Select>
 

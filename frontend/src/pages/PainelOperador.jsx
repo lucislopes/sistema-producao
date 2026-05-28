@@ -168,12 +168,6 @@ export function PainelOperador() {
             </div>
             )}
 
-          {servicosDisponiveis.length === 0 && (
-            <div className="bg-white p-5 rounded-2xl shadow-md">
-              Nenhum serviço disponível.
-            </div>
-          )}
-
         </div>
 
       </div>
@@ -237,55 +231,35 @@ export function PainelOperador() {
                             </p>
 
                         </div>
+                      
+                        // Botões de ação dependendo do status do serviço
 
                         <div className="flex gap-2">
-
-                            {servico.status === "ABERTO" && (
+                          {servico.status === "ABERTO" && (
                             <button
-                                onClick={() =>
+                              onClick={() =>
                                 alterarStatus(servico.id, "INICIADO")
-                                }
-                                className="bg-green-600 text-white px-4 py-2 rounded-lg"
+                              }
+                              className="bg-green-600 text-white px-4 py-2 rounded-lg"
                             >
-                                Iniciar
+                              Iniciar
                             </button>
-                            )}
+                          )}
 
-                            {["INICIADO", "ABERTO"].includes(servico.status) && (
+                          {servico.status === "INICIADO" && (
                             <button
-                                onClick={() =>
-                                alterarStatus(servico.id, "EM_SEPARACAO")
-                                }
-                                className="bg-yellow-500 text-white px-4 py-2 rounded-lg"
-                            >
-                                Em Separação
-                            </button>
-                            )}
-
-                            {["INICIADO", "EM_SEPARACAO"].includes(servico.status) && (
-                            <button
-                                onClick={() =>
+                              onClick={() =>
                                 alterarStatus(servico.id, "CONCLUIDO")
-                                }
-                                className="bg-blue-700 text-white px-4 py-2 rounded-lg"
+                              }
+                              className="bg-blue-700 text-white px-4 py-2 rounded-lg"
                             >
-                                Concluir
+                              Concluir
                             </button>
-                            )}
-
-                            {servico.status === "CONCLUIDO" && (
-                            <button
-                                onClick={() =>
-                                alterarStatus(servico.id, "FINALIZADO")
-                                }
-                                className="bg-green-700 text-white px-4 py-2 rounded-lg"
-                            >
-                                Finalizar
-                            </button>
-                            )}
-
-
+                          )}
                         </div>
+
+                        //fechamento dos botões de ação
+                            
 
                         </div>
 

@@ -5,9 +5,7 @@ import { registrarHistoricoPedido } from "../utils/registrarHistoricoPedido.js"
 const STATUS_SERVICO_PERMITIDOS = [
   "ABERTO",
   "INICIADO",
-  "EM_SEPARACAO",
   "CONCLUIDO",
-  "FINALIZADO",
   "CANCELADO"
 ]
 
@@ -83,9 +81,9 @@ export async function criarServicoPlano(req, res) {
       })
     }
 
-    if (["ENTREGUE", "CANCELADO"].includes(plano.pedido.status)) {
+    if (["PRONTO_ENTREGA", "SAIU_ENTREGA", "ENTREGUE", "CANCELADO"].includes(plano.pedido.status)) {
       return res.status(400).json({
-        error: "Pedido já encerrado"
+        error: "Pedido já está encerrado ou em expedição"
       })
     }
 
@@ -204,9 +202,9 @@ export async function atualizarServicoPlano(req, res) {
       })
     }
 
-    if (["ENTREGUE", "CANCELADO"].includes(servicoAtual.plano.pedido.status)) {
+    if (["PRONTO_ENTREGA", "SAIU_ENTREGA", "ENTREGUE", "CANCELADO"].includes(servicoAtual.plano.pedido.status)) {
       return res.status(400).json({
-        error: "Pedido já encerrado"
+        error: "Pedido já está encerrado ou em expedição"
       })
     }
 
@@ -265,10 +263,7 @@ export async function atualizarServicoPlano(req, res) {
       dados.dataInicio = new Date()
     }
 
-    if (
-      ["CONCLUIDO", "FINALIZADO"].includes(status) &&
-      !servicoAtual.dataFim
-    ) {
+    if (status === "CONCLUIDO" && !servicoAtual.dataFim) {
       dados.dataFim = new Date()
     }
 
@@ -323,15 +318,13 @@ export async function deletarServicoPlano(req, res) {
       })
     }
 
-    if (["ENTREGUE", "CANCELADO"].includes(servico.plano.pedido.status)) {
+    if (["PRONTO_ENTREGA", "SAIU_ENTREGA", "ENTREGUE", "CANCELADO"].includes(servico.plano.pedido.status)) {
       return res.status(400).json({
-        error: "Pedido já encerrado"
+        error: "Pedido já está encerrado ou em expedição"
       })
     }
 
-    if (
-      ["CONCLUIDO", "FINALIZADO"].includes(servico.status)
-    ) {
+    if (servico.status === "CONCLUIDO") {
       return res.status(400).json({
         error: "Não é possível excluir serviço concluído"
       })
@@ -373,7 +366,12 @@ export async function listarServicosDisponiveis(req, res) {
         plano: {
           pedido: {
             status: {
-              notIn: ["ENTREGUE", "CANCELADO"]
+              notIn: [
+                "PRONTO_ENTREGA",
+                "SAIU_ENTREGA",
+                "ENTREGUE",
+                "CANCELADO"
+              ]
             }
           }
         }
@@ -426,7 +424,12 @@ export async function listarMeusServicos(req, res) {
       plano: {
         pedido: {
           status: {
-            notIn: ["ENTREGUE", "CANCELADO"]
+            notIn: [
+              "PRONTO_ENTREGA",
+              "SAIU_ENTREGA",
+              "ENTREGUE",
+              "CANCELADO"
+            ]
           }
         }
       }
@@ -438,7 +441,12 @@ export async function listarMeusServicos(req, res) {
         plano: {
           pedido: {
             status: {
-              notIn: ["ENTREGUE", "CANCELADO"]
+              notIn: [
+                "PRONTO_ENTREGA",
+                "SAIU_ENTREGA",
+                "ENTREGUE",
+                "CANCELADO"
+              ]
             }
           }
         }
@@ -522,9 +530,9 @@ export async function assumirServico(req, res) {
       })
     }
 
-    if (["ENTREGUE", "CANCELADO"].includes(servicoAtual.plano.pedido.status)) {
+    if (["PRONTO_ENTREGA", "SAIU_ENTREGA", "ENTREGUE", "CANCELADO"].includes(servicoAtual.plano.pedido.status)) {
       return res.status(400).json({
-        error: "Pedido já encerrado"
+        error: "Pedido já está encerrado ou em expedição"
       })
     }
 
@@ -594,9 +602,9 @@ export async function alterarStatusServico(req, res) {
       })
     }
 
-    if (["ENTREGUE", "CANCELADO"].includes(servicoAtual.plano.pedido.status)) {
+    if (["PRONTO_ENTREGA", "SAIU_ENTREGA", "ENTREGUE", "CANCELADO"].includes(servicoAtual.plano.pedido.status)) {
       return res.status(400).json({
-        error: "Pedido já encerrado"
+        error: "Pedido já está encerrado ou em expedição"
       })
     }
 

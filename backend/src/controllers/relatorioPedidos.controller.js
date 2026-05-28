@@ -80,8 +80,39 @@ export async function relatorioPedidos(req, res) {
       })
     ])
 
+    const hoje = new Date()
+      hoje.setHours(0, 0, 0, 0)
+
+      const pedidosComPrazo = pedidos.map((pedido) => {
+        let situacaoPrazo = "No prazo"
+
+        if (!pedido.dataEntrega) {
+          situacaoPrazo = "Sem data"
+        } else {
+          const dataEntrega = new Date(pedido.dataEntrega)
+          dataEntrega.setHours(0, 0, 0, 0)
+
+          if (pedido.status === "ENTREGUE") {
+            situacaoPrazo =
+              dataEntrega < hoje
+                ? "Entregue com atraso"
+                : "Entregue no prazo"
+          } else {
+            situacaoPrazo =
+              dataEntrega < hoje
+                ? "Atrasado"
+                : "No prazo"
+          }
+        }
+
+        return {
+          ...pedido,
+          situacaoPrazo
+        }
+      })
+
     return res.json({
-      dados: pedidos,
+      dados: pedidosComPrazo,
       paginacao: {
         total,
         page: paginaAtual,

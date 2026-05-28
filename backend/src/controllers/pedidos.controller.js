@@ -118,6 +118,8 @@ function validarPedido({
     export async function criarPedido(req, res) {
       try {
         const {
+          origemPedido,
+          numeroPedidoManual,
           clienteId,
           vendedorId,
           dataEntrega,
@@ -188,6 +190,11 @@ function validarPedido({
 
     const pedido = await prisma.pedido.create({
       data: {
+        origemPedido: origemPedido || "INTERNO",
+        numeroPedidoManual:
+          origemPedido === "EXTERNO"
+            ? numeroPedidoManual?.trim() || null
+            : null,
         clienteId,
         vendedorId,
         dataEntrega: dataEntrega ? new Date(dataEntrega) : null,
@@ -240,6 +247,8 @@ export async function atualizarPedido(req, res) {
     const { id } = req.params
 
     const {
+      origemPedido,
+      numeroPedidoManual,
       clienteId,
       vendedorId,
       dataEntrega,
@@ -326,6 +335,11 @@ export async function atualizarPedido(req, res) {
         id
       },
       data: {
+        origemPedido: origemPedido || "INTERNO",
+        numeroPedidoManual:
+          origemPedido === "EXTERNO"
+            ? numeroPedidoManual?.trim() || null
+            : null,
         clienteId,
         vendedorId,
         dataEntrega: dataEntrega ? new Date(dataEntrega) : null,

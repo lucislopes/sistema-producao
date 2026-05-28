@@ -5,6 +5,8 @@ import { Button } from "../components/ui/Button"
 import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
 import { Table, Th, Td } from "../components/ui/Table"
+import { BadgePrazo } from "../components/ui/BadgePrazo"
+import { BadgeStatus } from "../components/ui/BadgeStatus"
 
 export function RelatorioPedidos() {
   const [pedidos, setPedidos] = useState([])
@@ -34,6 +36,7 @@ export function RelatorioPedidos() {
     "Data Entrega",
     "Endereco",
     "Status",
+    "Prazo",
     "Valor"
   ]
 
@@ -44,6 +47,7 @@ export function RelatorioPedidos() {
     formatarData(item.dataEntrega),
     item.enderecoEntrega || item.cliente?.endereco || "",
     item.status || "",
+    item.situacaoPrazo || "",
     item.valorTotal || ""
   ])
 
@@ -150,7 +154,9 @@ export function RelatorioPedidos() {
   function formatarData(data) {
     if (!data) return "-"
 
-    return new Date(data).toLocaleDateString("pt-BR")
+    const dataTexto = String(data).substring(0, 10)
+    const [ano, mes, dia] = dataTexto.split("-")
+    return `${dia}/${mes}/${ano}`
   }
 
   function formatarMoeda(valor) {
@@ -223,10 +229,8 @@ export function RelatorioPedidos() {
           >
             <option value="">Todos os status</option>
             <option value="ABERTO">Aberto</option>
+            <option value="EM_SEPARACAO">Em Separação</option>
             <option value="EM_PRODUCAO">Em Produção</option>
-            <option value="PENDENTE_PECA">Pendente Peça</option>
-            <option value="AGUARDANDO_EXTERNO">Aguardando Externo</option>
-            <option value="PARCIAL">Parcial</option>
             <option value="CONCLUIDO">Concluído</option>
             <option value="PRONTO_ENTREGA">Pronto Entrega</option>
             <option value="SAIU_ENTREGA">Saiu Entrega</option>
@@ -290,6 +294,7 @@ export function RelatorioPedidos() {
               <Th>Data Entrega</Th>
               <Th>Endereço</Th>
               <Th>Status</Th>
+              <Th>Prazo</Th>
               <Th>Valor</Th>
             </tr>
           </thead>
@@ -318,7 +323,11 @@ export function RelatorioPedidos() {
                 </td>
 
                 <td className="p-3 border">
-                  {item.status}
+                  <BadgeStatus status={item.status} />
+                </td>
+
+                <td className="p-3 border">
+                  <BadgePrazo prazo={item.situacaoPrazo} />
                 </td>
 
                 <td className="p-3 border">
@@ -329,7 +338,7 @@ export function RelatorioPedidos() {
 
             {pedidos.length === 0 && (
               <tr>
-                <td className="p-4 border" colSpan="7">
+                <td className="p-4 border" colSpan="8">
                   Nenhum pedido encontrado.
                 </td>
               </tr>

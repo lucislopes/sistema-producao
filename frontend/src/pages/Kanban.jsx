@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react"
 import { api } from "../services/api"
+import { BadgeStatus } from "../components/ui/BadgeStatus"
 
 export function Kanban() {
 
   const [kanban, setKanban] = useState({
     ABERTO: [],
     INICIADO: [],
-    EM_SEPARACAO: [],
     CONCLUIDO: [],
-    FINALIZADO: [],
     CANCELADO: []
   })
 
@@ -47,31 +46,54 @@ export function Kanban() {
       titulo: "Iniciados"
     },
     {
-      key: "EM_SEPARACAO",
-      titulo: "Em Separação"
-    },
-    {
       key: "CONCLUIDO",
       titulo: "Concluídos"
     },
-    {
-      key: "FINALIZADO",
-      titulo: "Finalizados"
-    }
   ]
+
+  async function alterarStatus(id, status) {
+    try {
+      await api.put(`/servicos-plano/status/${id}`, {
+        status
+      })
+
+      carregarKanban()
+    } catch (error) {
+      console.log(error)
+      alert(
+        error.response?.data?.error ||
+        "Erro ao alterar status"
+      )
+    }
+  }
+
 
   return (
     <div>
-      <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
         {colunas.map((coluna) => (
 
           <div
             key={coluna.key}
-            className="bg-gray-100 rounded-2xl p-4 min-h-[600px]"
+            className="
+              bg-gray-50 rounded-2xl p-4 min-h-[600px]
+              border border-gray-200 shadow-sm
+            "
           >
 
-            <h2 className="text-xl font-bold mb-4 flex justify-between items-center">
+            <h2
+              className={`
+                text-xl font-bold mb-4 flex justify-between items-center
+                ${
+                  coluna.key === "ABERTO"
+                    ? "text-gray-700"
+                    : coluna.key === "INICIADO"
+                    ? "text-blue-700"
+                    : "text-green-700"
+                }
+              `}
+            >
             <span>{coluna.titulo}</span>
 
             <span className="bg-gray-800 text-white text-sm px-3 py-1 rounded-full">
@@ -79,13 +101,13 @@ export function Kanban() {
             </span>
             </h2>
 
-            <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 2xl:grid-cols-2 gap-3">
 
               {kanban[coluna.key]?.map((servico) => (
 
                 <div
                   key={servico.id}
-                  className="bg-white rounded-2xl shadow-md p-4 border"
+                  className="bg-white rounded-xl shadow-sm p-3 border"
                 >
 
                 <div className="flex justify-between items-start mb-2">
@@ -93,9 +115,8 @@ export function Kanban() {
                     {servico.tipoServico?.nome}
                 </h3>
 
-                <span className="text-xs bg-gray-200 px-2 py-1 rounded-full">
-                    {servico.status}
-                </span>
+                <BadgeStatus status={servico.status} />
+                
                 </div>
 
                   <p className="text-gray-600">
@@ -115,6 +136,25 @@ export function Kanban() {
                       servico.operador?.nome || "Sem operador"
                     }
                   </p>
+                  <div className="mt-3 flex gap-2">
+                    {servico.status === "ABERTO" && (
+                      <button
+                        onClick={() => alterarStatus(servico.id, "INICIADO")}
+                        className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm"
+                      >
+                        Iniciar
+                      </button>
+                    )}
+
+                    {servico.status === "INICIADO" && (
+                      <button
+                        onClick={() => alterarStatus(servico.id, "CONCLUIDO")}
+                        className="bg-green-600 text-white px-3 py-1 rounded-lg text-sm"
+                      >
+                        Concluir
+                      </button>
+                    )}
+                  </div>
 
                 </div>
 

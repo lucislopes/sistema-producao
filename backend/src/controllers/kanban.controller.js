@@ -42,9 +42,7 @@ export async function obterKanban(req, res) {
     const kanban = {
       ABERTO: [],
       INICIADO: [],
-      EM_SEPARACAO: [],
       CONCLUIDO: [],
-      FINALIZADO:[],
       CANCELADO: []
     }
 

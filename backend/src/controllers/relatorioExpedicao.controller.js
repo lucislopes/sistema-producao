@@ -1,5 +1,23 @@
 import { prisma } from "../lib/prisma.js"
 
+function criarDataLocal(dataTexto, fimDoDia = false) {
+  const [ano, mes, dia] = dataTexto.split("-")
+
+  const data = new Date(
+    Number(ano),
+    Number(mes) - 1,
+    Number(dia)
+  )
+
+  if (fimDoDia) {
+    data.setHours(23, 59, 59, 999)
+  } else {
+    data.setHours(0, 0, 0, 0)
+  }
+
+  return data
+}
+
 export async function relatorioExpedicao(req, res) {
   try {
     const {
@@ -54,17 +72,11 @@ export async function relatorioExpedicao(req, res) {
       where.dataEntrega = {}
 
       if (dataInicio) {
-        const inicio = new Date(dataInicio)
-        inicio.setHours(0, 0, 0, 0)
-
-        where.dataEntrega.gte = inicio
+        where.dataEntrega.gte = criarDataLocal(dataInicio)
       }
 
       if (dataFim) {
-        const fim = new Date(dataFim)
-        fim.setHours(23, 59, 59, 999)
-
-        where.dataEntrega.lte = fim
+        where.dataEntrega.lte = criarDataLocal(dataFim, true)
       }
     }
 
@@ -93,7 +105,6 @@ export async function relatorioExpedicao(req, res) {
     })
 
     return res.json(pedidos)
-
   } catch (error) {
     console.log(error)
 

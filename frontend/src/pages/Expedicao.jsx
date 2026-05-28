@@ -57,10 +57,10 @@ export function Expedicao() {
     }
 
     const hoje = new Date()
-    hoje.seThours(0, 0, 0, 0)
+    hoje.setHours(0, 0, 0, 0)
 
     const entrega = new Date(dataEntrega)
-    entrega.seThours(0, 0, 0, 0)
+    entrega.setHours(0, 0, 0, 0)
 
     if (entrega < hoje) {
       return {
@@ -299,7 +299,7 @@ export function Expedicao() {
           )
         })}
 
-        {pedidosFiltrados.lengTh === 0 && (
+        {pedidosFiltrados.length === 0 && (
           <div className="bg-white rounded-2xl shadow-md p-6">
             Nenhum pedido na expedição.
           </div>

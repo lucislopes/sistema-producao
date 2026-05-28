@@ -1,6 +1,18 @@
 import { prisma } from "../lib/prisma.js"
 
 export async function recalcularStatusPedido(pedidoId) {
+  const pedido = await prisma.pedido.findUnique({
+    where: {
+      id: pedidoId
+    }
+  })
+
+  if (!pedido) return
+
+  if (["PRONTO_ENTREGA", "SAIU_ENTREGA", "ENTREGUE", "CANCELADO"].includes(pedido.status)) {
+    return
+  }
+
   const planos = await prisma.planoCorte.findMany({
     where: {
       pedidoId
@@ -10,9 +22,7 @@ export async function recalcularStatusPedido(pedidoId) {
     }
   })
 
-  const servicos = planos.flatMap(
-    (plano) => plano.servicos
-  )
+  const servicos = planos.flatMap((plano) => plano.servicos)
 
   if (servicos.length === 0) {
     await prisma.pedido.update({
@@ -20,37 +30,18 @@ export async function recalcularStatusPedido(pedidoId) {
         id: pedidoId
       },
       data: {
-        status: "ABERTO"
+        status: "EM_SEPARACAO"
       }
     })
 
     return
   }
 
-  const todosCancelados = servicos.every(
-    (s) => s.status === "CANCELADO"
+  const todosConcluidos = servicos.every(
+    (servico) => servico.status === "CONCLUIDO"
   )
 
-  if (todosCancelados) {
-    await prisma.pedido.update({
-      where: {
-        id: pedidoId
-      },
-      data: {
-        status: "CANCELADO"
-      }
-    })
-
-    return
-  }
-
-  const todosConcluidosOuFinalizados = servicos.every(
-    (s) =>
-      s.status === "CONCLUIDO" ||
-      s.status === "FINALIZADO"
-  )
-
-  if (todosConcluidosOuFinalizados) {
+  if (todosConcluidos) {
     await prisma.pedido.update({
       where: {
         id: pedidoId
@@ -64,11 +55,7 @@ export async function recalcularStatusPedido(pedidoId) {
   }
 
   const algumIniciado = servicos.some(
-    (s) =>
-      s.status === "INICIADO" ||
-      s.status === "EM_SEPARACAO" ||
-      s.status === "CONCLUIDO" ||
-      s.status === "FINALIZADO"
+    (servico) => servico.status === "INICIADO"
   )
 
   if (algumIniciado) {
@@ -89,7 +76,7 @@ export async function recalcularStatusPedido(pedidoId) {
       id: pedidoId
     },
     data: {
-      status: "ABERTO"
+      status: "EM_SEPARACAO"
     }
   })
 }

@@ -30,10 +30,8 @@ enum ResponsavelFrete {
 
 enum StatusPedido {
   ABERTO
+  EM_SEPARACAO
   EM_PRODUCAO
-  PENDENTE_PECA
-  AGUARDANDO_EXTERNO
-  PARCIAL
   CONCLUIDO
   PRONTO_ENTREGA
   SAIU_ENTREGA
@@ -44,9 +42,7 @@ enum StatusPedido {
 enum StatusServico {
   ABERTO
   INICIADO
-  EM_SEPARACAO
   CONCLUIDO
-  FINALIZADO
   CANCELADO
 }
 
@@ -155,6 +151,9 @@ model Pedido {
   id                    String   @id @default(cuid())
 
   numeroPedido          Int @default(autoincrement())
+
+  origemPedido String   @default("INTERNO")
+  numeroPedidoManual    String?
 
   clienteId             String
   cliente               Cliente @relation(fields: [clienteId], references: [id])

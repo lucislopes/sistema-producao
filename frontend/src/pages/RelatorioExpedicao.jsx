@@ -9,10 +9,10 @@ export function RelatorioExpedicao() {
   const [pedidos, setPedidos] = useState([])
   const [rotas, setRotas] = useState([])
   const [empresa, setEmpresa] = useState(null)
-  const hoje = new Date().toISOString().substring(0, 10)
+  const hoje = new Date().toLocaleDateString("sv-SE")
 
-  const [dataInicio, setDataInicio] = useState(hoje)
-  const [dataFim, setDataFim] = useState(hoje)
+  const [dataInicio, setDataInicio] = useState("")
+  const [dataFim, setDataFim] = useState("")
   
   const [rotaId, setRotaId] = useState("")
   const [status, setStatus] = useState("")
@@ -121,7 +121,10 @@ export function RelatorioExpedicao() {
   function formatarData(data) {
     if (!data) return "-"
 
-    return new Date(data).toLocaleDateString("pt-BR")
+    const dataTexto = String(data).substring(0, 10)
+    const [ano, mes, dia] = dataTexto.split("-")
+
+    return `${dia}/${mes}/${ano}`
   }
 
   function obterStatus(status) {
@@ -139,10 +142,10 @@ export function RelatorioExpedicao() {
     if (!dataEntrega) return ""
 
     const hojeData = new Date()
-    hojeData.sethours(0, 0, 0, 0)
+    hojeData.setHours(0, 0, 0, 0)
 
     const entrega = new Date(dataEntrega)
-    entrega.sethours(0, 0, 0, 0)
+    entrega.setHours(0, 0, 0, 0)
 
     if (entrega < hojeData) {
       return "bg-red-50"
@@ -227,8 +230,8 @@ export function RelatorioExpedicao() {
           <button
             type="button"
             onClick={() => {
-              setDataInicio(hoje)
-              setDataFim(hoje)
+              setDataInicio("")
+              setDataFim("")
               setRotaId("")
               setStatus("")
               setBusca("")
@@ -245,7 +248,7 @@ export function RelatorioExpedicao() {
 
       <CabecalhoImpressao
         empresa={empresa}
-        titulo="Relatório de Produção"
+        titulo="Relatório de Expedição"
         periodoInicio={dataInicio}
         periodoFim={dataFim}
       />
@@ -261,7 +264,7 @@ export function RelatorioExpedicao() {
           </p>
 
           <p className="text-gray-600">
-            Total de entregas: {pedidos.lengTh}
+            Total de entregas: {pedidos.length}
           </p>
         </div>
 

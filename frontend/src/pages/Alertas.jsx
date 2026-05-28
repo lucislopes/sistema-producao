@@ -47,21 +47,15 @@ export function Alertas() {
         />
 
         <ResumoCard
-          titulo="Serviços Pausados"
-          valor={alertas.servicosPausados.length}
-          tipo={alertas.servicosPausados.length > 0 ? "alerta" : "normal"}
-        />
-
-        <ResumoCard
           titulo="Sem Operador"
           valor={alertas.servicosSemOperador.length}
           tipo={alertas.servicosSemOperador.length > 0 ? "info" : "normal"}
         />
 
         <ResumoCard
-          titulo="Aguardando Externo"
-          valor={alertas.pedidosAguardandoExterno.length}
-          tipo={alertas.pedidosAguardandoExterno.length > 0 ? "alerta" : "normal"}
+          titulo="Em Separação"
+          valor={alertas.pedidosEmSeparacao.length}
+          tipo={alertas.pedidosEmSeparacao.length > 0 ? "alerta" : "normal"}
         />
 
         <ResumoCard
@@ -78,18 +72,13 @@ export function Alertas() {
       />
 
       <SecaoServicos
-        titulo="Serviços Pausados"
-        servicos={alertas.servicosPausados}
-      />
-
-      <SecaoServicos
         titulo="Serviços Sem Operador"
         servicos={alertas.servicosSemOperador}
       />
 
       <SecaoPedidos
-        titulo="Pedidos Aguardando Externo"
-        pedidos={alertas.pedidosAguardandoExterno}
+        titulo="Pedidos Em Separação"
+        pedidos={alertas.pedidosEmSeparacao}
         formatarData={formatarData}
       />
 

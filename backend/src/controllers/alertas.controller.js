@@ -7,9 +7,8 @@ export async function obterAlertas(req, res) {
 
     const [
       pedidosAtrasados,
-      servicosPausados,
       servicosSemOperador,
-      pedidosAguardandoExterno,
+      pedidosEmSeparacao,
       pedidosProntoEntrega
     ] = await Promise.all([
       prisma.pedido.findMany({
@@ -33,41 +32,12 @@ export async function obterAlertas(req, res) {
 
       prisma.servicoPlano.findMany({
         where: {
-          status: "PAUSADO",
-          plano: {
-            pedido: {
-              status: {
-                notIn: ["ENTREGUE", "CANCELADO"]
-              }
-            }
-          }
-        },
-        include: {
-          tipoServico: true,
-          operador: true,
-          plano: {
-            include: {
-              pedido: {
-                include: {
-                  cliente: true
-                }
-              }
-            }
-          }
-        },
-        orderBy: {
-          updatedAt: "asc"
-        }
-      }),
-
-      prisma.servicoPlano.findMany({
-        where: {
           operadorId: null,
           status: "ABERTO",
           plano: {
             pedido: {
               status: {
-                notIn: ["ENTREGUE", "CANCELADO"]
+                notIn: ["PRONTO_ENTREGA", "SAIU_ENTREGA", "ENTREGUE", "CANCELADO"]
               }
             }
           }
@@ -91,7 +61,7 @@ export async function obterAlertas(req, res) {
 
       prisma.pedido.findMany({
         where: {
-          status: "AGUARDANDO_EXTERNO"
+          status: "EM_SEPARACAO"
         },
         include: {
           cliente: true,
@@ -120,12 +90,10 @@ export async function obterAlertas(req, res) {
 
     return res.json({
       pedidosAtrasados,
-      servicosPausados,
       servicosSemOperador,
-      pedidosAguardandoExterno,
+      pedidosEmSeparacao,
       pedidosProntoEntrega
     })
-
   } catch (error) {
     console.log(error)
 

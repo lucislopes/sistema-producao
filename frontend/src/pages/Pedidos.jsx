@@ -16,6 +16,8 @@ export function Pedidos() {
   const [rotas, setRotas] = useState([])
 
   const [editandoId, setEditandoId] = useState(null)
+  const [origemPedido, setOrigemPedido] = useState("INTERNO")
+  const [numeroPedidoManual, setNumeroPedidoManual] = useState("")  
 
   const [clienteId, setClienteId] = useState("")
   const [vendedorId, setVendedorId] = useState("")
@@ -30,9 +32,6 @@ export function Pedidos() {
   const [enderecoEntrega, setEnderecoEntrega] = useState("")
   const [status, setStatus] = useState("ABERTO")
   const [observacoes, setObservacoes] = useState("")
-
-  const [historico, setHistorico] = useState([])
-  const [pedidoHistorico, setPedidoHistorico] = useState(null)
 
   const [busca, setBusca] = useState("")
   const [filtroStatus, setFiltroStatus] = useState("")
@@ -88,6 +87,8 @@ export function Pedidos() {
     e.preventDefault()
 
     const dados = {
+      origemPedido,
+      numeroPedidoManual,
       clienteId,
       vendedorId,
       dataEntrega,
@@ -114,11 +115,16 @@ export function Pedidos() {
       carregarDados()
     } catch (error) {
       console.log(error)
-      alert("Erro ao salvar pedido")
+      alert(
+        error.response?.data?.error ||
+        "Erro ao salvar pedido"
+      )
     }
   }
 
   function editarPedido(pedido) {
+    setOrigemPedido(pedido.origemPedido || "INTERNO")
+    setNumeroPedidoManual(pedido.numeroPedidoManual || "")
     setEditandoId(pedido.id)
     setClienteId(pedido.clienteId)
     setVendedorId(pedido.vendedorId)
@@ -140,6 +146,8 @@ export function Pedidos() {
   }
 
   function limparFormulario() {
+    setOrigemPedido("INTERNO")
+    setNumeroPedidoManual("")
     setEditandoId(null)
     setClienteId("")
     setVendedorId("")
@@ -210,21 +218,18 @@ export function Pedidos() {
   function classeStatus(status) {
     const classes = {
       ABERTO: "bg-gray-100 text-gray-700",
+      EM_SEPARACAO: "bg-orange-100 text-orange-700",
       EM_PRODUCAO: "bg-blue-100 text-blue-700",
-      PENDENTE_PECA: "bg-orange-100 text-orange-700",
-      AGUARDANDO_EXTERNO: "bg-purple-100 text-purple-700",
-      PARCIAL: "bg-yellow-100 text-yellow-700",
       CONCLUIDO: "bg-green-100 text-green-700",
       PRONTO_ENTREGA: "bg-cyan-100 text-cyan-700",
       SAIU_ENTREGA: "bg-indigo-100 text-indigo-700",
       ENTREGUE: "bg-emerald-100 text-emerald-700",
       CANCELADO: "bg-red-100 text-red-700"
     }
+      return classes[status] || "bg-gray-100 text-gray-700"
+    }
 
-    return classes[status] || "bg-gray-100 text-gray-700"
-  }
-
-  const pedidosFiltrados = pedidos.filter((pedido) => {
+    const pedidosFiltrados = pedidos.filter((pedido) => {
     const textoBusca = busca.toLowerCase()
 
     const bateBusca =
@@ -341,7 +346,29 @@ export function Pedidos() {
           {editandoId ? "Editar Pedido" : "Novo Pedido"}
         </h2>
 
-        <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Select
+          value={origemPedido}
+          onChange={(e) => {
+            setOrigemPedido(e.target.value)
+
+            if (e.target.value === "INTERNO") {
+              setNumeroPedidoManual("")
+            }
+          }}
+        >
+          <option value="INTERNO">Pedido gerado pelo sistema</option>
+          <option value="EXTERNO">Pedido de outro sistema</option>
+        </Select>
+
+        <Input
+          type="text"
+          placeholder="Número do pedido externo"
+          value={numeroPedidoManual}
+          onChange={(e) => setNumeroPedidoManual(e.target.value)}
+          disabled={origemPedido === "INTERNO"}
+        />
+
           <AutocompleteCliente
             clienteId={clienteId}
             onSelecionar={(cliente) => {
@@ -446,9 +473,11 @@ export function Pedidos() {
             onChange={(e) => setStatus(e.target.value)}
           >
             <option value="ABERTO">Aberto</option>
+            <option value="EM_SEPARACAO">Em Separação</option>
             <option value="EM_PRODUCAO">Em Produção</option>
-            <option value="PARCIAL">Parcial</option>
             <option value="CONCLUIDO">Concluído</option>
+            <option value="PRONTO_ENTREGA">Pronto Entrega</option>
+            <option value="SAIU_ENTREGA">Saiu Entrega</option>
             <option value="ENTREGUE">Entregue</option>
             <option value="CANCELADO">Cancelado</option>
           </Select>
@@ -496,10 +525,8 @@ export function Pedidos() {
             >
               <option value="">Todos os status</option>
               <option value="ABERTO">Aberto</option>
+              <option value="EM_SEPARACAO">Em Separação</option>
               <option value="EM_PRODUCAO">Em Produção</option>
-              <option value="PENDENTE_PECA">Pendente Peça</option>
-              <option value="AGUARDANDO_EXTERNO">Aguardando Externo</option>
-              <option value="PARCIAL">Parcial</option>
               <option value="CONCLUIDO">Concluído</option>
               <option value="PRONTO_ENTREGA">Pronto Entrega</option>
               <option value="SAIU_ENTREGA">Saiu Entrega</option>
@@ -553,7 +580,7 @@ export function Pedidos() {
         <Table>
           <thead>
             <tr>
-              <Th>Nº</Th>
+              <Th>Pedido</Th>
               <Th>Cliente</Th>
               <Th>Vendedor</Th>
               <Th>Entrega</Th>
@@ -572,7 +599,9 @@ export function Pedidos() {
                 }`}
               >
                 <Td >
-                  {pedido.numeroPedido}
+                  {pedido.origemPedido === "EXTERNO"
+                  ? pedido.numeroPedidoManual
+                  : `#${pedido.numeroPedido}`}
                 </Td>
 
                 <Td>
