@@ -80,6 +80,17 @@ export function RelatorioExpedicao() {
     return data.toISOString().split("T")[0]
   }
 
+  function obterNumeroPedido(pedido) {
+    if (
+      pedido?.origemPedido === "EXTERNO" &&
+      pedido?.numeroPedidoManual
+    ) {
+      return pedido.numeroPedidoManual
+    }
+
+    return `#${pedido?.numeroPedido}`
+  }
+
   function obterStatus(status) {
     const statusMap = {
       CONCLUIDO: "Concluído",
@@ -189,7 +200,7 @@ export function RelatorioExpedicao() {
     ]
 
     const linhas = pedidos.map((pedido) => [
-      `#${pedido.numeroPedido}`,
+      obterNumeroPedido(pedido),
       pedido.cliente?.nome || "",
       formatarData(pedido.dataEntrega),
       pedido.rota?.nome || "",
@@ -238,7 +249,7 @@ export function RelatorioExpedicao() {
 
     const hoje = new Date().toISOString().split("T")[0]
 
-    return pedido.dataEntrega.substring(0, 10) === hoje
+    return String(pedido.dataEntrega).substring(0, 10) === hoje
   }).length
 
   const prontoEntrega = pedidos.filter(
@@ -439,7 +450,7 @@ export function RelatorioExpedicao() {
                 className={obterClasseLinha(pedido.dataEntrega)}
               >
                 <td className="p-3 border font-bold">
-                  #{pedido.numeroPedido}
+                  {obterNumeroPedido(pedido)}
                 </td>
 
                 <td className="p-3 border">
