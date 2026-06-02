@@ -4,6 +4,17 @@ import { api } from "../services/api"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
 import { Table, Th, Td } from "../components/ui/Table"
 
+function obterNumeroPedido(pedido) {
+  if (
+    pedido?.origemPedido === "EXTERNO" &&
+    pedido?.numeroPedidoManual
+  ) {
+    return pedido.numeroPedidoManual
+  }
+
+  return `#${pedido?.numeroPedido}`
+}
+
 export function Alertas() {
   const [alertas, setAlertas] = useState(null)
 
@@ -37,29 +48,20 @@ export function Alertas() {
     return <div>Carregando...</div>
   }
 
+  const totalAlertas =
+    alertas.pedidosAtrasados.length +
+    alertas.servicosSemOperador.length +
+    alertas.pedidosEmSeparacao.length +
+    alertas.pedidosProntoEntrega.length
+
   return (
     <div>
       <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-8">
-        
         <ResumoCard
-        titulo="Total Alertas"
-        valor={
-          alertas.pedidosAtrasados.length +
-          alertas.servicosSemOperador.length +
-          alertas.pedidosEmSeparacao.length +
-          alertas.pedidosProntoEntrega.length
-        }
-        tipo={
-          (
-            alertas.pedidosAtrasados.length +
-            alertas.servicosSemOperador.length +
-            alertas.pedidosEmSeparacao.length +
-            alertas.pedidosProntoEntrega.length
-          ) > 0
-            ? "perigo"
-            : "normal"
-        }
-      />
+          titulo="Total Alertas"
+          valor={totalAlertas}
+          tipo={totalAlertas > 0 ? "perigo" : "normal"}
+        />
 
         <ResumoCard
           titulo="Pedidos Atrasados"
@@ -108,7 +110,6 @@ export function Alertas() {
         pedidos={alertas.pedidosProntoEntrega}
         formatarData={formatarData}
       />
-
     </div>
   )
 }
@@ -149,12 +150,12 @@ function SecaoPedidos({ titulo, pedidos, formatarData }) {
       <Table>
         <thead>
           <tr>
-            <Th >Pedido</Th>
-            <Th >Cliente</Th>
-            <Th >Entrega</Th>
-            <Th >Rota</Th>
-            <Th >Status</Th>
-            <Th >Ação</Th>
+            <Th>Pedido</Th>
+            <Th>Cliente</Th>
+            <Th>Entrega</Th>
+            <Th>Rota</Th>
+            <Th>Status</Th>
+            <Th>Ação</Th>
           </tr>
         </thead>
 
@@ -162,26 +163,26 @@ function SecaoPedidos({ titulo, pedidos, formatarData }) {
           {pedidos.map((pedido) => (
             <tr key={pedido.id}>
               <Td>
-                #{pedido.numeroPedido}
+                {obterNumeroPedido(pedido)}
               </Td>
 
-              <Td >
+              <Td>
                 {pedido.cliente?.nome}
               </Td>
 
-              <Td >
+              <Td>
                 {formatarData(pedido.dataEntrega)}
               </Td>
 
-              <Td >
+              <Td>
                 {pedido.rota?.nome || "-"}
               </Td>
 
-              <Td >
+              <Td>
                 <BadgeStatus status={pedido.status} />
               </Td>
 
-              <Td >
+              <Td>
                 <Link
                   to={`/pedidos/${pedido.id}`}
                   className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm"
@@ -194,7 +195,7 @@ function SecaoPedidos({ titulo, pedidos, formatarData }) {
 
           {pedidos.length === 0 && (
             <tr>
-              <Td colSpan="7">
+              <Td colSpan="6">
                 Nenhum item encontrado.
               </Td>
             </tr>
@@ -215,21 +216,21 @@ function SecaoServicos({ titulo, servicos }) {
       <Table>
         <thead>
           <tr>
-            <Th >Pedido</Th>
-            <Th >Cliente</Th>
-            <Th >Plano</Th>
-            <Th >Serviço</Th>
-            <Th >Operador</Th>
-            <Th >Status</Th>
-            <Th >Ação</Th>
+            <Th>Pedido</Th>
+            <Th>Cliente</Th>
+            <Th>Plano</Th>
+            <Th>Serviço</Th>
+            <Th>Operador</Th>
+            <Th>Status</Th>
+            <Th>Ação</Th>
           </tr>
         </thead>
 
         <tbody>
           {servicos.map((servico) => (
             <tr key={servico.id}>
-              <Td >
-                #{servico.plano?.pedido?.numeroPedido}
+              <Td>
+                {obterNumeroPedido(servico.plano?.pedido)}
               </Td>
 
               <Td>
@@ -240,19 +241,19 @@ function SecaoServicos({ titulo, servicos }) {
                 {servico.plano?.numeroPlano}
               </Td>
 
-              <Td >
+              <Td>
                 {servico.tipoServico?.nome}
               </Td>
 
-              <Td >
+              <Td>
                 {servico.operador?.nome || "-"}
               </Td>
 
-              <Td >
+              <Td>
                 <BadgeStatus status={servico.status} />
               </Td>
 
-              <Td >
+              <Td>
                 <Link
                   to={`/pedidos/${servico.plano?.pedido?.id}`}
                   className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm"
