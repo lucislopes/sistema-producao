@@ -4,7 +4,9 @@ import {
   listarFuncionarios,
   criarFuncionario,
   atualizarFuncionario,
-  listarOperadores
+  listarOperadores,
+  alterarSenhaFuncionario,
+  deletarFuncionario
 } from "../controllers/funcionarios.controller.js"
 
 import { authMiddleware } from "../middlewares/auth.middleware.js"
@@ -40,6 +42,18 @@ router.put(
   "/:id",
   roleMiddleware("ADMIN"),
   atualizarFuncionario
+)
+
+router.delete(
+  "/:id",
+  roleMiddleware("ADMIN"),
+  deletarFuncionario
+)
+
+router.patch(
+  "/:id/senha",
+  roleMiddleware("ADMIN"),
+  alterarSenhaFuncionario
 )
 
 export default router

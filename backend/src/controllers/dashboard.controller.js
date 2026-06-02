@@ -5,7 +5,11 @@ export async function obterDashboard(req, res) {
     const hoje = new Date()
     hoje.setHours(0, 0, 0, 0)
 
-    const { dataInicio, dataFim } = req.query
+    const {
+      dataInicio,
+      dataFim,
+      baseData = "entrega"
+    } = req.query
 
     const inicioPeriodo = dataInicio
       ? new Date(dataInicio)
@@ -19,8 +23,13 @@ export async function obterDashboard(req, res) {
 
     fimPeriodo.setHours(23, 59, 59, 999)
 
+    const campoDataPedido =
+      baseData === "pedido"
+        ? "createdAt"
+        : "dataEntrega"
+
     const filtroPeriodoPedido = {
-      dataEntrega: {
+      [campoDataPedido]: {
         gte: inicioPeriodo,
         lte: fimPeriodo
       }
@@ -33,8 +42,92 @@ export async function obterDashboard(req, res) {
       }
     }
 
+    function filtroAtrasados() {
+      if (campoDataPedido === "dataEntrega") {
+        return {
+          dataEntrega: {
+            gte: inicioPeriodo,
+            lte: fimPeriodo,
+            lt: hoje
+          },
+          status: {
+            notIn: ["ENTREGUE", "CANCELADO"]
+          }
+        }
+      }
+
+      return {
+        createdAt: {
+          gte: inicioPeriodo,
+          lte: fimPeriodo
+        },
+        dataEntrega: {
+          lt: hoje
+        },
+        status: {
+          notIn: ["ENTREGUE", "CANCELADO"]
+        }
+      }
+    }
+
+    function filtroSlaDentroPrazo() {
+      if (campoDataPedido === "dataEntrega") {
+        return {
+          dataEntrega: {
+            gte: hoje > inicioPeriodo ? hoje : inicioPeriodo,
+            lte: fimPeriodo
+          },
+          status: {
+            notIn: ["ENTREGUE", "CANCELADO"]
+          }
+        }
+      }
+
+      return {
+        createdAt: {
+          gte: inicioPeriodo,
+          lte: fimPeriodo
+        },
+        dataEntrega: {
+          gte: hoje
+        },
+        status: {
+          notIn: ["ENTREGUE", "CANCELADO"]
+        }
+      }
+    }
+
+    function filtroSlaForaPrazo() {
+      if (campoDataPedido === "dataEntrega") {
+        return {
+          dataEntrega: {
+            gte: inicioPeriodo,
+            lte: fimPeriodo,
+            lt: hoje
+          },
+          status: {
+            notIn: ["ENTREGUE", "CANCELADO"]
+          }
+        }
+      }
+
+      return {
+        createdAt: {
+          gte: inicioPeriodo,
+          lte: fimPeriodo
+        },
+        dataEntrega: {
+          lt: hoje
+        },
+        status: {
+          notIn: ["ENTREGUE", "CANCELADO"]
+        }
+      }
+    }
+
     const [
       pedidosAbertos,
+      pedidosEmSeparacao,
       pedidosEmProducao,
       pedidosConcluidos,
       pedidosProntoEntrega,
@@ -52,82 +145,80 @@ export async function obterDashboard(req, res) {
       pedidosForaPrazo,
 
       financeiroAberto,
-
       financeiroProducao,
       financeiroConcluido,
       financeiroEntregue,
       financeiroTotal
-
     ] = await Promise.all([
       prisma.pedido.count({
         where: {
           status: "ABERTO",
-        }
-      }),
-
-      prisma.pedido.count({
-        where: {
-          status: "EM_PRODUCAO",
-        }
-      }),
-
-      prisma.pedido.count({
-        where: { 
-          status: "CONCLUIDO",
-        }
-      }),
-
-      prisma.pedido.count({
-        where: { 
-          status: "PRONTO_ENTREGA",
-        }
-      }),
-
-      prisma.pedido.count({
-        where: { 
-          status: "SAIU_ENTREGA",
-
-        }
-      }),
-
-      prisma.pedido.count({
-        where: { 
-          status: "ENTREGUE",
           ...filtroPeriodoPedido
         }
       }),
 
       prisma.pedido.count({
         where: {
-          ...filtroPeriodoPedido,
-          dataEntrega: {
-            lt: hoje,
-            gte: inicioPeriodo,
-            lte: fimPeriodo
-          },
-          status: {
-            notIn: ["ENTREGUE", "CANCELADO"]
-          }
+          status: "EM_SEPARACAO",
+          ...filtroPeriodoPedido
         }
-              
+      }),
+
+      prisma.pedido.count({
+        where: {
+          status: "EM_PRODUCAO",
+          ...filtroPeriodoPedido
+        }
+      }),
+
+      prisma.pedido.count({
+        where: {
+          status: "CONCLUIDO",
+          ...filtroPeriodoPedido
+        }
+      }),
+
+      prisma.pedido.count({
+        where: {
+          status: "PRONTO_ENTREGA",
+          ...filtroPeriodoPedido
+        }
+      }),
+
+      prisma.pedido.count({
+        where: {
+          status: "SAIU_ENTREGA",
+          ...filtroPeriodoPedido
+        }
+      }),
+
+      prisma.pedido.count({
+        where: {
+          status: "ENTREGUE",
+          ...filtroPeriodoPedido
+        }
+      }),
+
+      prisma.pedido.count({
+        where: filtroAtrasados()
       }),
 
       prisma.servicoPlano.count({
-        where: { 
+        where: {
           status: "ABERTO",
           ...filtroPeriodoServico
         }
       }),
 
       prisma.servicoPlano.count({
-        where: { 
+        where: {
           status: "INICIADO",
           ...filtroPeriodoServico
         }
       }),
 
       prisma.servicoPlano.count({
-        where: { 
+        where: {
           status: "CONCLUIDO",
           ...filtroPeriodoServico
         }
@@ -156,83 +247,64 @@ export async function obterDashboard(req, res) {
       }),
 
       prisma.pedido.count({
-        where: {
-          dataEntrega: {
-            gte: hoje > inicioPeriodo ? hoje : inicioPeriodo,
-            lte: fimPeriodo
-          },
-
-          status: {
-            notIn: ["ENTREGUE", "CANCELADO"]
-          }
-        }
+        where: filtroSlaDentroPrazo()
       }),
 
       prisma.pedido.count({
-        where: {
-          dataEntrega: {
-            lt: hoje,
-            gte: inicioPeriodo,
-            lte: fimPeriodo
-          },
+        where: filtroSlaForaPrazo()
+      }),
 
-          status: {
-            notIn: ["ENTREGUE", "CANCELADO"]
-          }
+      prisma.pedido.aggregate({
+        where: {
+          status: "ABERTO",
+          ...filtroPeriodoPedido
+        },
+        _sum: {
+          valorTotal: true
         }
       }),
 
-        prisma.pedido.aggregate({
-          where: {
-            status: "ABERTO",
-            ...filtroPeriodoPedido
-          },
-          _sum: {
-            valorTotal: true
-          }
-        }),
+      prisma.pedido.aggregate({
+        where: {
+          status: "EM_PRODUCAO",
+          ...filtroPeriodoPedido
+        },
+        _sum: {
+          valorTotal: true
+        }
+      }),
 
-        prisma.pedido.aggregate({
-          where: {
-            status: "EM_PRODUCAO",
-            ...filtroPeriodoPedido
-          },
-          _sum: {
-            valorTotal: true
-          }
-        }),
+      prisma.pedido.aggregate({
+        where: {
+          status: "CONCLUIDO",
+          ...filtroPeriodoPedido
+        },
+        _sum: {
+          valorTotal: true
+        }
+      }),
 
-        prisma.pedido.aggregate({
-          where: {
-            status: "CONCLUIDO",
-            ...filtroPeriodoPedido
-          },
-          _sum: {
-            valorTotal: true
-          }
-        }),
+      prisma.pedido.aggregate({
+        where: {
+          status: "ENTREGUE",
+          ...filtroPeriodoPedido
+        },
+        _sum: {
+          valorTotal: true
+        }
+      }),
 
-        prisma.pedido.aggregate({
-          where: {
-            status: "ENTREGUE",
-            ...filtroPeriodoPedido
-          },
-          _sum: {
-            valorTotal: true
-          }
-        }),
-
-        prisma.pedido.aggregate({
-          where: {
-            ...filtroPeriodoPedido
-          },
-          _sum: {
-            valorTotal: true
-          },
-          _avg: {
-            valorTotal: true
-          }
-        })
+      prisma.pedido.aggregate({
+        where: {
+          ...filtroPeriodoPedido
+        },
+        _sum: {
+          valorTotal: true
+        },
+        _avg: {
+          valorTotal: true
+        }
+      })
     ])
 
     const leaderboardCompleto = await Promise.all(
@@ -258,8 +330,11 @@ export async function obterDashboard(req, res) {
         : 100
 
     return res.json({
+      baseData,
+
       pedidos: {
         abertos: pedidosAbertos,
+        emSeparacao: pedidosEmSeparacao,
         emProducao: pedidosEmProducao,
         concluidos: pedidosConcluidos,
         prontoEntrega: pedidosProntoEntrega,
@@ -281,7 +356,7 @@ export async function obterDashboard(req, res) {
         percentual: percentualSla
       },
 
-            financeiro: {
+      financeiro: {
         aberto: Number(financeiroAberto._sum.valorTotal || 0),
         producao: Number(financeiroProducao._sum.valorTotal || 0),
         concluido: Number(financeiroConcluido._sum.valorTotal || 0),
@@ -292,7 +367,6 @@ export async function obterDashboard(req, res) {
 
       leaderboard: leaderboardCompleto
     })
-
   } catch (error) {
     console.log(error)
 
