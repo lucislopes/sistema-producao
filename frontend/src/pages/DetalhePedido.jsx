@@ -5,11 +5,22 @@ import { CabecalhoImpressao } from "../components/CabecalhoImpressao"
 import { Button } from "../components/ui/Button"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
 
+function obterNumeroPedido(pedido) {
+  if (
+    pedido?.origemPedido === "EXTERNO" &&
+    pedido?.numeroPedidoManual
+  ) {
+    return pedido.numeroPedidoManual
+  }
+
+  return `#${pedido?.numeroPedido}`
+}
+
 export function DetalhePedido() {
   const { id } = useParams()
   const [pedido, setPedido] = useState(null)
   const [empresa, setEmpresa] = useState(null)
-  
+
   async function carregarDetalhe() {
     try {
       const [pedidoResponse, empresaResponse] = await Promise.all([
@@ -35,13 +46,11 @@ export function DetalhePedido() {
 
   function formatarData(data) {
     if (!data) return "-"
-
     return new Date(data).toLocaleDateString("pt-BR")
   }
 
   function formatarDataHora(data) {
     if (!data) return "-"
-
     return new Date(data).toLocaleString("pt-BR")
   }
 
@@ -57,10 +66,8 @@ export function DetalhePedido() {
   function classeStatus(status) {
     const classes = {
       ABERTO: "bg-gray-100 text-gray-700",
+      EM_SEPARAÇÃO: "bg-blue-100 text-blue-700",
       EM_PRODUCAO: "bg-blue-100 text-blue-700",
-      PENDENTE_PECA: "bg-orange-100 text-orange-700",
-      AGUARDANDO_EXTERNO: "bg-purple-100 text-purple-700",
-      PARCIAL: "bg-yellow-100 text-yellow-700",
       CONCLUIDO: "bg-green-100 text-green-700",
       PRONTO_ENTREGA: "bg-cyan-100 text-cyan-700",
       SAIU_ENTREGA: "bg-indigo-100 text-indigo-700",
@@ -71,7 +78,7 @@ export function DetalhePedido() {
     return classes[status] || "bg-gray-100 text-gray-700"
   }
 
-    function classeHistorico(tipo) {
+  function classeHistorico(tipo) {
     if (tipo.includes("EXCLUIDO")) {
       return "bg-red-100 text-red-700 border-red-400"
     }
@@ -100,7 +107,7 @@ export function DetalhePedido() {
       <div className="flex justify-between items-center mb-6 no-print">
         <div>
           <h1 className="text-3xl font-bold">
-            Pedido #{pedido.numeroPedido}
+            Pedido {obterNumeroPedido(pedido)}
           </h1>
 
           <span
@@ -129,8 +136,8 @@ export function DetalhePedido() {
 
       <CabecalhoImpressao
         empresa={empresa}
-        titulo={`Detalhe do Pedido #${pedido.numeroPedido}`}
-        extra={`Status: $<BadgeStatus status={pedido.status} />`}
+        titulo={`Detalhe do Pedido ${obterNumeroPedido(pedido)}`}
+        extra={`Status: ${pedido.status}`}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -215,7 +222,7 @@ export function DetalhePedido() {
                   </div>
                 ))}
 
-                {plano.servicos.lengTh === 0 && (
+                {plano.servicos.length === 0 && (
                   <p className="text-gray-500">
                     Nenhum serviço neste plano.
                   </p>
@@ -224,7 +231,7 @@ export function DetalhePedido() {
             </div>
           ))}
 
-          {pedido.planos.lengTh === 0 && (
+          {pedido.planos.length === 0 && (
             <p className="text-gray-500">
               Nenhum plano cadastrado.
             </p>
@@ -243,32 +250,32 @@ export function DetalhePedido() {
               <div className="absolute -left-[34px] top-1 w-4 h-4 rounded-full bg-blue-600 border-4 border-white shadow" />
 
               <div className="bg-gray-50 border rounded-2xl p-4 shadow-sm">
-              <div className="flex justify-between items-start gap-4 mb-3">
-                <div>
-                  <span
-                    className={`inline-block mb-2 px-3 py-1 rounded-full border text-xs font-semibold ${classeHistorico(item.tipo)}`}
-                  >
-                    {item.tipo}
-                  </span>
+                <div className="flex justify-between items-start gap-4 mb-3">
+                  <div>
+                    <span
+                      className={`inline-block mb-2 px-3 py-1 rounded-full border text-xs font-semibold ${classeHistorico(item.tipo)}`}
+                    >
+                      {item.tipo}
+                    </span>
 
-                  <p className="font-bold">
-                    {item.descricao}
-                  </p>
+                    <p className="font-bold">
+                      {item.descricao}
+                    </p>
+                  </div>
+
+                  <span className="text-xs text-gray-500 whitespace-nowrap">
+                    {formatarDataHora(item.createdAt)}
+                  </span>
                 </div>
 
-                <span className="text-xs text-gray-500 whitespace-nowrap">
-                  {formatarDataHora(item.createdAt)}
-                </span>
+                <p className="text-sm text-gray-600">
+                  Usuário: {item.usuario?.funcionario?.nome || "-"}
+                </p>
               </div>
-
-              <p className="text-sm text-gray-600">
-                Usuário: {item.usuario?.funcionario?.nome || "-"}
-              </p>
-            </div>
             </div>
           ))}
 
-          {pedido.historicos.lengTh === 0 && (
+          {pedido.historicos.length === 0 && (
             <p className="text-gray-500">
               Nenhum histórico encontrado.
             </p>
