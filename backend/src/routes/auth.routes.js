@@ -11,6 +11,13 @@ const router = Router()
 
 router.post("/login", login)
 
+router.get("/teste-minha-senha", (req, res) => {
+  return res.json({
+    ok: true,
+    rota: "/auth/teste-minha-senha"
+  })
+})
+
 router.patch(
   "/minha-senha",
   authMiddleware,

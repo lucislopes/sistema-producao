@@ -200,17 +200,24 @@ export function MainLayout() {
             {usuario?.funcao}
           </p>
 
-          <button onClick={() => {
-              logout()
-              navigate("/")
-            }}
-          >
-            Sair
-          </button>
-          
-            <MenuLink to="/minha-senha">
+          <div className="flex flex-col gap-2">
+            <Link
+              to="/minha-senha"
+              className="text-sm text-gray-100 hover:text-white"
+            >
               Alterar Senha
-            </MenuLink>
+            </Link>
+
+            <button
+              className="text-left text-sm text-gray-100 hover:text-white"
+              onClick={() => {
+                logout()
+                navigate("/")
+              }}
+            >
+              Sair
+            </button>
+          </div>
         </div>
       </aside>
 
