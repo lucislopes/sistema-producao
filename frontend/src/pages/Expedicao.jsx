@@ -21,12 +21,12 @@ export function Expedicao() {
 
   useEffect(() => {
     carregarPedidos()
+
     const interval = setInterval(() => {
       carregarPedidos()
     }, 30000)
 
     return () => clearInterval(interval)
-
   }, [])
 
   async function alterarStatus(id, status) {
@@ -45,7 +45,21 @@ export function Expedicao() {
   function formatarData(data) {
     if (!data) return "-"
 
-    return new Date(data).toLocaleDateString("pt-BR")
+    const dataTexto = String(data).substring(0, 10)
+    const [ano, mes, dia] = dataTexto.split("-")
+
+    return `${dia}/${mes}/${ano}`
+  }
+
+  function obterNumeroPedido(pedido) {
+    if (
+      pedido?.origemPedido === "EXTERNO" &&
+      pedido?.numeroPedidoManual
+    ) {
+      return pedido.numeroPedidoManual
+    }
+
+    return `#${pedido?.numeroPedido}`
   }
 
   function obterSituacaoPrazo(dataEntrega) {
@@ -126,11 +140,17 @@ export function Expedicao() {
     }
   }
 
-    const pedidosFiltrados = pedidos.filter((pedido) => {
+  const pedidosFiltrados = pedidos.filter((pedido) => {
     const textoBusca = busca.toLowerCase()
 
+    const numeroPedidoTexto = String(
+      pedido.origemPedido === "EXTERNO"
+        ? pedido.numeroPedidoManual || ""
+        : pedido.numeroPedido || ""
+    ).toLowerCase()
+
     const bateBusca =
-      String(pedido.numeroPedido).includes(textoBusca) ||
+      numeroPedidoTexto.includes(textoBusca) ||
       pedido.cliente?.nome?.toLowerCase().includes(textoBusca)
 
     const bateStatus =
@@ -153,50 +173,50 @@ export function Expedicao() {
   return (
     <div>
       <div className="bg-white p-4 rounded-2xl shadow-md mb-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Input
-          type="text"
-          placeholder="Buscar pedido ou cliente..."
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Input
+            type="text"
+            placeholder="Buscar pedido ou cliente..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
 
-        <Select
-          value={filtroStatus}
-          onChange={(e) => setFiltroStatus(e.target.value)}
-        >
-          <option value="">Todos os status</option>
-          <option value="CONCLUIDO">Concluído</option>
-          <option value="PRONTO_ENTREGA">Pronto Entrega</option>
-          <option value="SAIU_ENTREGA">Saiu Entrega</option>
-        </Select>
+          <Select
+            value={filtroStatus}
+            onChange={(e) => setFiltroStatus(e.target.value)}
+          >
+            <option value="">Todos os status</option>
+            <option value="CONCLUIDO">Concluído</option>
+            <option value="PRONTO_ENTREGA">Pronto Entrega</option>
+            <option value="SAIU_ENTREGA">Saiu Entrega</option>
+          </Select>
 
-        <Select
-          value={filtroRota}
-          onChange={(e) => setFiltroRota(e.target.value)}
-        >
-          <option value="">Todas as rotas</option>
+          <Select
+            value={filtroRota}
+            onChange={(e) => setFiltroRota(e.target.value)}
+          >
+            <option value="">Todas as rotas</option>
 
-          {rotasUnicas.map((rota) => (
-            <option key={rota.id} value={rota.id}>
-              {rota.nome}
-            </option>
-          ))}
-        </Select>
+            {rotasUnicas.map((rota) => (
+              <option key={rota.id} value={rota.id}>
+                {rota.nome}
+              </option>
+            ))}
+          </Select>
 
-        <button
-          type="button"
-          onClick={() => {
-            setBusca("")
-            setFiltroStatus("")
-            setFiltroRota("")
-          }}
-          className="bg-gray-500 text-white px-4 py-2 rounded-lg"
-        >
-          Limpar filtros
-        </button>
+          <button
+            type="button"
+            onClick={() => {
+              setBusca("")
+              setFiltroStatus("")
+              setFiltroRota("")
+            }}
+            className="bg-gray-500 text-white px-4 py-2 rounded-lg"
+          >
+            Limpar filtros
+          </button>
+        </div>
       </div>
-    </div>
 
       <div className="grid grid-cols-1 gap-4">
         {pedidosFiltrados.map((pedido) => {
@@ -212,7 +232,7 @@ export function Expedicao() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3">
                     <h2 className="text-2xl font-bold">
-                      Pedido #{pedido.numeroPedido}
+                      Pedido {obterNumeroPedido(pedido)}
                     </h2>
 
                     <span className={`text-xs px-3 py-1 rounded-full border ${statusInfo.classe}`}>
