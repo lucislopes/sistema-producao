@@ -4,7 +4,7 @@ import { CabecalhoImpressao } from "../components/CabecalhoImpressao"
 import { Button } from "../components/ui/Button"
 import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
-import { Table, Th, Td } from "../components/ui/Table"
+import { Table, Th } from "../components/ui/Table"
 import { BadgePrazo } from "../components/ui/BadgePrazo"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
 
@@ -12,6 +12,7 @@ export function RelatorioPedidos() {
   const [pedidos, setPedidos] = useState([])
   const [vendedores, setVendedores] = useState([])
   const [empresa, setEmpresa] = useState(null)
+
   const [dataInicio, setDataInicio] = useState("")
   const [dataFim, setDataFim] = useState("")
   const [pedido, setPedido] = useState("")
@@ -28,55 +29,67 @@ export function RelatorioPedidos() {
     limit: 50,
     totalPages: 1
   })
+
+  function obterNumeroPedido(item) {
+    if (
+      item?.origemPedido === "EXTERNO" &&
+      item?.numeroPedidoManual
+    ) {
+      return item.numeroPedidoManual
+    }
+
+    return `#${item?.numeroPedido}`
+  }
+
   function exportarCSV() {
-  const cabecalho = [
-    "Pedido",
-    "Cliente",
-    "Vendedor",
-    "Data Entrega",
-    "Endereco",
-    "Status",
-    "Prazo",
-    "Valor"
-  ]
+    const cabecalho = [
+      "Pedido",
+      "Cliente",
+      "Vendedor",
+      "Data Entrega",
+      "Endereco",
+      "Status",
+      "Prazo",
+      "Valor"
+    ]
 
-  const linhas = pedidos.map((item) => [
-    `#${item.numeroPedido}`,
-    item.cliente?.nome || "",
-    item.vendedor?.nome || "",
-    formatarData(item.dataEntrega),
-    item.enderecoEntrega || item.cliente?.endereco || "",
-    item.status || "",
-    item.situacaoPrazo || "",
-    item.valorTotal || ""
-  ])
+    const linhas = pedidos.map((item) => [
+      obterNumeroPedido(item),
+      item.cliente?.nome || "",
+      item.vendedor?.nome || "",
+      formatarData(item.dataEntrega),
+      item.enderecoEntrega || item.cliente?.endereco || "",
+      item.status || "",
+      item.situacaoPrazo || "",
+      item.valorTotal || ""
+    ])
 
-  const csv = [
-    cabecalho,
-    ...linhas
-  ]
-    .map((linha) =>
-      linha
-        .map((campo) =>
-          `"${String(campo).replace(/"/g, '""')}"`
-        )
-        .join(";")
-    )
-    .join("\n")
+    const csv = [
+      cabecalho,
+      ...linhas
+    ]
+      .map((linha) =>
+        linha
+          .map((campo) =>
+            `"${String(campo).replace(/"/g, '""')}"`
+          )
+          .join(";")
+      )
+      .join("\n")
 
-  const blob = new Blob(["\uFEFF" + csv], {
-    type: "text/csv;charset=utf-8;"
-  })
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;"
+    })
 
-  const url = URL.createObjectURL(blob)
+    const url = URL.createObjectURL(blob)
 
-  const link = document.createElement("a")
-  link.href = url
-  link.download = "relatorio-pedidos.csv"
-  link.click()
+    const link = document.createElement("a")
+    link.href = url
+    link.download = "relatorio-pedidos.csv"
+    link.click()
 
-  URL.revokeObjectURL(url)
-}
+    URL.revokeObjectURL(url)
+  }
 
   function obterClassePrazo(prazo) {
     if (prazo === "ATRASADO") {
@@ -127,46 +140,12 @@ export function RelatorioPedidos() {
 
       setPedidos(relatorioResponse.data.dados)
       setPaginacao(relatorioResponse.data.paginacao)
-
       setEmpresa(empresaResponse.data)
     } catch (error) {
       console.log(error)
       alert("Erro ao carregar relatório de pedidos")
     }
   }
-
-
-  const totalPedidos = pedidos.length
-
-  const emSeparacao = pedidos.filter(
-    p => p.status === "EM_SEPARACAO"
-  )
-
-  const emProducao = pedidos.filter(
-    p => p.status === "EM_PRODUCAO"
-  ).length
-
-  const prontoEntrega = pedidos.filter(
-    p => p.status === "PRONTO_ENTREGA"
-  ).length
-
-  const saiuEntrega = pedidos.filter(
-    p => p.status === "SAIU_ENTREGA"
-  ).length
-
-  const entregues = pedidos.filter(
-    p => p.status === "ENTREGUE"
-  ).length
-
-  const atrasados = pedidos.filter(
-    p => p.situacaoPrazo === "ATRASADO"
-  ).length
-
-  const valorTotalPedidos = pedidos.reduce(
-  (acc, pedido) => acc + (pedido.valorTotal || 0),
-  0
-)
-
 
   useEffect(() => {
     carregarVendedores()
@@ -201,6 +180,7 @@ export function RelatorioPedidos() {
 
     const dataTexto = String(data).substring(0, 10)
     const [ano, mes, dia] = dataTexto.split("-")
+
     return `${dia}/${mes}/${ano}`
   }
 
@@ -275,19 +255,44 @@ export function RelatorioPedidos() {
     setPage(1)
   }
 
+  const totalPedidos = pedidos.length
 
+  const emSeparacao = pedidos.filter(
+    (p) => p.status === "EM_SEPARACAO"
+  ).length
+
+  const emProducao = pedidos.filter(
+    (p) => p.status === "EM_PRODUCAO"
+  ).length
+
+  const prontoEntrega = pedidos.filter(
+    (p) => p.status === "PRONTO_ENTREGA"
+  ).length
+
+  const saiuEntrega = pedidos.filter(
+    (p) => p.status === "SAIU_ENTREGA"
+  ).length
+
+  const atrasados = pedidos.filter(
+    (p) => p.situacaoPrazo === "ATRASADO"
+  ).length
+
+  const valorTotalPedidos = pedidos.reduce(
+    (acc, item) => acc + Number(item.valorTotal || 0),
+    0
+  )
 
   return (
     <div>
-        <div className="flex justify-between items-center mb-6 no-print">
-      <div className="flex gap-2">
-        <Button variant="success" onClick={exportarCSV}>
+      <div className="flex justify-between items-center mb-6 no-print">
+        <div className="flex gap-2">
+          <Button variant="success" onClick={exportarCSV}>
             Exportar CSV
-        </Button>
+          </Button>
 
-        <Button variant="dark" onClick={imprimir}>
+          <Button variant="dark" onClick={imprimir}>
             Imprimir
-        </Button>
+          </Button>
         </div>
       </div>
 
@@ -331,32 +336,19 @@ export function RelatorioPedidos() {
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4 no-print">
-
-        <Button
-          type="button"
-          onClick={filtroHoje}
-        >
+        <Button type="button" onClick={filtroHoje}>
           Hoje
         </Button>
 
-        <Button
-          type="button"
-          onClick={filtroProximos5Dias}
-        >
+        <Button type="button" onClick={filtroProximos5Dias}>
           Próximos 5 Dias
         </Button>
 
-        <Button
-          type="button"
-          onClick={filtroSemana}
-        >
+        <Button type="button" onClick={filtroSemana}>
           Esta Semana
         </Button>
 
-        <Button
-          type="button"
-          onClick={filtroMes}
-        >
+        <Button type="button" onClick={filtroMes}>
           Este Mês
         </Button>
 
@@ -394,9 +386,7 @@ export function RelatorioPedidos() {
         >
           Cancelados
         </Button>
-
       </div>
-
 
       <div className="bg-white p-6 rounded-2xl shadow-md mb-8 no-print">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -413,7 +403,7 @@ export function RelatorioPedidos() {
           />
 
           <Input
-            type="number"
+            type="text"
             placeholder="Número pedido"
             value={pedido}
             onChange={(e) => setPedido(e.target.value)}
@@ -517,9 +507,12 @@ export function RelatorioPedidos() {
 
           <tbody>
             {pedidos.map((item) => (
-              <tr key={item.id}>
+              <tr
+                key={item.id}
+                className={obterClassePrazo(item.situacaoPrazo)}
+              >
                 <td className="p-3 border font-bold">
-                  #{item.numeroPedido}
+                  {obterNumeroPedido(item)}
                 </td>
 
                 <td className="p-3 border">
@@ -568,13 +561,17 @@ export function RelatorioPedidos() {
           </p>
 
           <div className="flex gap-2">
-            <Button variant="secondary" disabled={page <= 1}
+            <Button
+              variant="secondary"
+              disabled={page <= 1}
               onClick={() => setPage(page - 1)}
             >
               Anterior
             </Button>
 
-            <Button variant="secondary" disabled={page >= paginacao.totalPages}
+            <Button
+              variant="secondary"
+              disabled={page >= paginacao.totalPages}
               onClick={() => setPage(page + 1)}
             >
               Próxima
