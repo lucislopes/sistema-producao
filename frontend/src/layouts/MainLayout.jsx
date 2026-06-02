@@ -207,6 +207,10 @@ export function MainLayout() {
           >
             Sair
           </button>
+          
+            <MenuLink to="/minha-senha">
+              Alterar Senha
+            </MenuLink>
         </div>
       </aside>
 

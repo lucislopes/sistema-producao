@@ -11,6 +11,7 @@ export function RelatorioProducao() {
   const [operadores, setOperadores] = useState([])
   const [tiposServico, setTiposServico] = useState([])
   const [empresa, setEmpresa] = useState(null)
+
   const [dataInicio, setDataInicio] = useState("")
   const [dataFim, setDataFim] = useState("")
   const [operadorId, setOperadorId] = useState("")
@@ -42,55 +43,6 @@ export function RelatorioProducao() {
       alert("Erro ao carregar filtros")
     }
   }
-  function exportarCSV() {
-    const cabecalho = [
-        "Pedido",
-        "Cliente",
-        "Plano",
-        "Servico",
-        "Operador",
-        "Status",
-        "Inicio",
-        "Fim"
-    ]
-
-    const linhas = servicos.map((item) => [
-        `#${item.plano?.pedido?.numeroPedido || ""}`,
-        item.plano?.pedido?.cliente?.nome || "",
-        item.plano?.numeroPlano || "",
-        item.tipoServico?.nome || "",
-        item.operador?.nome || "",
-        item.status || "",
-        formatarDataHora(item.dataInicio),
-        formatarDataHora(item.dataFim)
-    ])
-
-    const csv = [
-        cabecalho,
-        ...linhas
-    ]
-        .map((linha) =>
-        linha
-            .map((campo) =>
-            `"${String(campo).replace(/"/g, '""')}"`
-            )
-            .join(";")
-        )
-        .join("\n")
-
-    const blob = new Blob(["\uFEFF" + csv], {
-        type: "text/csv;charset=utf-8;"
-    })
-
-    const url = URL.createObjectURL(blob)
-
-    const link = document.createElement("a")
-    link.href = url
-    link.download = "relatorio-producao.csv"
-    link.click()
-
-    URL.revokeObjectURL(url)
-    }
 
   async function carregarRelatorio(pagina = page) {
     try {
@@ -107,13 +59,11 @@ export function RelatorioProducao() {
             limit
           }
         }),
-
         api.get("/configuracao-empresa")
       ])
 
       setServicos(relatorioResponse.data.dados)
       setPaginacao(relatorioResponse.data.paginacao)
-
       setEmpresa(empresaResponse.data)
     } catch (error) {
       console.log(error)
@@ -155,24 +105,239 @@ export function RelatorioProducao() {
     return new Date(data).toLocaleString("pt-BR")
   }
 
+  function formatarDataFiltro(data) {
+    return data.toISOString().split("T")[0]
+  }
+
+  function filtroHoje() {
+    const hoje = new Date()
+
+    setDataInicio(formatarDataFiltro(hoje))
+    setDataFim(formatarDataFiltro(hoje))
+    setPage(1)
+  }
+
+  function filtroSemana() {
+    const hoje = new Date()
+
+    const inicio = new Date(hoje)
+    inicio.setDate(hoje.getDate() - hoje.getDay())
+
+    const fim = new Date(inicio)
+    fim.setDate(inicio.getDate() + 6)
+
+    setDataInicio(formatarDataFiltro(inicio))
+    setDataFim(formatarDataFiltro(fim))
+    setPage(1)
+  }
+
+  function filtroMes() {
+    const hoje = new Date()
+
+    const inicio = new Date(
+      hoje.getFullYear(),
+      hoje.getMonth(),
+      1
+    )
+
+    const fim = new Date(
+      hoje.getFullYear(),
+      hoje.getMonth() + 1,
+      0
+    )
+
+    setDataInicio(formatarDataFiltro(inicio))
+    setDataFim(formatarDataFiltro(fim))
+    setPage(1)
+  }
+
+  function filtroStatusRapido(novoStatus) {
+    setStatus(novoStatus)
+    setPage(1)
+  }
+
+  function obterStatus(status) {
+    const statusMap = {
+      ABERTO: "Aberto",
+      INICIADO: "Em Produção",
+      CONCLUIDO: "Concluído",
+      CANCELADO: "Cancelado"
+    }
+
+    return statusMap[status] || status
+  }
+
+  function obterClasseStatus(status) {
+    const classes = {
+      ABERTO: "bg-gray-100 text-gray-700",
+      INICIADO: "bg-blue-100 text-blue-700",
+      CONCLUIDO: "bg-green-100 text-green-700",
+      CANCELADO: "bg-red-100 text-red-700"
+    }
+
+    return classes[status] || "bg-gray-100 text-gray-700"
+  }
+
+  function exportarCSV() {
+    const cabecalho = [
+      "Pedido",
+      "Cliente",
+      "Plano",
+      "Servico",
+      "Operador",
+      "Status",
+      "Inicio",
+      "Fim"
+    ]
+
+    const linhas = servicos.map((item) => [
+      `#${item.plano?.pedido?.numeroPedido || ""}`,
+      item.plano?.pedido?.cliente?.nome || "",
+      item.plano?.numeroPlano || "",
+      item.tipoServico?.nome || "",
+      item.operador?.nome || "",
+      obterStatus(item.status),
+      formatarDataHora(item.dataInicio),
+      formatarDataHora(item.dataFim)
+    ])
+
+    const csv = [cabecalho, ...linhas]
+      .map((linha) =>
+        linha
+          .map((campo) => `"${String(campo).replace(/"/g, '""')}"`)
+          .join(";")
+      )
+      .join("\n")
+
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;"
+    })
+
+    const url = URL.createObjectURL(blob)
+
+    const link = document.createElement("a")
+    link.href = url
+    link.download = "relatorio-producao.csv"
+    link.click()
+
+    URL.revokeObjectURL(url)
+  }
+
+  const totalServicos = servicos.length
+
+  const abertos = servicos.filter(
+    (item) => item.status === "ABERTO"
+  ).length
+
+  const iniciados = servicos.filter(
+    (item) => item.status === "INICIADO"
+  ).length
+
+  const concluidos = servicos.filter(
+    (item) => item.status === "CONCLUIDO"
+  ).length
+
+  const cancelados = servicos.filter(
+    (item) => item.status === "CANCELADO"
+  ).length
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6 no-print">
         <div className="flex gap-2">
-        <Button
+          <Button
+            type="button"
             onClick={exportarCSV}
             className="bg-green-700 text-white px-6 py-3 rounded-lg"
-        >
+          >
             Exportar CSV
+          </Button>
+
+          <Button
+            type="button"
+            onClick={imprimir}
+            className="bg-gray-800 text-white px-6 py-3 rounded-lg"
+          >
+            Imprimir
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 no-print">
+        <div className="bg-white border border-gray-300 rounded-xl p-4">
+          <p className="text-sm text-gray-600">Total</p>
+          <strong className="text-2xl">{totalServicos}</strong>
+        </div>
+
+        <div className="bg-gray-50 border border-gray-300 rounded-xl p-4">
+          <p className="text-sm text-gray-600">Abertos</p>
+          <strong className="text-2xl">{abertos}</strong>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-300 rounded-xl p-4">
+          <p className="text-sm text-gray-600">Em Produção</p>
+          <strong className="text-2xl">{iniciados}</strong>
+        </div>
+
+        <div className="bg-green-50 border border-green-300 rounded-xl p-4">
+          <p className="text-sm text-gray-600">Concluídos</p>
+          <strong className="text-2xl">{concluidos}</strong>
+        </div>
+
+        <div className="bg-red-50 border border-red-300 rounded-xl p-4">
+          <p className="text-sm text-gray-600">Cancelados</p>
+          <strong className="text-2xl">{cancelados}</strong>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-4 no-print">
+        <Button
+          type="button"
+          onClick={filtroHoje}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+        >
+          Hoje
         </Button>
 
         <Button
-            onClick={imprimir}
-            className="bg-gray-800 text-white px-6 py-3 rounded-lg"
+          type="button"
+          onClick={filtroSemana}
+          className="bg-purple-600 text-white px-4 py-2 rounded-lg"
         >
-            Imprimir
+          Esta semana
         </Button>
-        </div>
+
+        <Button
+          type="button"
+          onClick={filtroMes}
+          className="bg-cyan-600 text-white px-4 py-2 rounded-lg"
+        >
+          Este mês
+        </Button>
+
+        <Button
+          type="button"
+          onClick={() => filtroStatusRapido("ABERTO")}
+          className="bg-gray-600 text-white px-4 py-2 rounded-lg"
+        >
+          Abertos
+        </Button>
+
+        <Button
+          type="button"
+          onClick={() => filtroStatusRapido("INICIADO")}
+          className="bg-blue-700 text-white px-4 py-2 rounded-lg"
+        >
+          Em Produção
+        </Button>
+
+        <Button
+          type="button"
+          onClick={() => filtroStatusRapido("CONCLUIDO")}
+          className="bg-green-700 text-white px-4 py-2 rounded-lg"
+        >
+          Concluídos
+        </Button>
       </div>
 
       <div className="bg-white p-6 rounded-2xl shadow-md mb-8 no-print">
@@ -228,8 +393,7 @@ export function RelatorioProducao() {
           >
             <option value="">Todos os status</option>
             <option value="ABERTO">Aberto</option>
-            <option value="INICIADO">Iniciado</option>
-            <option value="PAUSADO">Pausado</option>
+            <option value="INICIADO">Em Produção</option>
             <option value="CONCLUIDO">Concluído</option>
             <option value="CANCELADO">Cancelado</option>
           </Select>
@@ -249,13 +413,16 @@ export function RelatorioProducao() {
 
         <div className="flex gap-3 mt-4">
           <Button
+            type="button"
             onClick={buscar}
             className="bg-blue-600 text-white px-6 py-3 rounded-lg"
           >
             Buscar
           </Button>
 
-          <Button variant="secondary"
+          <Button
+            type="button"
+            variant="secondary"
             onClick={limparFiltros}
             className="bg-gray-500 text-white px-6 py-3 rounded-lg"
           >
@@ -270,11 +437,11 @@ export function RelatorioProducao() {
         periodoInicio={dataInicio}
         periodoFim={dataFim}
       />
-      
+
       <div className="bg-white rounded-2xl shadow-md p-6">
         <div className="mb-6">
           <h2 className="text-2xl font-bold">
-            Listagem de Produção
+            Relatório de Produção
           </h2>
 
           <p className="text-gray-600">
@@ -284,58 +451,62 @@ export function RelatorioProducao() {
 
         <Table>
           <thead>
-            <tr className="p-3 border font-bold" >
-              <th className="p-3 border font-bold" >Pedido</th>
-              <th className="p-3 border font-bold" >Cliente</th>
-              <th className="p-3 border font-bold" >Plano</th>
-              <th className="p-3 border font-bold" >Serviço</th>
-              <th className="p-3 border font-bold" >Operador</th>
-              <th className="p-3 border font-bold" >Status</th>
-              <th className="p-3 border font-bold" >Início</th>
-              <th className="p-3 border font-bold" >Fim</th>
+            <tr>
+              <Th>Pedido</Th>
+              <Th>Cliente</Th>
+              <Th>Plano</Th>
+              <Th>Serviço</Th>
+              <Th>Operador</Th>
+              <Th>Status</Th>
+              <Th>Início</Th>
+              <Th>Fim</Th>
             </tr>
           </thead>
 
           <tbody>
             {servicos.map((item) => (
-              <tr key={item.id}>
-                <td className="p-3 border font-bold">
-                  #{item.plano?.pedido?.numeroPedido}
-                </td>
+              <tr key={item.id} className="border-t">
+                <Td className="font-bold">
+                  #{item.plano?.pedido?.numeroPedido || "-"}
+                </Td>
 
-                <td className="p-3 border">
-                  {item.plano?.pedido?.cliente?.nome}
-                </td>
+                <Td>
+                  {item.plano?.pedido?.cliente?.nome || "-"}
+                </Td>
 
-                <td className="p-3 border">
-                  {item.plano?.numeroPlano}
-                </td>
+                <Td>
+                  {item.plano?.numeroPlano || "-"}
+                </Td>
 
-                <td className="p-3 border">
-                  {item.tipoServico?.nome}
-                </td>
+                <Td>
+                  {item.tipoServico?.nome || "-"}
+                </Td>
 
-                <td className="p-3 border">
+                <Td>
                   {item.operador?.nome || "-"}
-                </td>
+                </Td>
 
-                <td className="p-3 border">
-                  {item.status}
-                </td>
+                <Td>
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${obterClasseStatus(item.status)}`}
+                  >
+                    {obterStatus(item.status)}
+                  </span>
+                </Td>
 
-                <td className="p-3 border">
+                <Td>
                   {formatarDataHora(item.dataInicio)}
-                </td>
+                </Td>
 
-                <td className="p-3 border">
+                <Td>
                   {formatarDataHora(item.dataFim)}
-                </td>
+                </Td>
               </tr>
             ))}
 
             {servicos.length === 0 && (
               <tr>
-                <td>
+                <td className="p-4 border" colSpan="8">
                   Nenhum serviço encontrado.
                 </td>
               </tr>
@@ -349,7 +520,9 @@ export function RelatorioProducao() {
           </p>
 
           <div className="flex gap-2">
-            <Button variant="secondary"
+            <Button
+              type="button"
+              variant="secondary"
               disabled={page <= 1}
               onClick={() => setPage(page - 1)}
               className="bg-gray-500 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg"
@@ -358,6 +531,8 @@ export function RelatorioProducao() {
             </Button>
 
             <Button
+              type="button"
+              variant="secondary"
               disabled={page >= paginacao.totalPages}
               onClick={() => setPage(page + 1)}
               className="bg-gray-500 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg"

@@ -40,6 +40,27 @@ export function Alertas() {
   return (
     <div>
       <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-8">
+        
+        <ResumoCard
+        titulo="Total Alertas"
+        valor={
+          alertas.pedidosAtrasados.length +
+          alertas.servicosSemOperador.length +
+          alertas.pedidosEmSeparacao.length +
+          alertas.pedidosProntoEntrega.length
+        }
+        tipo={
+          (
+            alertas.pedidosAtrasados.length +
+            alertas.servicosSemOperador.length +
+            alertas.pedidosEmSeparacao.length +
+            alertas.pedidosProntoEntrega.length
+          ) > 0
+            ? "perigo"
+            : "normal"
+        }
+      />
+
         <ResumoCard
           titulo="Pedidos Atrasados"
           valor={alertas.pedidosAtrasados.length}
@@ -87,6 +108,7 @@ export function Alertas() {
         pedidos={alertas.pedidosProntoEntrega}
         formatarData={formatarData}
       />
+
     </div>
   )
 }

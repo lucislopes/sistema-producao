@@ -78,6 +78,18 @@ export function RelatorioPedidos() {
   URL.revokeObjectURL(url)
 }
 
+  function obterClassePrazo(prazo) {
+    if (prazo === "ATRASADO") {
+      return "bg-red-50"
+    }
+
+    if (prazo === "HOJE") {
+      return "bg-yellow-50"
+    }
+
+    return ""
+  }
+
   async function carregarVendedores() {
     try {
       const response = await api.get("/funcionarios/operadores")
@@ -122,6 +134,39 @@ export function RelatorioPedidos() {
       alert("Erro ao carregar relatório de pedidos")
     }
   }
+
+
+  const totalPedidos = pedidos.length
+
+  const emSeparacao = pedidos.filter(
+    p => p.status === "EM_SEPARACAO"
+  )
+
+  const emProducao = pedidos.filter(
+    p => p.status === "EM_PRODUCAO"
+  ).length
+
+  const prontoEntrega = pedidos.filter(
+    p => p.status === "PRONTO_ENTREGA"
+  ).length
+
+  const saiuEntrega = pedidos.filter(
+    p => p.status === "SAIU_ENTREGA"
+  ).length
+
+  const entregues = pedidos.filter(
+    p => p.status === "ENTREGUE"
+  ).length
+
+  const atrasados = pedidos.filter(
+    p => p.situacaoPrazo === "ATRASADO"
+  ).length
+
+  const valorTotalPedidos = pedidos.reduce(
+  (acc, pedido) => acc + (pedido.valorTotal || 0),
+  0
+)
+
 
   useEffect(() => {
     carregarVendedores()
@@ -168,6 +213,70 @@ export function RelatorioPedidos() {
     })
   }
 
+  function formatarDataFiltro(data) {
+    return data.toISOString().split("T")[0]
+  }
+
+  function filtroHoje() {
+    const hoje = new Date()
+
+    setDataInicio(formatarDataFiltro(hoje))
+    setDataFim(formatarDataFiltro(hoje))
+    setPage(1)
+  }
+
+  function filtroProximos5Dias() {
+    const hoje = new Date()
+
+    const fim = new Date()
+    fim.setDate(fim.getDate() + 5)
+
+    setDataInicio(formatarDataFiltro(hoje))
+    setDataFim(formatarDataFiltro(fim))
+    setPage(1)
+  }
+
+  function filtroSemana() {
+    const hoje = new Date()
+
+    const inicio = new Date(hoje)
+    inicio.setDate(hoje.getDate() - hoje.getDay())
+
+    const fim = new Date(inicio)
+    fim.setDate(inicio.getDate() + 6)
+
+    setDataInicio(formatarDataFiltro(inicio))
+    setDataFim(formatarDataFiltro(fim))
+    setPage(1)
+  }
+
+  function filtroMes() {
+    const hoje = new Date()
+
+    const inicio = new Date(
+      hoje.getFullYear(),
+      hoje.getMonth(),
+      1
+    )
+
+    const fim = new Date(
+      hoje.getFullYear(),
+      hoje.getMonth() + 1,
+      0
+    )
+
+    setDataInicio(formatarDataFiltro(inicio))
+    setDataFim(formatarDataFiltro(fim))
+    setPage(1)
+  }
+
+  function filtroStatusRapido(novoStatus) {
+    setStatus(novoStatus)
+    setPage(1)
+  }
+
+
+
   return (
     <div>
         <div className="flex justify-between items-center mb-6 no-print">
@@ -181,6 +290,113 @@ export function RelatorioPedidos() {
         </Button>
         </div>
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-7 gap-4 mb-6 no-print">
+        <div className="bg-white border border-gray-300 rounded-xl p-4">
+          <p className="text-sm text-gray-600">Total Pedidos</p>
+          <strong className="text-2xl">{totalPedidos}</strong>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-300 rounded-xl p-4">
+          <p className="text-sm text-gray-600">Em Separação</p>
+          <strong className="text-2xl">{emSeparacao}</strong>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-300 rounded-xl p-4">
+          <p className="text-sm text-gray-600">Em Produção</p>
+          <strong className="text-2xl">{emProducao}</strong>
+        </div>
+
+        <div className="bg-green-50 border border-green-300 rounded-xl p-4">
+          <p className="text-sm text-gray-600">Pronto Entrega</p>
+          <strong className="text-2xl">{prontoEntrega}</strong>
+        </div>
+
+        <div className="bg-indigo-50 border border-indigo-300 rounded-xl p-4">
+          <p className="text-sm text-gray-600">Saiu Entrega</p>
+          <strong className="text-2xl">{saiuEntrega}</strong>
+        </div>
+
+        <div className="bg-red-50 border border-red-300 rounded-xl p-4">
+          <p className="text-sm text-gray-600">Atrasados</p>
+          <strong className="text-2xl">{atrasados}</strong>
+        </div>
+
+        <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-4">
+          <p className="text-sm text-gray-600">Valor Exibido</p>
+          <strong className="text-2xl">
+            {formatarMoeda(valorTotalPedidos)}
+          </strong>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-4 no-print">
+
+        <Button
+          type="button"
+          onClick={filtroHoje}
+        >
+          Hoje
+        </Button>
+
+        <Button
+          type="button"
+          onClick={filtroProximos5Dias}
+        >
+          Próximos 5 Dias
+        </Button>
+
+        <Button
+          type="button"
+          onClick={filtroSemana}
+        >
+          Esta Semana
+        </Button>
+
+        <Button
+          type="button"
+          onClick={filtroMes}
+        >
+          Este Mês
+        </Button>
+
+        <Button
+          type="button"
+          onClick={() => filtroStatusRapido("EM_PRODUCAO")}
+        >
+          Em Produção
+        </Button>
+
+        <Button
+          type="button"
+          onClick={() => filtroStatusRapido("PRONTO_ENTREGA")}
+        >
+          Pronto Entrega
+        </Button>
+
+        <Button
+          type="button"
+          onClick={() => filtroStatusRapido("SAIU_ENTREGA")}
+        >
+          Saiu Entrega
+        </Button>
+
+        <Button
+          type="button"
+          onClick={() => filtroStatusRapido("ENTREGUE")}
+        >
+          Entregues
+        </Button>
+
+        <Button
+          type="button"
+          onClick={() => filtroStatusRapido("CANCELADO")}
+        >
+          Cancelados
+        </Button>
+
+      </div>
+
 
       <div className="bg-white p-6 rounded-2xl shadow-md mb-8 no-print">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

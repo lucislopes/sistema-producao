@@ -3,116 +3,65 @@ import { api } from "../services/api"
 import { CabecalhoImpressao } from "../components/CabecalhoImpressao"
 import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
-import { Table, Th, Td } from "../components/ui/Table"
+import { Table, Th } from "../components/ui/Table"
 
 export function RelatorioExpedicao() {
   const [pedidos, setPedidos] = useState([])
   const [rotas, setRotas] = useState([])
   const [empresa, setEmpresa] = useState(null)
-  const hoje = new Date().toLocaleDateString("sv-SE")
 
   const [dataInicio, setDataInicio] = useState("")
   const [dataFim, setDataFim] = useState("")
-  
   const [rotaId, setRotaId] = useState("")
   const [status, setStatus] = useState("")
   const [busca, setBusca] = useState("")
 
-    async function carregarRotas() {
+  async function carregarRotas() {
+    try {
       const response = await api.get("/rotas-entrega")
       setRotas(response.data)
+    } catch (error) {
+      console.log(error)
     }
-
-    async function carregarRelatorio() {
-      try {
-        const [relatorioResponse, empresaResponse] = await Promise.all([
-          api.get("/relatorio-expedicao", {
-            params: {
-              dataInicio,
-              dataFim,
-              rotaId,
-              status,
-              busca
-            }
-          }),
-
-          api.get("/configuracao-empresa")
-        ])
-
-        setPedidos(relatorioResponse.data)
-        setEmpresa(empresaResponse.data)
-
-      } catch (error) {
-        console.log(error)
-        alert("Erro ao carregar relatório")
-      }
-    }
-
-  function exportarCSV() {
-    const cabecalho = [
-      "Pedido",
-      "Cliente",
-      "Data",
-      "Rota",
-      "Recebedor",
-      "Contato",
-      "Endereco",
-      "Status"
-    ]
-
-    const linhas = pedidos.map((pedido) => [
-      `#${pedido.numeroPedido}`,
-      pedido.cliente?.nome || "",
-      formatarData(pedido.dataEntrega),
-      pedido.rota?.nome || "",
-      pedido.nomeRecebedor || "",
-      pedido.contatoRecebedor || "",
-      pedido.enderecoEntrega || "",
-      obterStatus(pedido.status)
-    ])
-
-    const csv = [
-      cabecalho,
-      ...linhas
-    ]
-      .map((linha) =>
-        linha
-          .map((campo) =>
-            `"${String(campo).replace(/"/g, '""')}"`
-          )
-          .join(";")
-      )
-      .join("\n")
-
-    const blob = new Blob(["\uFEFF" + csv], {
-      type: "text/csv;charset=utf-8;"
-    })
-
-    const url = URL.createObjectURL(blob)
-
-    const link = document.createElement("a")
-    link.href = url
-    link.download = "relatorio-expedicao.csv"
-    link.click()
-
-    URL.revokeObjectURL(url)
   }
 
+  async function carregarRelatorio() {
+    try {
+      const [relatorioResponse, empresaResponse] = await Promise.all([
+        api.get("/relatorio-expedicao", {
+          params: {
+            dataInicio,
+            dataFim,
+            rotaId,
+            status,
+            busca
+          }
+        }),
+        api.get("/configuracao-empresa")
+      ])
+
+      setPedidos(relatorioResponse.data)
+      setEmpresa(empresaResponse.data)
+    } catch (error) {
+      console.log(error)
+      alert("Erro ao carregar relatório")
+    }
+  }
 
   useEffect(() => {
-
     carregarRotas()
     carregarRelatorio()
 
     const interval = setInterval(() => {
-
       carregarRelatorio()
-
     }, 30000)
 
     return () => clearInterval(interval)
-
   }, [])
+
+  useEffect(() => {
+    carregarRelatorio()
+  }, [dataInicio, dataFim, rotaId, status])
 
   function imprimir() {
     window.print()
@@ -125,6 +74,10 @@ export function RelatorioExpedicao() {
     const [ano, mes, dia] = dataTexto.split("-")
 
     return `${dia}/${mes}/${ano}`
+  }
+
+  function formatarDataFiltro(data) {
+    return data.toISOString().split("T")[0]
   }
 
   function obterStatus(status) {
@@ -158,24 +111,228 @@ export function RelatorioExpedicao() {
     return ""
   }
 
+  function filtroHoje() {
+    const hoje = new Date()
+
+    setDataInicio(formatarDataFiltro(hoje))
+    setDataFim(formatarDataFiltro(hoje))
+  }
+
+  function filtroAmanha() {
+    const amanha = new Date()
+    amanha.setDate(amanha.getDate() + 1)
+
+    setDataInicio(formatarDataFiltro(amanha))
+    setDataFim(formatarDataFiltro(amanha))
+  }
+
+  function filtroProximos5Dias() {
+    const hoje = new Date()
+
+    const fim = new Date()
+    fim.setDate(fim.getDate() + 5)
+
+    setDataInicio(formatarDataFiltro(hoje))
+    setDataFim(formatarDataFiltro(fim))
+  }
+
+  function filtroSemana() {
+    const hoje = new Date()
+
+    const inicio = new Date(hoje)
+    inicio.setDate(hoje.getDate() - hoje.getDay())
+
+    const fim = new Date(inicio)
+    fim.setDate(inicio.getDate() + 6)
+
+    setDataInicio(formatarDataFiltro(inicio))
+    setDataFim(formatarDataFiltro(fim))
+  }
+
+  function filtroMes() {
+    const hoje = new Date()
+
+    const inicio = new Date(
+      hoje.getFullYear(),
+      hoje.getMonth(),
+      1
+    )
+
+    const fim = new Date(
+      hoje.getFullYear(),
+      hoje.getMonth() + 1,
+      0
+    )
+
+    setDataInicio(formatarDataFiltro(inicio))
+    setDataFim(formatarDataFiltro(fim))
+  }
+
+  function limparFiltros() {
+    setDataInicio("")
+    setDataFim("")
+    setRotaId("")
+    setStatus("")
+    setBusca("")
+  }
+
+  function exportarCSV() {
+    const cabecalho = [
+      "Pedido",
+      "Cliente",
+      "Data Prevista",
+      "Rota",
+      "Recebedor",
+      "Contato",
+      "Endereco",
+      "Status"
+    ]
+
+    const linhas = pedidos.map((pedido) => [
+      `#${pedido.numeroPedido}`,
+      pedido.cliente?.nome || "",
+      formatarData(pedido.dataEntrega),
+      pedido.rota?.nome || "",
+      pedido.nomeRecebedor || "",
+      pedido.contatoRecebedor || "",
+      pedido.enderecoEntrega || "",
+      obterStatus(pedido.status)
+    ])
+
+    const csv = [cabecalho, ...linhas]
+      .map((linha) =>
+        linha
+          .map((campo) => `"${String(campo).replace(/"/g, '""')}"`)
+          .join(";")
+      )
+      .join("\n")
+
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;"
+    })
+
+    const url = URL.createObjectURL(blob)
+
+    const link = document.createElement("a")
+    link.href = url
+    link.download = "relatorio-expedicao.csv"
+    link.click()
+
+    URL.revokeObjectURL(url)
+  }
+
+  const atrasados = pedidos.filter((pedido) => {
+    if (!pedido.dataEntrega) return false
+
+    const hoje = new Date()
+    hoje.setHours(0, 0, 0, 0)
+
+    const entrega = new Date(pedido.dataEntrega)
+    entrega.setHours(0, 0, 0, 0)
+
+    return entrega < hoje
+  }).length
+
+  const hojeQtd = pedidos.filter((pedido) => {
+    if (!pedido.dataEntrega) return false
+
+    const hoje = new Date().toISOString().split("T")[0]
+
+    return pedido.dataEntrega.substring(0, 10) === hoje
+  }).length
+
+  const prontoEntrega = pedidos.filter(
+    (pedido) => pedido.status === "PRONTO_ENTREGA"
+  ).length
+
+  const saiuEntrega = pedidos.filter(
+    (pedido) => pedido.status === "SAIU_ENTREGA"
+  ).length
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6 no-print">
-      <div className="flex gap-2">
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={exportarCSV}
+            className="bg-green-700 text-white px-6 py-3 rounded-lg"
+          >
+            Exportar CSV
+          </button>
+
+          <button
+            type="button"
+            onClick={imprimir}
+            className="bg-gray-800 text-white px-6 py-3 rounded-lg"
+          >
+            Imprimir
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 no-print">
+        <div className="bg-red-50 border border-red-300 rounded-xl p-4">
+          <p className="text-sm text-gray-600">Atrasados</p>
+          <strong className="text-2xl">{atrasados}</strong>
+        </div>
+
+        <div className="bg-yellow-50 border border-yellow-300 rounded-xl p-4">
+          <p className="text-sm text-gray-600">Hoje</p>
+          <strong className="text-2xl">{hojeQtd}</strong>
+        </div>
+
+        <div className="bg-green-50 border border-green-300 rounded-xl p-4">
+          <p className="text-sm text-gray-600">Pronto Entrega</p>
+          <strong className="text-2xl">{prontoEntrega}</strong>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-300 rounded-xl p-4">
+          <p className="text-sm text-gray-600">Saiu Entrega</p>
+          <strong className="text-2xl">{saiuEntrega}</strong>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-4 no-print">
         <button
-          onClick={exportarCSV}
-          className="bg-green-700 text-white px-6 py-3 rounded-lg"
+          type="button"
+          onClick={filtroHoje}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg"
         >
-          Exportar CSV
+          Hoje
         </button>
 
         <button
-          onClick={imprimir}
-          className="bg-gray-800 text-white px-6 py-3 rounded-lg"
+          type="button"
+          onClick={filtroAmanha}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg"
         >
-          Imprimir
+          Amanhã
         </button>
-      </div>
+
+        <button
+          type="button"
+          onClick={filtroProximos5Dias}
+          className="bg-indigo-600 text-white px-4 py-2 rounded-lg"
+        >
+          Próximos 5 dias
+        </button>
+
+        <button
+          type="button"
+          onClick={filtroSemana}
+          className="bg-purple-600 text-white px-4 py-2 rounded-lg"
+        >
+          Esta semana
+        </button>
+
+        <button
+          type="button"
+          onClick={filtroMes}
+          className="bg-cyan-600 text-white px-4 py-2 rounded-lg"
+        >
+          Este mês
+        </button>
       </div>
 
       <div className="bg-white p-6 rounded-2xl shadow-md mb-8 no-print">
@@ -222,27 +379,20 @@ export function RelatorioExpedicao() {
           />
 
           <button
+            type="button"
             onClick={carregarRelatorio}
             className="bg-blue-600 text-white px-6 py-3 rounded-lg"
           >
             Buscar
           </button>
+
           <button
             type="button"
-            onClick={() => {
-              setDataInicio("")
-              setDataFim("")
-              setRotaId("")
-              setStatus("")
-              setBusca("")
-            }}
+            onClick={limparFiltros}
             className="bg-gray-500 text-white px-6 py-3 rounded-lg"
           >
             Limpar
           </button>
-
-
-
         </div>
       </div>
 
@@ -256,7 +406,7 @@ export function RelatorioExpedicao() {
       <div className="bg-white rounded-2xl shadow-md p-6">
         <div className="mb-6">
           <h2 className="text-2xl font-bold">
-            Entregas do dia
+            Relatório de Expedição
           </h2>
 
           <p className="text-gray-600">
@@ -273,7 +423,7 @@ export function RelatorioExpedicao() {
             <tr>
               <Th>Pedido</Th>
               <Th>Cliente</Th>
-              <Th>Data</Th>
+              <Th>Prev. Entrega</Th>
               <Th>Rota</Th>
               <Th>Recebedor</Th>
               <Th>Contato</Th>
@@ -325,7 +475,7 @@ export function RelatorioExpedicao() {
             {pedidos.length === 0 && (
               <tr>
                 <td className="p-4 border" colSpan="8">
-                  Nenhuma entrega encontrada para esta data.
+                  Nenhuma entrega encontrada para este período.
                 </td>
               </tr>
             )}

@@ -25,6 +25,7 @@ import { RelatorioProducao } from "./pages/RelatorioProducao"
 import { Alertas } from "./pages/Alertas"
 import { ProdutividadeOperadores } from "./pages/ProdutividadeOperadores"
 import { ConfiguracaoEmpresa } from "./pages/ConfiguracaoEmpresa"
+import { MinhaSenha } from "./pages/MinhaSenha"
 
 export default function App() {
 
@@ -140,6 +141,8 @@ export default function App() {
             path="/configuracao-empresa"
             element={<ConfiguracaoEmpresa />}
           />
+
+          <Route path="/minha-senha" element={<MinhaSenha />} />
 
         </Route>
 

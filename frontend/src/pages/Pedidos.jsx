@@ -8,7 +8,6 @@ import { Select } from "../components/ui/Select"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
 import { Table, Th, Td } from "../components/ui/Table"
 
-
 export function Pedidos() {
   const [pedidos, setPedidos] = useState([])
   const [clientes, setClientes] = useState([])
@@ -373,6 +372,20 @@ export function Pedidos() {
             clienteId={clienteId}
             onSelecionar={(cliente) => {
               setClienteId(cliente ? cliente.id : "")
+
+              if (cliente) {
+                if (!nomeRecebedor) {
+                  setNomeRecebedor(cliente.nome || "")
+                }
+
+                if (!contatoRecebedor) {
+                  setContatoRecebedor(cliente.telefone || "")
+                }
+
+                if (!enderecoEntrega) {
+                  setEnderecoEntrega(cliente.endereco || "")
+                }
+              }
             }}
           />
 
@@ -389,11 +402,17 @@ export function Pedidos() {
             ))}
           </Select>
 
-          <Input
-            type="date"
-            value={dataEntrega}
-            onChange={(e) => setDataEntrega(e.target.value)}
-          />
+          <div className="flex items-center gap-2">
+            <Input
+              type="date"
+              value={dataEntrega}
+              onChange={(e) => setDataEntrega(e.target.value)}
+            />
+
+            <span className="text-sm text-gray-500 whitespace-nowrap">
+              Data Prevista p/ entrega
+            </span>
+          </div>
 
           <Select
             value={tipoEntrega}

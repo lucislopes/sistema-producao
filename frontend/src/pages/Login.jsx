@@ -36,30 +36,38 @@ export function Login() {
         className="bg-white p-8 rounded-2xl shadow-md w-full max-w-sm"
       >
 
-        <h1 className="text-2xl font-bold mb-6 text-center">
-          Sistema Produção
-        </h1>
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">
+            Sistema Produção
+          </h1>
 
-        <Input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+          <p className="text-gray-500 mt-2">
+            Gestão de Pedidos e Produção
+          </p>
+        </div>
 
-        <Input
-          type="password"
-          placeholder="Senha"
-          value={senha}
-          onChange={(e) => setSenha(e.target.value)}
-        />
+        <div className="space-y-4">
+          <Input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
 
-        <Button
-          type="submit"
-          className="w-full bg-blue-600 text-white p-3 rounded-lg"
-        >
-          Entrar
-        </Button>
+          <Input
+            type="password"
+            placeholder="Senha"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+          />
+
+          <Button
+            type="submit"
+            className="w-full"
+          >
+            Entrar
+          </Button>
+        </div>
 
       </form>
 
