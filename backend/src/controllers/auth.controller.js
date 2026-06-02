@@ -73,7 +73,7 @@ export async function login(req, res) {
 
 export async function alterarMinhaSenha(req, res) {
   try {
-    const usuarioId = req.usuario.id
+    const usuarioId = req.user.id
 
     const {
       senhaAtual,
