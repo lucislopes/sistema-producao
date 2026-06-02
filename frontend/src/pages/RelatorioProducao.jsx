@@ -109,6 +109,17 @@ export function RelatorioProducao() {
     return data.toISOString().split("T")[0]
   }
 
+  function obterNumeroPedido(pedido) {
+    if (
+      pedido?.origemPedido === "EXTERNO" &&
+      pedido?.numeroPedidoManual
+    ) {
+      return pedido.numeroPedidoManual
+    }
+
+    return `#${pedido?.numeroPedido}`
+  }
+
   function filtroHoje() {
     const hoje = new Date()
 
@@ -191,7 +202,7 @@ export function RelatorioProducao() {
     ]
 
     const linhas = servicos.map((item) => [
-      `#${item.plano?.pedido?.numeroPedido || ""}`,
+      obterNumeroPedido(item.plano?.pedido),
       item.plano?.pedido?.cliente?.nome || "",
       item.plano?.numeroPlano || "",
       item.tipoServico?.nome || "",
@@ -201,10 +212,15 @@ export function RelatorioProducao() {
       formatarDataHora(item.dataFim)
     ])
 
-    const csv = [cabecalho, ...linhas]
+    const csv = [
+      cabecalho,
+      ...linhas
+    ]
       .map((linha) =>
         linha
-          .map((campo) => `"${String(campo).replace(/"/g, '""')}"`)
+          .map((campo) =>
+            `"${String(campo).replace(/"/g, '""')}"`
+          )
           .join(";")
       )
       .join("\n")
@@ -467,7 +483,7 @@ export function RelatorioProducao() {
             {servicos.map((item) => (
               <tr key={item.id} className="border-t">
                 <Td className="font-bold">
-                  #{item.plano?.pedido?.numeroPedido || "-"}
+                  {obterNumeroPedido(item.plano?.pedido)}
                 </Td>
 
                 <Td>
