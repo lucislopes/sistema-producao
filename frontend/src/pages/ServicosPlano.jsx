@@ -214,7 +214,10 @@ export function ServicosPlano() {
 
               {pedidos.map((pedido) => (
                 <option key={pedido.id} value={pedido.id}>
-                  Pedido #{pedido.numeroPedido} - {pedido.cliente?.nome}
+                  Pedido {pedido.origemPedido === "EXTERNO" &&
+                          pedido.numeroPedidoManual
+                            ? pedido.numeroPedidoManual
+                            : `#${pedido.numeroPedido}`} - {pedido.cliente?.nome}
                 </option>
               ))}
             </Select>
