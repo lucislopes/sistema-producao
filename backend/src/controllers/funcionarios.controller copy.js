@@ -261,6 +261,17 @@ export async function deletarFuncionario(req, res) {
   try {
     const { id } = req.params
 
+    const funcionario = await prisma.funcionario.findUnique({
+      where: { id },
+      include: { usuario: true }
+    })
+
+    if (!funcionario) {
+      return res.status(404).json({
+        error: "Funcionário não encontrado"
+      })
+    }
+
     const pedidosComoVendedor = await prisma.pedido.count({
       where: {
         vendedorId: id
@@ -273,41 +284,42 @@ export async function deletarFuncionario(req, res) {
       }
     })
 
-    const possuiVinculo =
+    const possuiReferencia =
       pedidosComoVendedor > 0 ||
       servicosComoOperador > 0
 
-    if (possuiVinculo) {
-      await prisma.funcionario.update({
+    if (possuiReferencia) {
+      const funcionarioDesativado = await prisma.funcionario.update({
         where: { id },
         data: { ativo: false }
       })
 
       return res.json({
-        message:
-          "Funcionário possui vínculos no sistema e foi apenas desativado."
+        message: "Funcionário possui histórico e foi desativado.",
+        funcionario: funcionarioDesativado
       })
     }
 
-    await prisma.usuario.deleteMany({
-      where: {
-        funcionarioId: id
-      }
-    })
+    if (funcionario.usuario) {
+      await prisma.usuario.delete({
+        where: {
+          id: funcionario.usuario.id
+        }
+      })
+    }
 
     await prisma.funcionario.delete({
       where: { id }
     })
 
     return res.json({
-      message:
-        "Funcionário e usuário excluídos com sucesso."
+      message: "Funcionário excluído com sucesso."
     })
   } catch (error) {
     console.log(error)
 
     return res.status(500).json({
-      error: "Erro ao excluir funcionário."
+      error: "Erro ao excluir funcionário"
     })
   }
 }

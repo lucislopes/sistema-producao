@@ -119,22 +119,22 @@ export function RelatorioPedidos() {
     }
   }
 
-  async function carregarRelatorio(pagina = page) {
+  async function carregarRelatorio(pagina = page, filtros = {}) {
     try {
-      const [relatorioResponse, empresaResponse] = await Promise.all([
-        api.get("/relatorio-pedidos", {
-          params: {
-            dataInicio,
-            dataFim,
-            pedido,
-            cliente,
-            vendedorId,
-            status,
-            page: pagina,
-            limit
-          }
-        }),
+      const params = {
+        dataInicio,
+        dataFim,
+        pedido,
+        cliente,
+        vendedorId,
+        status,
+        page: pagina,
+        limit,
+        ...filtros
+      }
 
+      const [relatorioResponse, empresaResponse] = await Promise.all([
+        api.get("/relatorio-pedidos", { params }),
         api.get("/configuracao-empresa")
       ])
 
@@ -198,11 +198,16 @@ export function RelatorioPedidos() {
   }
 
   function filtroHoje() {
-    const hoje = new Date()
+    const hoje = formatarDataFiltro(new Date())
 
-    setDataInicio(formatarDataFiltro(hoje))
-    setDataFim(formatarDataFiltro(hoje))
+    setDataInicio(hoje)
+    setDataFim(hoje)
     setPage(1)
+
+    carregarRelatorio(1, {
+      dataInicio: hoje,
+      dataFim: hoje
+    })
   }
 
   function filtroProximos5Dias() {
@@ -211,9 +216,17 @@ export function RelatorioPedidos() {
     const fim = new Date()
     fim.setDate(fim.getDate() + 5)
 
-    setDataInicio(formatarDataFiltro(hoje))
-    setDataFim(formatarDataFiltro(fim))
+    const dataInicioFiltro = formatarDataFiltro(hoje)
+    const dataFimFiltro = formatarDataFiltro(fim)
+
+    setDataInicio(dataInicioFiltro)
+    setDataFim(dataFimFiltro)
     setPage(1)
+
+    carregarRelatorio(1, {
+      dataInicio: dataInicioFiltro,
+      dataFim: dataFimFiltro
+    })
   }
 
   function filtroSemana() {
@@ -225,9 +238,17 @@ export function RelatorioPedidos() {
     const fim = new Date(inicio)
     fim.setDate(inicio.getDate() + 6)
 
-    setDataInicio(formatarDataFiltro(inicio))
-    setDataFim(formatarDataFiltro(fim))
+    const dataInicioFiltro = formatarDataFiltro(inicio)
+    const dataFimFiltro = formatarDataFiltro(fim)
+
+    setDataInicio(dataInicioFiltro)
+    setDataFim(dataFimFiltro)
     setPage(1)
+
+    carregarRelatorio(1, {
+      dataInicio: dataInicioFiltro,
+      dataFim: dataFimFiltro
+    })
   }
 
   function filtroMes() {
@@ -245,14 +266,26 @@ export function RelatorioPedidos() {
       0
     )
 
-    setDataInicio(formatarDataFiltro(inicio))
-    setDataFim(formatarDataFiltro(fim))
+    const dataInicioFiltro = formatarDataFiltro(inicio)
+    const dataFimFiltro = formatarDataFiltro(fim)
+
+    setDataInicio(dataInicioFiltro)
+    setDataFim(dataFimFiltro)
     setPage(1)
+
+    carregarRelatorio(1, {
+      dataInicio: dataInicioFiltro,
+      dataFim: dataFimFiltro
+    })
   }
 
   function filtroStatusRapido(novoStatus) {
     setStatus(novoStatus)
     setPage(1)
+
+    carregarRelatorio(1, {
+      status: novoStatus
+    })
   }
 
   const totalPedidos = pedidos.length
@@ -286,11 +319,11 @@ export function RelatorioPedidos() {
     <div>
       <div className="flex justify-between items-center mb-6 no-print">
         <div className="flex gap-2">
-          <Button variant="success" onClick={exportarCSV}>
+          <Button variant="success" onClick={exportarCSV} className="bg-green-700 text-white px-6 py-3 rounded-lg">
             Exportar CSV
           </Button>
 
-          <Button variant="dark" onClick={imprimir}>
+          <Button variant="dark" onClick={imprimir} className="bg-gray-800 text-white px-6 py-3 rounded-lg">
             Imprimir
           </Button>
         </div>
@@ -336,53 +369,53 @@ export function RelatorioPedidos() {
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4 no-print">
-        <Button type="button" onClick={filtroHoje}>
+        <Button type="button" onClick={filtroHoje} className="bg-blue-600 text-white px-4 py-2 rounded-lg">
           Hoje
         </Button>
 
-        <Button type="button" onClick={filtroProximos5Dias}>
+        <Button type="button" onClick={filtroProximos5Dias} className="bg-purple-600 text-white px-4 py-2 rounded-lg">
           Próximos 5 Dias
         </Button>
 
-        <Button type="button" onClick={filtroSemana}>
+        <Button type="button" onClick={filtroSemana} className="bg-green-500 text-white px-4 py-2 rounded-lg" >
           Esta Semana
         </Button>
 
-        <Button type="button" onClick={filtroMes}>
+        <Button type="button" onClick={filtroMes} className="bg-cyan-600 text-white px-4 py-2 rounded-lg">
           Este Mês
         </Button>
 
         <Button
           type="button"
-          onClick={() => filtroStatusRapido("EM_PRODUCAO")}
+          onClick={() => filtroStatusRapido("EM_PRODUCAO") } className="bg-gray-600 text-white px-4 py-2 rounded-lg"
         >
           Em Produção
         </Button>
 
         <Button
           type="button"
-          onClick={() => filtroStatusRapido("PRONTO_ENTREGA")}
+          onClick={() => filtroStatusRapido("PRONTO_ENTREGA")} className="bg-blue-700 text-white px-4 py-2 rounded-lg"
         >
           Pronto Entrega
         </Button>
 
         <Button
           type="button"
-          onClick={() => filtroStatusRapido("SAIU_ENTREGA")}
+          onClick={() => filtroStatusRapido("SAIU_ENTREGA")} className="bg-green-700 text-white px-4 py-2 rounded-lg"
         >
           Saiu Entrega
         </Button>
 
         <Button
           type="button"
-          onClick={() => filtroStatusRapido("ENTREGUE")}
+          onClick={() => filtroStatusRapido("ENTREGUE")} className="bg-blue-500 text-white px-4 py-2 rounded-lg"
         >
           Entregues
         </Button>
 
         <Button
           type="button"
-          onClick={() => filtroStatusRapido("CANCELADO")}
+          onClick={() => filtroStatusRapido("CANCELADO")} className="bg-red-600 text-white px-4 py-2 rounded-lg"
         >
           Cancelados
         </Button>
@@ -455,18 +488,21 @@ export function RelatorioPedidos() {
             <option value={50}>50 por página</option>
             <option value={100}>100 por página</option>
           </Select>
+          <div className="flex grid-cols-1 md:grid-cols-3 gap-4" >
+            <Button variant="Primary" onClick={buscar} className="bg-blue-600 text-white px-6 py-3 rounded-lg">
+              Buscar
+            </Button> 
+
+            <Button variant="secondary" onClick={limparFiltros} className="bg-gray-500 text-white px-6 py-3 rounded-lg">
+              Limpar
+            </Button>
+          </div>
+        </div>
+        
+        
         </div>
 
-        <div className="flex gap-3 mt-4">
-          <Button variant="secondary" onClick={buscar}>
-            Buscar
-          </Button>
-
-          <Button variant="secondary" onClick={limparFiltros}>
-            Limpar
-          </Button>
-        </div>
-      </div>
+        
 
       <CabecalhoImpressao
         empresa={empresa}
@@ -480,7 +516,7 @@ export function RelatorioPedidos() {
         }
       />
 
-      <div className="bg-white rounded-2xl shadow-md p-6">
+      <div className="bg-white rounded-2xl shadow-md p-6 print-area">
         <div className="mb-6">
           <h2 className="text-2xl font-bold">
             Listagem de Pedidos

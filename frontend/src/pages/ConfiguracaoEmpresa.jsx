@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { api } from "../services/api"
 import { Input } from "../components/ui/Input"
+import { IMaskInput } from "react-imask"
 
 export function ConfiguracaoEmpresa() {
   const [nome, setNome] = useState("")
@@ -10,6 +11,12 @@ export function ConfiguracaoEmpresa() {
   const [cidade, setCidade] = useState("")
   const [estado, setEstado] = useState("")
   const [cnpj, setCnpj] = useState("")
+
+  const estadosBrasil = [
+    "AC","AL","AP","AM","BA","CE","DF","ES","GO",
+    "MA","MT","MS","MG","PA","PB","PR","PE","PI",
+    "RJ","RN","RS","RO","RR","SC","SP","SE","TO"
+  ]
 
   async function carregarConfiguracao() {
     try {
@@ -27,6 +34,7 @@ export function ConfiguracaoEmpresa() {
       alert("Erro ao carregar configuração da empresa")
     }
   }
+
 
   async function salvarConfiguracao(e) {
     e.preventDefault()
@@ -72,20 +80,20 @@ export function ConfiguracaoEmpresa() {
             required
           />
 
-          <Input
-            type="text"
-            placeholder="CNPJ"
-
+          <IMaskInput
+            mask="00.000.000/0000-00"
             value={cnpj}
-            onChange={(e) => setCnpj(e.target.value)}
+            onAccept={(value) => setCnpj(value)}
+            placeholder="CNPJ"
+            className="w-full rounded border px-3 py-2"
           />
 
-          <Input
-            type="text"
-            placeholder="Telefone"
-
+          <IMaskInput
+            mask="(00) 00000-0000"
             value={telefone}
-            onChange={(e) => setTelefone(e.target.value)}
+            onAccept={(value) => setTelefone(value)}
+            placeholder="(00) 00000-0000"
+            className="w-full rounded border px-3 py-2"
           />
 
           <Input
@@ -112,13 +120,19 @@ export function ConfiguracaoEmpresa() {
             onChange={(e) => setCidade(e.target.value)}
           />
 
-          <Input
-            type="text"
-            placeholder="Estado"
-
+          <select
             value={estado}
             onChange={(e) => setEstado(e.target.value)}
-          />
+            className="border p-3 rounded-lg w-full"
+          >
+            <option value="">Selecione o Estado</option>
+
+            {estadosBrasil.map((uf) => (
+              <option key={uf} value={uf}>
+                {uf}
+              </option>
+            ))}
+          </select>
         </div>
 
         <button

@@ -27,7 +27,12 @@ export function TiposServico() {
   }, [busca])
 
   async function handleSubmit(e) {
-    e.prevenTdefault()
+    e.preventDefault()
+
+    if (!nome.trim()) {
+      alert("Informe o nome do serviço")
+      return
+    }
 
     try {
       if (editandoId) {
@@ -144,7 +149,7 @@ export function TiposServico() {
 
             {tipos.length === 0 && (
               <tr>
-                <Td>
+                <Td colSpan={2}>
                   Nenhum tipo de serviço encontrado.
                 </Td>
               </tr>

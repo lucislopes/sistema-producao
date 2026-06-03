@@ -4,6 +4,8 @@ import { CabecalhoImpressao } from "../components/CabecalhoImpressao"
 import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
 import { Table, Th } from "../components/ui/Table"
+import { Button } from "../components/ui/Button"
+
 
 export function RelatorioExpedicao() {
   const [pedidos, setPedidos] = useState([])
@@ -25,18 +27,19 @@ export function RelatorioExpedicao() {
     }
   }
 
-  async function carregarRelatorio() {
+  async function carregarRelatorio(filtros = {}) {
     try {
+      const params = {
+        dataInicio,
+        dataFim,
+        rotaId,
+        status,
+        busca,
+        ...filtros
+      }
+
       const [relatorioResponse, empresaResponse] = await Promise.all([
-        api.get("/relatorio-expedicao", {
-          params: {
-            dataInicio,
-            dataFim,
-            rotaId,
-            status,
-            busca
-          }
-        }),
+        api.get("/relatorio-expedicao", { params }),
         api.get("/configuracao-empresa")
       ])
 
@@ -123,18 +126,30 @@ export function RelatorioExpedicao() {
   }
 
   function filtroHoje() {
-    const hoje = new Date()
+    const hoje = formatarDataFiltro(new Date())
 
-    setDataInicio(formatarDataFiltro(hoje))
-    setDataFim(formatarDataFiltro(hoje))
+    setDataInicio(hoje)
+    setDataFim(hoje)
+
+    carregarRelatorio({
+      dataInicio: hoje,
+      dataFim: hoje
+    })
   }
 
   function filtroAmanha() {
     const amanha = new Date()
     amanha.setDate(amanha.getDate() + 1)
 
-    setDataInicio(formatarDataFiltro(amanha))
-    setDataFim(formatarDataFiltro(amanha))
+    const data = formatarDataFiltro(amanha)
+
+    setDataInicio(data)
+    setDataFim(data)
+
+    carregarRelatorio({
+      dataInicio: data,
+      dataFim: data
+    })
   }
 
   function filtroProximos5Dias() {
@@ -143,8 +158,16 @@ export function RelatorioExpedicao() {
     const fim = new Date()
     fim.setDate(fim.getDate() + 5)
 
-    setDataInicio(formatarDataFiltro(hoje))
-    setDataFim(formatarDataFiltro(fim))
+    const dataInicioFiltro = formatarDataFiltro(hoje)
+    const dataFimFiltro = formatarDataFiltro(fim)
+
+    setDataInicio(dataInicioFiltro)
+    setDataFim(dataFimFiltro)
+
+    carregarRelatorio({
+      dataInicio: dataInicioFiltro,
+      dataFim: dataFimFiltro
+    })
   }
 
   function filtroSemana() {
@@ -156,8 +179,16 @@ export function RelatorioExpedicao() {
     const fim = new Date(inicio)
     fim.setDate(inicio.getDate() + 6)
 
-    setDataInicio(formatarDataFiltro(inicio))
-    setDataFim(formatarDataFiltro(fim))
+    const dataInicioFiltro = formatarDataFiltro(inicio)
+    const dataFimFiltro = formatarDataFiltro(fim)
+
+    setDataInicio(dataInicioFiltro)
+    setDataFim(dataFimFiltro)
+
+    carregarRelatorio({
+      dataInicio: dataInicioFiltro,
+      dataFim: dataFimFiltro
+    })
   }
 
   function filtroMes() {
@@ -175,8 +206,16 @@ export function RelatorioExpedicao() {
       0
     )
 
-    setDataInicio(formatarDataFiltro(inicio))
-    setDataFim(formatarDataFiltro(fim))
+    const dataInicioFiltro = formatarDataFiltro(inicio)
+    const dataFimFiltro = formatarDataFiltro(fim)
+
+    setDataInicio(dataInicioFiltro)
+    setDataFim(dataFimFiltro)
+
+    carregarRelatorio({
+      dataInicio: dataInicioFiltro,
+      dataFim: dataFimFiltro
+    })
   }
 
   function limparFiltros() {
@@ -264,21 +303,21 @@ export function RelatorioExpedicao() {
     <div>
       <div className="flex justify-between items-center mb-6 no-print">
         <div className="flex gap-2">
-          <button
+          <Button
             type="button"
             onClick={exportarCSV}
             className="bg-green-700 text-white px-6 py-3 rounded-lg"
           >
             Exportar CSV
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="button"
             onClick={imprimir}
             className="bg-gray-800 text-white px-6 py-3 rounded-lg"
           >
             Imprimir
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -305,49 +344,49 @@ export function RelatorioExpedicao() {
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4 no-print">
-        <button
+        <Button
           type="button"
           onClick={filtroHoje}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg"
         >
           Hoje
-        </button>
+        </Button>
 
-        <button
+        <Button
           type="button"
           onClick={filtroAmanha}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg"
         >
           Amanhã
-        </button>
+        </Button>
 
-        <button
+        <Button
           type="button"
           onClick={filtroProximos5Dias}
           className="bg-indigo-600 text-white px-4 py-2 rounded-lg"
         >
           Próximos 5 dias
-        </button>
+        </Button>
 
-        <button
+        <Button
           type="button"
           onClick={filtroSemana}
           className="bg-purple-600 text-white px-4 py-2 rounded-lg"
         >
           Esta semana
-        </button>
+        </Button>
 
-        <button
+        <Button
           type="button"
           onClick={filtroMes}
           className="bg-cyan-600 text-white px-4 py-2 rounded-lg"
         >
           Este mês
-        </button>
+        </Button>
       </div>
 
       <div className="bg-white p-6 rounded-2xl shadow-md mb-8 no-print">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
           <Input
             type="date"
             value={dataInicio}
@@ -388,22 +427,22 @@ export function RelatorioExpedicao() {
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
           />
-
-          <button
+          
+          <Button
             type="button"
-            onClick={carregarRelatorio}
+            onClick={() => carregarRelatorio()}
             className="bg-blue-600 text-white px-6 py-3 rounded-lg"
           >
             Buscar
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="button"
             onClick={limparFiltros}
             className="bg-gray-500 text-white px-6 py-3 rounded-lg"
           >
             Limpar
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -414,7 +453,7 @@ export function RelatorioExpedicao() {
         periodoFim={dataFim}
       />
 
-      <div className="bg-white rounded-2xl shadow-md p-6">
+      <div className="bg-white rounded-2xl shadow-md p-6 print-area">
         <div className="mb-6">
           <h2 className="text-2xl font-bold">
             Relatório de Expedição

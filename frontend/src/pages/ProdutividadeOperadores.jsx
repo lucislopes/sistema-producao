@@ -2,6 +2,8 @@ import { useEffect, useState } from "react"
 import { api } from "../services/api"
 import { Input } from "../components/ui/Input"
 import { Table, Th, Td } from "../components/ui/Table"
+import { Button } from "../components/ui/Button"
+import { CabecalhoImpressao } from "../components/CabecalhoImpressao"
 
 export function ProdutividadeOperadores() {
   const [dados, setDados] = useState([])
@@ -9,16 +11,16 @@ export function ProdutividadeOperadores() {
   const [dataInicio, setDataInicio] = useState("")
   const [dataFim, setDataFim] = useState("")
 
-  async function carregarProdutividade() {
+  async function carregarProdutividade(filtros = {}) {
     try {
-      const [produtividadeResponse, empresaResponse] = await Promise.all([
-        api.get("/produtividade/operadores", {
-          params: {
-            dataInicio,
-            dataFim
-          }
-        }),
+      const params = {
+        dataInicio,
+        dataFim,
+        ...filtros
+      }
 
+      const [produtividadeResponse, empresaResponse] = await Promise.all([
+        api.get("/produtividade/operadores", { params }),
         api.get("/configuracao-empresa")
       ])
 
@@ -89,12 +91,17 @@ export function ProdutividadeOperadores() {
   }
 
   function filtroHoje() {
-    const hoje = new Date()
+    const hoje = formatarDataFiltro(new Date())
 
-    setDataInicio(formatarDataFiltro(hoje))
-    setDataFim(formatarDataFiltro(hoje))
+    setDataInicio(hoje)
+    setDataFim(hoje)
+
+    carregarProdutividade({
+      dataInicio: hoje,
+      dataFim: hoje
+    })
   }
-
+  
   function filtroSemana() {
     const hoje = new Date()
 
@@ -104,8 +111,16 @@ export function ProdutividadeOperadores() {
     const fim = new Date(inicio)
     fim.setDate(inicio.getDate() + 6)
 
-    setDataInicio(formatarDataFiltro(inicio))
-    setDataFim(formatarDataFiltro(fim))
+    const dataInicioFiltro = formatarDataFiltro(inicio)
+    const dataFimFiltro = formatarDataFiltro(fim)
+
+    setDataInicio(dataInicioFiltro)
+    setDataFim(dataFimFiltro)
+
+    carregarProdutividade({
+      dataInicio: dataInicioFiltro,
+      dataFim: dataFimFiltro
+    })
   }
 
   function filtroMes() {
@@ -123,8 +138,16 @@ export function ProdutividadeOperadores() {
       0
     )
 
-    setDataInicio(formatarDataFiltro(inicio))
-    setDataFim(formatarDataFiltro(fim))
+    const dataInicioFiltro = formatarDataFiltro(inicio)
+    const dataFimFiltro = formatarDataFiltro(fim)
+
+    setDataInicio(dataInicioFiltro)
+    setDataFim(dataFimFiltro)
+
+    carregarProdutividade({
+      dataInicio: dataInicioFiltro,
+      dataFim: dataFimFiltro
+    })
   }
 
   const totalConcluidos = dados.reduce(
@@ -151,21 +174,21 @@ export function ProdutividadeOperadores() {
     <div>
       <div className="flex justify-between items-center mb-6 no-print">
         <div className="flex gap-2">
-          <button
+          <Button
             type="button"
             onClick={exportarCSV}
             className="bg-green-700 text-white px-6 py-3 rounded-lg"
           >
             Exportar CSV
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="button"
             onClick={imprimir}
             className="bg-gray-800 text-white px-6 py-3 rounded-lg"
           >
             Imprimir
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -284,7 +307,15 @@ export function ProdutividadeOperadores() {
         </p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-md p-6">
+      <CabecalhoImpressao
+              empresa={empresa}
+              titulo="Relatório de Produtividade"
+              periodoInicio={dataInicio}
+              periodoFim={dataFim}
+            />
+
+
+      <div className="bg-white rounded-2xl shadow-md p-6 print-area">
         <div className="mb-6">
           <h2 className="text-2xl font-bold">
             Ranking de Operadores

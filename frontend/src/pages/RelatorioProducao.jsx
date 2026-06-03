@@ -44,21 +44,22 @@ export function RelatorioProducao() {
     }
   }
 
-  async function carregarRelatorio(pagina = page) {
+  async function carregarRelatorio(pagina = page, filtros = {}) {
     try {
+      const params = {
+        dataInicio,
+        dataFim,
+        operadorId,
+        tipoServicoId,
+        status,
+        busca,
+        page: pagina,
+        limit,
+        ...filtros
+      }
+
       const [relatorioResponse, empresaResponse] = await Promise.all([
-        api.get("/relatorio-producao", {
-          params: {
-            dataInicio,
-            dataFim,
-            operadorId,
-            tipoServicoId,
-            status,
-            busca,
-            page: pagina,
-            limit
-          }
-        }),
+        api.get("/relatorio-producao", { params }),
         api.get("/configuracao-empresa")
       ])
 
@@ -121,11 +122,16 @@ export function RelatorioProducao() {
   }
 
   function filtroHoje() {
-    const hoje = new Date()
+    const hoje = formatarDataFiltro(new Date())
 
-    setDataInicio(formatarDataFiltro(hoje))
-    setDataFim(formatarDataFiltro(hoje))
+    setDataInicio(hoje)
+    setDataFim(hoje)
     setPage(1)
+
+    carregarRelatorio(1, {
+      dataInicio: hoje,
+      dataFim: hoje
+    })
   }
 
   function filtroSemana() {
@@ -137,9 +143,17 @@ export function RelatorioProducao() {
     const fim = new Date(inicio)
     fim.setDate(inicio.getDate() + 6)
 
-    setDataInicio(formatarDataFiltro(inicio))
-    setDataFim(formatarDataFiltro(fim))
+    const dataInicioFiltro = formatarDataFiltro(inicio)
+    const dataFimFiltro = formatarDataFiltro(fim)
+
+    setDataInicio(dataInicioFiltro)
+    setDataFim(dataFimFiltro)
     setPage(1)
+
+    carregarRelatorio(1, {
+      dataInicio: dataInicioFiltro,
+      dataFim: dataFimFiltro
+    })
   }
 
   function filtroMes() {
@@ -157,14 +171,26 @@ export function RelatorioProducao() {
       0
     )
 
-    setDataInicio(formatarDataFiltro(inicio))
-    setDataFim(formatarDataFiltro(fim))
+    const dataInicioFiltro = formatarDataFiltro(inicio)
+    const dataFimFiltro = formatarDataFiltro(fim)
+
+    setDataInicio(dataInicioFiltro)
+    setDataFim(dataFimFiltro)
     setPage(1)
+
+    carregarRelatorio(1, {
+      dataInicio: dataInicioFiltro,
+      dataFim: dataFimFiltro
+    })
   }
 
   function filtroStatusRapido(novoStatus) {
     setStatus(novoStatus)
     setPage(1)
+
+    carregarRelatorio(1, {
+      status: novoStatus
+    })
   }
 
   function obterStatus(status) {
@@ -425,25 +451,16 @@ export function RelatorioProducao() {
             <option value={50}>50 por página</option>
             <option value={100}>100 por página</option>
           </Select>
-        </div>
 
-        <div className="flex gap-3 mt-4">
-          <Button
-            type="button"
-            onClick={buscar}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg"
-          >
-            Buscar
-          </Button>
+          <div className="flex grid-cols-1 md:grid-cols-3 gap-4" >
+            <Button variant="Primary" onClick={buscar} className="bg-blue-600 text-white px-6 py-3 rounded-lg">
+              Buscar
+            </Button> 
 
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={limparFiltros}
-            className="bg-gray-500 text-white px-6 py-3 rounded-lg"
-          >
-            Limpar
-          </Button>
+            <Button variant="secondary" onClick={limparFiltros} className="bg-gray-500 text-white px-6 py-3 rounded-lg">
+              Limpar
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -454,7 +471,7 @@ export function RelatorioProducao() {
         periodoFim={dataFim}
       />
 
-      <div className="bg-white rounded-2xl shadow-md p-6">
+      <div className="bg-white rounded-2xl shadow-md p-6 print-area">
         <div className="mb-6">
           <h2 className="text-2xl font-bold">
             Relatório de Produção

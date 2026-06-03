@@ -4,6 +4,7 @@ import { Button } from "../components/ui/Button"
 import { Input } from "../components/ui/Input"
 import { Table, Th, Td } from "../components/ui/Table"
 import { ConfirmModal } from "../components/ui/ConfirmModal"
+import { IMaskInput } from "react-imask"
 
 export function Clientes() {
   const [clientes, setClientes] = useState([])
@@ -128,18 +129,27 @@ export function Clientes() {
             onChange={(e) => setNome(e.target.value)}
           />
 
-          <Input
-            type="text"
-            placeholder="CPF/CNPJ"
+          <IMaskInput
+            mask={[
+              {
+                mask: "000.000.000-00"
+              },
+              {
+                mask: "00.000.000/0000-00"
+              }
+            ]}
             value={documento}
-            onChange={(e) => setDocumento(e.target.value)}
+            onAccept={(value) => setDocumento(value)}
+            placeholder="CPF/CNPJ"
+            className="border p-3 rounded-lg w-full"
           />
 
-          <Input
-            type="text"
-            placeholder="Telefone"
+          <IMaskInput
+            mask="(00) 00000-0000"
             value={telefone}
-            onChange={(e) => setTelefone(e.target.value)}
+            onAccept={(value) => setTelefone(value)}
+            placeholder="(00) 00000-0000"
+            className="border p-3 rounded-lg w-full"
           />
 
           <Input

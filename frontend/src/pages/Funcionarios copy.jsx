@@ -4,18 +4,16 @@ import { Button } from "../components/ui/Button"
 import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
 import { Table, Th, Td } from "../components/ui/Table"
-import { IMaskInput } from "react-imask"
 
 export function Funcionarios() {
   const [funcionarios, setFuncionarios] = useState([])
   const [busca, setBusca] = useState("")
   const [nome, setNome] = useState("")
   const [telefone, setTelefone] = useState("")
-  const [funcao, setFuncao] = useState("")
+  const [funcao, setFuncao] = useState("OPERADOR")
   const [email, setEmail] = useState("")
   const [senha, setSenha] = useState("")
   const [editandoId, setEditandoId] = useState(null)
-  const [mostrarInativos, setMostrarInativos] = useState(false)
 
   async function carregarFuncionarios() {
     try {
@@ -87,31 +85,6 @@ export function Funcionarios() {
     }
   }
 
-    async function excluirFuncionario(funcionario) {
-    const confirmar = confirm(
-      `Deseja excluir ${funcionario.nome}?\n\n` +
-      `Se houver pedidos vinculados, ele será apenas desativado.`
-    )
-
-    if (!confirmar) return
-
-    try {
-      const response = await api.delete(
-        `/funcionarios/${funcionario.id}`
-      )
-
-      alert(response.data.message)
-      carregarFuncionarios()
-    } catch (error) {
-      console.log(error)
-
-      alert(
-        error?.response?.data?.error ||
-        "Erro ao excluir funcionário."
-      )
-    }
-  }
-
     async function redefinirSenha(funcionario) {
     const novaSenha = prompt(
       `Nova senha para ${funcionario.nome}`
@@ -139,15 +112,18 @@ export function Funcionarios() {
   }
   
 
+
+
   function limparFormulario() {
     setNome("")
     setTelefone("")
-    setFuncao("")
+    setFuncao("OPERADOR")
     setEmail("")
     setSenha("")
     setEditandoId(null)
   }
 
+  
 
   return (
     <div>
@@ -158,21 +134,6 @@ export function Funcionarios() {
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
-      </div>
-
-      <div className="mb-4 flex items-center gap-2">
-        <input
-          type="checkbox"
-          id="mostrarInativos"
-          checked={mostrarInativos}
-          onChange={(e) =>
-            setMostrarInativos(e.target.checked)
-          }
-        />
-
-        <label htmlFor="mostrarInativos">
-          Mostrar funcionários desativados
-        </label>
       </div>
 
       <form
@@ -187,19 +148,17 @@ export function Funcionarios() {
             onChange={(e) => setNome(e.target.value)}
           />
 
-          <IMaskInput
-            mask="(00) 00000-0000"
+          <Input
+            type="text"
+            placeholder="Telefone"
             value={telefone}
-            onAccept={(value) => setTelefone(value)}
-            placeholder="(00) 00000-0000"
-            className="w-full rounded border px-3 py-2"
+            onChange={(e) => setTelefone(e.target.value)}
           />
 
           <Select
             value={funcao}
             onChange={(e) => setFuncao(e.target.value)}
           >
-            <option value="">Selecione a função</option>
             <option value="OPERADOR">Operador</option>
             <option value="VENDEDOR">Vendedor</option>
             <option value="VENDEDOR_OPERADOR">Vendedor / Operador</option>
@@ -211,7 +170,6 @@ export function Funcionarios() {
             placeholder="Email"
             value={email}
             disabled={!!editandoId}
-            autoComplete="new-email"
             onChange={(e) => setEmail(e.target.value)}
           />
 
@@ -220,7 +178,6 @@ export function Funcionarios() {
               type="password"
               placeholder="Senha"
               value={senha}
-              autoComplete="new-password"
               onChange={(e) => setSenha(e.target.value)}
             />
           )}
@@ -256,12 +213,7 @@ export function Funcionarios() {
           </thead>
 
           <tbody>
-            {funcionarios
-              .filter(
-                (funcionario) =>
-                  mostrarInativos || funcionario.ativo
-              )
-              .map((funcionario) => (
+            {funcionarios.map((funcionario) => (
               <tr key={funcionario.id} className="border-t">
                 <Td>{funcionario.nome}</Td>
                 <Td>{funcionario.telefone || "-"}</Td>
@@ -275,26 +227,15 @@ export function Funcionarios() {
                       Editar
                     </Button>
 
-                    <Button
-                      variant={funcionario.ativo ? "warning" : "success"}
-                      onClick={() => toggleAtivo(funcionario)}
-                    >
+                    <Button onClick={() => toggleAtivo(funcionario)}>
                       {funcionario.ativo ? "Desativar" : "Ativar"}
                     </Button>
 
-                    <Button
-                      variant="danger"
-                      onClick={() => excluirFuncionario(funcionario)}
-                    >
-                      Excluir
-                    </Button>
-
-                    <Button
-                      variant="secondary"
-                      onClick={() => redefinirSenha(funcionario)}
-                    >
-                      Resetar Senha
-                    </Button>
+                  <Button
+                    onClick={() => redefinirSenha(funcionario)}
+                  >
+                    Resetar Senha
+                  </Button>
 
                   </div>
                 </Td>

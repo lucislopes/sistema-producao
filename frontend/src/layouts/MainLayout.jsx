@@ -1,9 +1,8 @@
-import { Outlet, Link, useNavigate, useLocation } from "react-router-dom"
+import { Outlet, NavLink, Link, useNavigate, useLocation } from "react-router-dom"
 import { useContext, useEffect, useRef, useState } from "react"
 
 import { AuthContext } from "../contexts/AuthContext"
 import { BuscaGlobal } from "../components/BuscaGlobal"
-import { Button } from "../components/ui/Button"
 
 export function MainLayout() {
   const { logout, usuario } = useContext(AuthContext)
@@ -18,7 +17,6 @@ export function MainLayout() {
   const isVendedorOperador = funcao === "VENDEDOR_OPERADOR"
 
   const [menuAberto, setMenuAberto] = useState(false)
-
   const menuRef = useRef(null)
 
   useEffect(() => {
@@ -45,7 +43,7 @@ export function MainLayout() {
           {titulo}
         </p>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1">
           {children}
         </div>
       </div>
@@ -54,12 +52,21 @@ export function MainLayout() {
 
   function MenuLink({ to, children }) {
     return (
-      <Link
+      <NavLink
         to={to}
-        className="text-sm text-gray-100 hover:text-white hover:bg-gray-800 px-3 py-2 rounded-lg transition"
+        className={({ isActive }) =>
+          `
+          text-sm px-3 py-2 rounded-lg transition
+          ${
+            isActive
+              ? "bg-gray-800 text-white font-semibold"
+              : "text-gray-100 hover:text-white hover:bg-gray-800"
+          }
+          `
+        }
       >
         {children}
-      </Link>
+      </NavLink>
     )
   }
 
@@ -73,32 +80,38 @@ export function MainLayout() {
       "/clientes": "Clientes",
       "/pedidos": "Pedidos",
       "/funcionarios": "Funcionários",
-      "/rotas-entrega": "Rotas Entrega",
-      "/tipos-servico": "Tipos Serviço",
+      "/rotas-entrega": "Rotas de Entrega",
+      "/tipos-servico": "Tipos de Serviço",
       "/planos-corte": "Planos de Corte",
       "/servicos-plano": "Serviços do Plano",
       "/painel-operador": "Painel Operador",
       "/kanban": "Kanban",
       "/expedicao": "Expedição",
-      "/relatorio-expedicao": "Relatório Expedição",
-      "/relatorio-pedidos": "Relatório Pedidos",
-      "/relatorio-producao": "Relatório Produção",
+      "/relatorio-expedicao": "Relatório de Expedição",
+      "/relatorio-pedidos": "Relatório de Pedidos",
+      "/relatorio-producao": "Relatório de Produção",
       "/alertas": "Alertas",
-      "/produtividade-operadores": "Produtividade"
+      "/produtividade-operadores": "Produtividade",
+      "/configuracao-empresa": "Configurações",
+      "/minha-senha": "Alterar Senha"
     }
 
     return titulos[path] || "Sistema"
   }
 
+  function sair() {
+    logout()
+    navigate("/")
+  }
+
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-64 bg-gray-900 text-white p-4 min-h-screen overflow-y-auto">
+    <div className="flex min-h-screen bg-gray-100">
+      <aside className="w-64 bg-gray-900 text-white p-4 min-h-screen overflow-y-auto sticky top-0 no-print">
         <h1 className="text-2xl font-bold mb-8">
           Produção
         </h1>
 
-          <nav className="flex flex-col">
-
+        <nav className="flex flex-col">
           <MenuGrupo titulo="Principal">
             <MenuLink to="/dashboard">
               Dashboard
@@ -172,11 +185,11 @@ export function MainLayout() {
               </MenuLink>
 
               <MenuLink to="/rotas-entrega">
-                Rotas Entrega
+                Rotas de Entrega
               </MenuLink>
 
               <MenuLink to="/tipos-servico">
-                Tipos Serviço
+                Tipos de Serviço
               </MenuLink>
             </MenuGrupo>
           )}
@@ -188,11 +201,10 @@ export function MainLayout() {
               </MenuLink>
             </MenuGrupo>
           )}
-
         </nav>
 
         <div className="mt-10 border-t border-gray-700 pt-4">
-          <p className="mb-1 text-sm">
+          <p className="mb-1 text-sm font-semibold">
             {usuario?.nome}
           </p>
 
@@ -201,19 +213,26 @@ export function MainLayout() {
           </p>
 
           <div className="flex flex-col gap-2">
-            <Link
+            <NavLink
               to="/minha-senha"
-              className="text-sm text-gray-100 hover:text-white"
+              className={({ isActive }) =>
+                `
+                text-sm px-3 py-2 rounded-lg transition
+                ${
+                  isActive
+                    ? "bg-gray-800 text-white font-semibold"
+                    : "text-gray-100 hover:text-white hover:bg-gray-800"
+                }
+                `
+              }
             >
               Alterar Senha
-            </Link>
+            </NavLink>
 
             <button
-              className="text-left text-sm text-gray-100 hover:text-white"
-              onClick={() => {
-                logout()
-                navigate("/")
-              }}
+              type="button"
+              className="text-left text-sm text-gray-100 hover:text-white hover:bg-gray-800 px-3 py-2 rounded-lg transition"
+              onClick={sair}
             >
               Sair
             </button>
@@ -221,139 +240,80 @@ export function MainLayout() {
         </div>
       </aside>
 
-      <main className="flex-1 bg-gray-100 p-6">
-        <div className="bg-white rounded-2xl shadow-sm border px-4 py-3 mb-6 flex items-center gap-4">
-        <h1 className="text-2xl font-bold whitespace-nowrap">
-          {tituloPagina()}
-        </h1>
+      <main className="flex-1 p-6">
+        <div className="bg-white rounded-2xl shadow-sm border px-4 py-3 mb-6 flex items-center gap-4 no-print">
+          <h1 className="text-2xl font-bold whitespace-nowrap">
+            {tituloPagina()}
+          </h1>
 
-        <div className="flex-1" />
+          <div className="flex-1" />
 
-        <div className="w-[380px]">
-          <BuscaGlobal />
-        </div>
-
-        <div className="relative group">
-        <div className="relative" ref={menuRef}>
-        <button
-          onClick={() => setMenuAberto(!menuAberto)}
-        >
-          ⚡ Ações
-        </button>
-
-        {menuAberto && (
-          <div
-            className="
-              absolute right-0 mt-2 w-56
-              bg-white border rounded-xl shadow-lg
-              z-50 overflow-hidden
-            "
-          >
-            <Link
-              to="/pedidos"
-              className="block px-4 py-3 hover:bg-gray-100"
-              onClick={() => setMenuAberto(false)}
-            >
-              Pedidos
-            </Link>
-
-            <Link
-              to="/expedicao"
-              className="block px-4 py-3 hover:bg-gray-100"
-              onClick={() => setMenuAberto(false)}
-            >
-              Expedição
-            </Link>
-
-            <Link
-              to="/kanban"
-              className="block px-4 py-3 hover:bg-gray-100"
-              onClick={() => setMenuAberto(false)}
-            >
-              Kanban
-            </Link>
-
-            <Link
-              to="/alertas"
-              className="block px-4 py-3 hover:bg-gray-100"
-              onClick={() => setMenuAberto(false)}
-            >
-              Alertas
-            </Link>
-
-            <Link
-              to="/relatorio-pedidos"
-              className="block px-4 py-3 hover:bg-gray-100"
-              onClick={() => setMenuAberto(false)}
-            >
-              Relatório Pedidos
-            </Link>
-
-            <Link
-              to="/relatorio-expedicao"
-              className="block px-4 py-3 hover:bg-gray-100"
-              onClick={() => setMenuAberto(false)}
-            >
-              Relatório Expedição
-            </Link>
+          <div className="w-[380px]">
+            <BuscaGlobal />
           </div>
-        )}
-      </div>
 
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setMenuAberto(!menuAberto)}
+              className="px-4 py-2 rounded-xl bg-gray-900 text-white text-sm hover:bg-gray-800 transition"
+            >
+              ⚡ Ações
+            </button>
 
+            {menuAberto && (
+              <div className="absolute right-0 mt-2 w-56 bg-white border rounded-xl shadow-lg z-50 overflow-hidden">
+                <Link
+                  to="/pedidos"
+                  className="block px-4 py-3 hover:bg-gray-100 text-sm"
+                  onClick={() => setMenuAberto(false)}
+                >
+                  Pedidos
+                </Link>
 
-        <div
-          className="
-            absolute right-0 mt-2 w-56
-            bg-white border rounded-xl shadow-lg
-            hidden group-hover:block
-            z-50
-          "
-        >
-          <Link
-            to="/pedidos"
-            className="block px-4 py-3 hover:bg-gray-100"
-          >
-            Pedidos
-          </Link>
+                <Link
+                  to="/expedicao"
+                  className="block px-4 py-3 hover:bg-gray-100 text-sm"
+                  onClick={() => setMenuAberto(false)}
+                >
+                  Expedição
+                </Link>
 
-          <Link
-            to="/expedicao"
-            className="block px-4 py-3 hover:bg-gray-100"
-          >
-            Expedição
-          </Link>
+                <Link
+                  to="/kanban"
+                  className="block px-4 py-3 hover:bg-gray-100 text-sm"
+                  onClick={() => setMenuAberto(false)}
+                >
+                  Kanban
+                </Link>
 
-          <Link
-            to="/kanban"
-            className="block px-4 py-3 hover:bg-gray-100"
-          >
-            Kanban
-          </Link>
+                <Link
+                  to="/alertas"
+                  className="block px-4 py-3 hover:bg-gray-100 text-sm"
+                  onClick={() => setMenuAberto(false)}
+                >
+                  Alertas
+                </Link>
 
-          <Link
-            to="/alertas"
-            className="block px-4 py-3 hover:bg-gray-100"
-          >
-            Alertas
-          </Link>
+                <Link
+                  to="/relatorio-pedidos"
+                  className="block px-4 py-3 hover:bg-gray-100 text-sm"
+                  onClick={() => setMenuAberto(false)}
+                >
+                  Relatório de Pedidos
+                </Link>
 
-          <Link
-            to="/relatorio-pedidos"
-            className="block px-4 py-3 hover:bg-gray-100"
-          >
-            Relatório Pedidos
-          </Link>
-
-          <Link
-            to="/relatorio-expedicao"
-            className="block px-4 py-3 hover:bg-gray-100"
-          >
-            Relatório Expedição
-          </Link>
+                <Link
+                  to="/relatorio-expedicao"
+                  className="block px-4 py-3 hover:bg-gray-100 text-sm"
+                  onClick={() => setMenuAberto(false)}
+                >
+                  Relatório de Expedição
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-      </div>
 
         <Outlet />
       </main>

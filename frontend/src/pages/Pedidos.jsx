@@ -214,20 +214,6 @@ export function Pedidos() {
     return entrega < hoje
   }
 
-  function classeStatus(status) {
-    const classes = {
-      ABERTO: "bg-gray-100 text-gray-700",
-      EM_SEPARACAO: "bg-orange-100 text-orange-700",
-      EM_PRODUCAO: "bg-blue-100 text-blue-700",
-      CONCLUIDO: "bg-green-100 text-green-700",
-      PRONTO_ENTREGA: "bg-cyan-100 text-cyan-700",
-      SAIU_ENTREGA: "bg-indigo-100 text-indigo-700",
-      ENTREGUE: "bg-emerald-100 text-emerald-700",
-      CANCELADO: "bg-red-100 text-red-700"
-    }
-      return classes[status] || "bg-gray-100 text-gray-700"
-    }
-
     const pedidosFiltrados = pedidos.filter((pedido) => {
     const textoBusca = busca.toLowerCase()
 
@@ -480,12 +466,12 @@ export function Pedidos() {
             onChange={(e) => setContatoRecebedor(e.target.value)}
           />
 
-          <Input
-            type="text"
-            placeholder="Endereço entrega"
-            value={enderecoEntrega}
-            onChange={(e) => setEnderecoEntrega(e.target.value)}
-          />
+          <Input 
+            type="text" 
+            placeholder="Endereço entrega" 
+            value={enderecoEntrega} 
+            onChange={(e) => setEnderecoEntrega(e.target.value)} 
+            />
 
           <Select
             value={status}
@@ -503,7 +489,7 @@ export function Pedidos() {
 
           <textarea
             placeholder="Observações"
-            className="border p-3 rounded-lg col-span-2"
+            className="border p-3 rounded-lg md:col-span-2"
             value={observacoes}
             onChange={(e) => setObservacoes(e.target.value)}
           />
@@ -529,7 +515,7 @@ export function Pedidos() {
       </form>
 
         <div className="bg-white p-4 rounded-2xl shadow-md mb-4">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4 items-end">
 
             <Input
               type="text"
@@ -642,11 +628,7 @@ export function Pedidos() {
                 </Td>
 
                 <Td >
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${classeStatus(pedido.status)}`}
-                  >
                     <BadgeStatus status={pedido.status} />
-                  </span>
                 </Td>
 
                 <Td>
@@ -661,14 +643,14 @@ export function Pedidos() {
 
                     <Link
                       to={`/pedidos/${pedido.id}`}
-                      className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm"
+                      className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
                     >
                       Detalhes
                     </Link>
 
                     <Link
                       to={`/planos-corte?pedidoId=${pedido.id}`}
-                      className="bg-purple-600 text-white px-3 py-1 rounded-lg text-sm"
+                      className="inline-flex items-center justify-center rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white hover:bg-purple-700"
                     >
                       Planos
                     </Link>
