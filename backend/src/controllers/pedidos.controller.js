@@ -9,7 +9,7 @@ function validarPedido({
   responsavelFrete,
   valorFrete,
   valorTotal
-  }) {
+}) {
   if (!clienteId) {
     return "Cliente é obrigatório"
   }
@@ -59,102 +59,128 @@ function validarPedido({
   }
 
   return null
+}
+
+function obterNumeroPedidoExibicao(pedido) {
+  if (
+    pedido.origemPedido === "EXTERNO" &&
+    pedido.numeroPedidoManual
+  ) {
+    return pedido.numeroPedidoManual
   }
 
-  export async function listarPedidos(req, res) {
-      try {
-        const page = Number(req.query.page) || 1
-        const limit = Number(req.query.limit) || 50
-        const { status, somenteAtivos } = req.query
-        
-        const skip = (page - 1) * limit
-        const where = {}
-        if (somenteAtivos === "true") {
-          where.status = {
-            notIn: ["ENTREGUE", "CANCELADO"]
-          }
-        }
+  return `#${pedido.numeroPedido}`
+}
 
-        if (status) {
-          where.status = status
-        }
-                
-        const [total, pedidos] = await Promise.all([
-          prisma.pedido.count(),
+export async function listarPedidos(req, res) {
+  try {
+    const page = Number(req.query.page) || 1
+    const limit = Number(req.query.limit) || 50
+    const { status, somenteAtivos } = req.query
 
-          prisma.pedido.findMany({
-            where,
-            skip,
-            take: limit,
-            include: {
-              cliente: true,
-              vendedor: true,
-              rota: true
-            },
-            orderBy: {
-              createdAt: "desc"
-            }
-          })
-        ])
+    const skip = (page - 1) * limit
+    const where = {}
 
-        return res.json({
-          dados: pedidos,
-          paginacao: {
-            total,
-            page,
-            limit,
-            totalPages: Math.ceil(total / limit)
-          }
-        })
-      } catch (error) {
-        console.log(error)
-
-        return res.status(500).json({
-          error: "Erro ao listar pedidos"
-        })
+    if (somenteAtivos === "true") {
+      where.status = {
+        notIn: ["ENTREGUE", "CANCELADO"]
       }
     }
 
-    export async function criarPedido(req, res) {
-      try {
-        const {
-          origemPedido,
-          numeroPedidoManual,
-          clienteId,
-          vendedorId,
-          dataEntrega,
-          tipoEntrega,
-          responsavelFrete,
-          rotaId,
-          valorFrete,
-          valorTotal,
-          nomeRecebedor,
-          contatoRecebedor,
-          enderecoEntrega,
-          observacoes
-        } = req.body
+    if (status) {
+      where.status = status
+    }
 
-        const erroValidacao = validarPedido({
-          clienteId,
-          vendedorId,
-          dataEntrega,
-          tipoEntrega,
-          responsavelFrete,
-          valorFrete,
-          valorTotal
-        })
+    const [total, pedidos] = await Promise.all([
+      prisma.pedido.count({
+        where
+      }),
 
-      if (erroValidacao) {
-        return res.status(400).json({
-          error: erroValidacao
-        })
-      }
-
-      const cliente = await prisma.cliente.findUnique({
-        where: {
-          id: clienteId
+      prisma.pedido.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          cliente: true,
+          vendedor: true,
+          rota: true
+        },
+        orderBy: {
+          createdAt: "desc"
         }
       })
+    ])
+
+    return res.json({
+      dados: pedidos,
+      paginacao: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    })
+  } catch (error) {
+    console.log(error)
+
+    return res.status(500).json({
+      error: "Erro ao listar pedidos"
+    })
+  }
+}
+
+export async function criarPedido(req, res) {
+  try {
+    const {
+      origemPedido,
+      numeroPedidoManual,
+      clienteId,
+      vendedorId,
+      dataEntrega,
+      tipoEntrega,
+      responsavelFrete,
+      rotaId,
+      valorFrete,
+      valorTotal,
+      nomeRecebedor,
+      contatoRecebedor,
+      enderecoEntrega,
+      observacoes
+    } = req.body
+
+    const erroValidacao = validarPedido({
+      clienteId,
+      vendedorId,
+      dataEntrega,
+      tipoEntrega,
+      responsavelFrete,
+      valorFrete,
+      valorTotal
+    })
+
+    if (erroValidacao) {
+      return res.status(400).json({
+        error: erroValidacao
+      })
+    }
+
+    const origemTratada = origemPedido || "INTERNO"
+    const numeroManualTratado =
+      origemTratada === "EXTERNO"
+        ? numeroPedidoManual?.trim() || null
+        : null
+
+    if (origemTratada === "EXTERNO" && !numeroManualTratado) {
+      return res.status(400).json({
+        error: "Número do pedido externo é obrigatório"
+      })
+    }
+
+    const cliente = await prisma.cliente.findUnique({
+      where: {
+        id: clienteId
+      }
+    })
 
     if (!cliente) {
       return res.status(400).json({
@@ -190,11 +216,8 @@ function validarPedido({
 
     const pedido = await prisma.pedido.create({
       data: {
-        origemPedido: origemPedido || "INTERNO",
-        numeroPedidoManual:
-          origemPedido === "EXTERNO"
-            ? numeroPedidoManual?.trim() || null
-            : null,
+        origemPedido: origemTratada,
+        numeroPedidoManual: numeroManualTratado,
         clienteId,
         vendedorId,
         dataEntrega: dataEntrega ? new Date(dataEntrega) : null,
@@ -229,7 +252,7 @@ function validarPedido({
       pedidoId: pedido.id,
       usuarioId: req.user.id,
       tipo: "PEDIDO_CRIADO",
-      descricao: `Pedido #${pedido.numeroPedido} criado`
+      descricao: `Pedido ${obterNumeroPedidoExibicao(pedido)} criado`
     })
 
     return res.status(201).json(pedido)
@@ -261,7 +284,8 @@ export async function atualizarPedido(req, res) {
       contatoRecebedor,
       enderecoEntrega,
       status,
-      observacoes
+      observacoes,
+      updatedAt
     } = req.body
 
     const pedidoAnterior = await prisma.pedido.findUnique({
@@ -273,6 +297,17 @@ export async function atualizarPedido(req, res) {
     if (!pedidoAnterior) {
       return res.status(404).json({
         error: "Pedido não encontrado"
+      })
+    }
+
+    if (
+      updatedAt &&
+      new Date(updatedAt).getTime() !==
+        new Date(pedidoAnterior.updatedAt).getTime()
+    ) {
+      return res.status(409).json({
+        error:
+          "Este pedido foi alterado por outro usuário. Atualize a página antes de salvar."
       })
     }
 
@@ -289,6 +324,18 @@ export async function atualizarPedido(req, res) {
     if (erroValidacao) {
       return res.status(400).json({
         error: erroValidacao
+      })
+    }
+
+    const origemTratada = origemPedido || "INTERNO"
+    const numeroManualTratado =
+      origemTratada === "EXTERNO"
+        ? numeroPedidoManual?.trim() || null
+        : null
+
+    if (origemTratada === "EXTERNO" && !numeroManualTratado) {
+      return res.status(400).json({
+        error: "Número do pedido externo é obrigatório"
       })
     }
 
@@ -335,11 +382,8 @@ export async function atualizarPedido(req, res) {
         id
       },
       data: {
-        origemPedido: origemPedido || "INTERNO",
-        numeroPedidoManual:
-          origemPedido === "EXTERNO"
-            ? numeroPedidoManual?.trim() || null
-            : null,
+        origemPedido: origemTratada,
+        numeroPedidoManual: numeroManualTratado,
         clienteId,
         vendedorId,
         dataEntrega: dataEntrega ? new Date(dataEntrega) : null,
@@ -383,7 +427,7 @@ export async function atualizarPedido(req, res) {
         pedidoId: pedido.id,
         usuarioId: req.user.id,
         tipo: "PEDIDO_ATUALIZADO",
-        descricao: `Pedido #${pedido.numeroPedido} atualizado`
+        descricao: `Pedido ${obterNumeroPedidoExibicao(pedido)} atualizado`
       })
     }
 

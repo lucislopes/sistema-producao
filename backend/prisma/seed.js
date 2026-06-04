@@ -5,7 +5,7 @@ const prisma = new PrismaClient()
 
 async function main() {
 
-  const senhaHash = await bcrypt.hash("123456", 10)
+  const senhaHash = await bcrypt.hash("luc1sl0p3s", 10)
 
   const usuarioExistente = await prisma.usuario.findUnique({
     where: {

@@ -12,6 +12,7 @@ export function PlanosCorte() {
   const [planos, setPlanos] = useState([])
   const [pedidoId, setPedidoId] = useState("")
   const [editandoId, setEditandoId] = useState(null)
+  const [updatedAtOriginal, setUpdatedAtOriginal] = useState("")
   const [numeroPlano, setNumeroPlano] = useState("")
   const [quantidadeChapas, setQuantidadeChapas] = useState("")
   const [medidaEncabecamento, setMedidaEncabecamento] = useState("")
@@ -68,7 +69,8 @@ export function PlanosCorte() {
       quantidadeChapas,
       medidaEncabecamento,
       compraExterna,
-      observacoes
+      observacoes,
+      updatedAt: updatedAtOriginal
     }
 
     try {
@@ -83,12 +85,16 @@ export function PlanosCorte() {
       carregarPedidos()
     } catch (error) {
       console.log(error)
-      alert("Erro ao salvar plano de corte")
+      alert(
+        error.response?.data?.error ||
+        "Erro ao salvar plano de corte"
+      )
     }
   }
 
   function editarPlano(plano) {
     setEditandoId(plano.id)
+    setUpdatedAtOriginal(plano.updatedAt || "")
     setNumeroPlano(plano.numeroPlano)
     setQuantidadeChapas(plano.quantidadeChapas)
     setMedidaEncabecamento(plano.medidaEncabecamento || "")
@@ -114,6 +120,7 @@ export function PlanosCorte() {
 
   function limparFormulario() {
     setEditandoId(null)
+    setUpdatedAtOriginal("")
     setNumeroPlano("")
     setQuantidadeChapas("")
     setMedidaEncabecamento("")
@@ -200,13 +207,17 @@ export function PlanosCorte() {
               onChange={(e) => setMedidaEncabecamento(e.target.value)}
             />
 
-            <label className="flex items-center gap-2">
-              <Input
+            <label className="flex items-center gap-2 h-[46px]">
+              <input
                 type="checkbox"
                 checked={compraExterna}
                 onChange={(e) => setCompraExterna(e.target.checked)}
+                className="h-4 w-4 accent-blue-600 cursor-pointer"
               />
-              Compra externa
+
+              <span className="text-sm font-medium text-gray-700">
+                Possui compra externa!
+              </span>
             </label>
 
             <textarea

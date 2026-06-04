@@ -17,6 +17,7 @@ export function Pedidos() {
   const [editandoId, setEditandoId] = useState(null)
   const [origemPedido, setOrigemPedido] = useState("INTERNO")
   const [numeroPedidoManual, setNumeroPedidoManual] = useState("")  
+  const [updatedAtOriginal, setUpdatedAtOriginal] = useState("")
 
   const [clienteId, setClienteId] = useState("")
   const [vendedorId, setVendedorId] = useState("")
@@ -100,7 +101,8 @@ export function Pedidos() {
       contatoRecebedor,
       enderecoEntrega,
       status,
-      observacoes
+      observacoes,
+      updatedAt: updatedAtOriginal
     }
 
     try {
@@ -125,6 +127,7 @@ export function Pedidos() {
     setOrigemPedido(pedido.origemPedido || "INTERNO")
     setNumeroPedidoManual(pedido.numeroPedidoManual || "")
     setEditandoId(pedido.id)
+    setUpdatedAtOriginal(pedido.updatedAt || "")
     setClienteId(pedido.clienteId)
     setVendedorId(pedido.vendedorId)
     setDataEntrega(
@@ -148,6 +151,7 @@ export function Pedidos() {
     setOrigemPedido("INTERNO")
     setNumeroPedidoManual("")
     setEditandoId(null)
+    setUpdatedAtOriginal("")
     setClienteId("")
     setVendedorId("")
     setDataEntrega("")
@@ -170,18 +174,6 @@ export function Pedidos() {
 
     if (rota) {
       setValorFrete(rota.valorFrete)
-    }
-  }
-
-  async function carregarHistorico(pedido) {
-    try {
-      const response = await api.get(`/historico-pedido/${pedido.id}`)
-
-      setHistorico(response.data)
-      setPedidoHistorico(pedido)
-    } catch (error) {
-      console.log(error)
-      alert("Erro ao carregar histórico")
     }
   }
 

@@ -30,10 +30,7 @@ function validarPlano({
 
   const qtdChapas = Number(quantidadeChapas)
 
-  if (
-    Number.isNaN(qtdChapas) ||
-    qtdChapas <= 0
-  ) {
+  if (Number.isNaN(qtdChapas) || qtdChapas <= 0) {
     return "Quantidade de chapas deve ser maior que zero"
   }
 
@@ -62,7 +59,6 @@ export async function listarPlanosPorPedido(req, res) {
     })
 
     return res.json(planos)
-
   } catch (error) {
     console.log(error)
 
@@ -151,7 +147,7 @@ export async function criarPlanoCorte(req, res) {
       },
       data: {
         dataEntrega: dataSugerida,
-        status: "EM_PRODUCAO"
+        status: "EM_SEPARACAO"
       }
     })
 
@@ -163,7 +159,6 @@ export async function criarPlanoCorte(req, res) {
     })
 
     return res.status(201).json(plano)
-
   } catch (error) {
     console.log(error)
 
@@ -182,7 +177,8 @@ export async function atualizarPlanoCorte(req, res) {
       quantidadeChapas,
       medidaEncabecamento,
       compraExterna,
-      observacoes
+      observacoes,
+      updatedAt
     } = req.body
 
     if (!numeroPlano || !numeroPlano.trim()) {
@@ -193,10 +189,7 @@ export async function atualizarPlanoCorte(req, res) {
 
     const qtdChapas = Number(quantidadeChapas)
 
-    if (
-      Number.isNaN(qtdChapas) ||
-      qtdChapas <= 0
-    ) {
+    if (Number.isNaN(qtdChapas) || qtdChapas <= 0) {
       return res.status(400).json({
         error: "Quantidade de chapas deve ser maior que zero"
       })
@@ -211,6 +204,17 @@ export async function atualizarPlanoCorte(req, res) {
     if (!planoAnterior) {
       return res.status(404).json({
         error: "Plano de corte não encontrado"
+      })
+    }
+
+    if (
+      updatedAt &&
+      new Date(updatedAt).getTime() !==
+        new Date(planoAnterior.updatedAt).getTime()
+    ) {
+      return res.status(409).json({
+        error:
+          "Este plano foi alterado por outro usuário. Atualize a página antes de salvar."
       })
     }
 
@@ -285,7 +289,6 @@ export async function atualizarPlanoCorte(req, res) {
     })
 
     return res.json(plano)
-
   } catch (error) {
     console.log(error)
 
@@ -336,7 +339,6 @@ export async function deletarPlanoCorte(req, res) {
     return res.json({
       message: "Plano de corte excluído"
     })
-
   } catch (error) {
     console.log(error)
 
