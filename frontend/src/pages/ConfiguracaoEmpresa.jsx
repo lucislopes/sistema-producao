@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { api } from "../services/api"
 import { Input } from "../components/ui/Input"
+import { Button } from "../components/ui/Button"
 import { IMaskInput } from "react-imask"
 
 export function ConfiguracaoEmpresa() {
@@ -13,9 +14,9 @@ export function ConfiguracaoEmpresa() {
   const [cnpj, setCnpj] = useState("")
 
   const estadosBrasil = [
-    "AC","AL","AP","AM","BA","CE","DF","ES","GO",
-    "MA","MT","MS","MG","PA","PB","PR","PE","PI",
-    "RJ","RN","RS","RO","RR","SC","SP","SE","TO"
+    "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO",
+    "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI",
+    "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
   ]
 
   async function carregarConfiguracao() {
@@ -35,7 +36,6 @@ export function ConfiguracaoEmpresa() {
     }
   }
 
-
   async function salvarConfiguracao(e) {
     e.preventDefault()
 
@@ -51,6 +51,7 @@ export function ConfiguracaoEmpresa() {
       })
 
       alert("Configuração salva com sucesso")
+      carregarConfiguracao()
     } catch (error) {
       console.log(error)
       alert("Erro ao salvar configuração")
@@ -85,21 +86,20 @@ export function ConfiguracaoEmpresa() {
             value={cnpj}
             onAccept={(value) => setCnpj(value)}
             placeholder="CNPJ"
-            className="w-full rounded border px-3 py-2"
+            className="w-full border p-3 rounded-lg"
           />
 
           <IMaskInput
             mask="(00) 00000-0000"
             value={telefone}
             onAccept={(value) => setTelefone(value)}
-            placeholder="(00) 00000-0000"
-            className="w-full rounded border px-3 py-2"
+            placeholder="Telefone"
+            className="w-full border p-3 rounded-lg"
           />
 
           <Input
             type="email"
             placeholder="E-mail"
-
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -115,7 +115,6 @@ export function ConfiguracaoEmpresa() {
           <Input
             type="text"
             placeholder="Cidade"
-
             value={cidade}
             onChange={(e) => setCidade(e.target.value)}
           />
@@ -123,7 +122,7 @@ export function ConfiguracaoEmpresa() {
           <select
             value={estado}
             onChange={(e) => setEstado(e.target.value)}
-            className="border p-3 rounded-lg w-full"
+            className="border p-3 rounded-lg w-full bg-white"
           >
             <option value="">Selecione o Estado</option>
 
@@ -135,46 +134,44 @@ export function ConfiguracaoEmpresa() {
           </select>
         </div>
 
-        <button
+        <Button
           type="submit"
           className="mt-4 bg-blue-600 text-white px-6 py-3 rounded-lg"
         >
           Salvar Configuração
-        </button>
+        </Button>
 
         <div className="mt-8 border-t pt-6">
-        <h2 className="text-xl font-bold mb-4">
+          <h2 className="text-xl font-bold mb-4">
             Dados Cadastrados
-        </h2>
+          </h2>
 
-        <div className="bg-gray-50 border rounded-2xl p-5">
+          <div className="bg-gray-50 border rounded-2xl p-5 space-y-1">
             <p>
-            <strong>Empresa:</strong> {nome || "-"}
+              <strong>Empresa:</strong> {nome || "-"}
             </p>
 
             <p>
-            <strong>CNPJ:</strong> {cnpj || "-"}
+              <strong>CNPJ:</strong> {cnpj || "-"}
             </p>
 
             <p>
-            <strong>Telefone:</strong> {telefone || "-"}
+              <strong>Telefone:</strong> {telefone || "-"}
             </p>
 
             <p>
-            <strong>E-mail:</strong> {email || "-"}
+              <strong>E-mail:</strong> {email || "-"}
             </p>
 
             <p>
-            <strong>Endereço:</strong> {endereco || "-"}
+              <strong>Endereço:</strong> {endereco || "-"}
             </p>
 
             <p>
-            <strong>Cidade/UF:</strong> {cidade || "-"} / {estado || "-"}
+              <strong>Cidade/UF:</strong> {cidade || "-"} / {estado || "-"}
             </p>
+          </div>
         </div>
-        </div>
-        
-
       </form>
     </div>
   )
