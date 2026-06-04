@@ -30,6 +30,9 @@ model Cliente {
   updatedAt DateTime @updatedAt
   email     String?
   pedidos   Pedido[]
+
+  @@index([nome])
+  @@index([documento])
 }
 
 model Funcionario {
@@ -43,6 +46,10 @@ model Funcionario {
   pedidosVenda Pedido[]          @relation("VendedorPedidos")
   servicos     ServicoPlano[]    @relation("OperadorServicos")
   usuario      Usuario?
+
+  @@index([nome])
+  @@index([funcao])
+  @@index([ativo])
 }
 
 model Usuario {
@@ -61,6 +68,8 @@ model RotaEntrega {
   valorFrete Decimal  @db.Decimal(10, 2)
   createdAt  DateTime @default(now())
   pedidos    Pedido[]
+
+  @@index([nome])
 }
 
 model Pedido {
@@ -89,6 +98,17 @@ model Pedido {
   rota               RotaEntrega?      @relation(fields: [rotaId], references: [id])
   vendedor           Funcionario       @relation("VendedorPedidos", fields: [vendedorId], references: [id])
   planos             PlanoCorte[]
+
+  @@index([numeroPedido])
+  @@index([numeroPedidoManual])
+  @@index([origemPedido])
+  @@index([clienteId])
+  @@index([vendedorId])
+  @@index([rotaId])
+  @@index([status])
+  @@index([dataEntrega])
+  @@index([createdAt])
+  @@index([updatedAt])
 }
 
 model PlanoCorte {
@@ -103,6 +123,10 @@ model PlanoCorte {
   updatedAt           DateTime       @updatedAt
   pedido              Pedido         @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
   servicos            ServicoPlano[]
+
+  @@index([pedidoId])
+  @@index([numeroPlano])
+  @@index([createdAt])
 }
 
 model TipoServico {
@@ -125,6 +149,15 @@ model ServicoPlano {
   operador      Funcionario?  @relation("OperadorServicos", fields: [operadorId], references: [id])
   plano         PlanoCorte    @relation(fields: [planoId], references: [id], onDelete: Cascade)
   tipoServico   TipoServico   @relation(fields: [tipoServicoId], references: [id])
+
+  @@index([planoId])
+  @@index([tipoServicoId])
+  @@index([operadorId])
+  @@index([status])
+  @@index([dataInicio])
+  @@index([dataFim])
+  @@index([createdAt])
+  @@index([updatedAt])
 }
 
 model HistoricoPedido {
@@ -136,6 +169,11 @@ model HistoricoPedido {
   createdAt DateTime      @default(now())
   pedido    Pedido        @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
   usuario   Usuario?      @relation(fields: [usuarioId], references: [id])
+
+  @@index([pedidoId])
+  @@index([usuarioId])
+  @@index([tipo])
+  @@index([createdAt])
 }
 
 enum FuncaoFuncionario {
