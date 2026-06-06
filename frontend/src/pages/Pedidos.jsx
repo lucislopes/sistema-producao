@@ -47,6 +47,18 @@ export function Pedidos() {
     totalPages: 1
   })
 
+  const [modalClienteAberto, setModalClienteAberto] = useState(false)
+  const [novoClienteNome, setNovoClienteNome] = useState("")
+  const [novoClienteDocumento, setNovoClienteDocumento] = useState("")
+  const [novoClienteTelefone, setNovoClienteTelefone] = useState("")
+  const [novoClienteEndereco, setNovoClienteEndereco] = useState("")
+
+  const [modalRotaAberto, setModalRotaAberto] = useState(false)
+  const [novaRotaNome, setNovaRotaNome] = useState("")
+  const [novaRotaValorFrete, setNovaRotaValorFrete] = useState("")
+
+
+
   async function carregarDados() {
     try {
       const [pedidosRes, clientesRes, funcionariosRes, rotasRes] =
@@ -119,6 +131,74 @@ export function Pedidos() {
       alert(
         error.response?.data?.error ||
         "Erro ao salvar pedido"
+      )
+    }
+  }
+
+  async function criarClienteRapido() {
+    try {
+      if (!novoClienteNome.trim()) {
+        alert("Nome do cliente é obrigatório")
+        return
+      }
+
+      const response = await api.post("/clientes", {
+        nome: novoClienteNome,
+        documento: novoClienteDocumento,
+        telefone: novoClienteTelefone,
+        endereco: novoClienteEndereco
+      })
+
+      const cliente = response.data
+
+      setClienteId(cliente.id)
+      setNomeRecebedor(cliente.nome || "")
+      setContatoRecebedor(cliente.telefone || "")
+      setEnderecoEntrega(cliente.endereco || "")
+
+      setModalClienteAberto(false)
+      setNovoClienteNome("")
+      setNovoClienteDocumento("")
+      setNovoClienteTelefone("")
+      setNovoClienteEndereco("")
+
+      carregarDados()
+    } catch (error) {
+      console.log(error)
+      alert(
+        error.response?.data?.error ||
+        "Erro ao cadastrar cliente"
+      )
+    }
+  }
+
+  async function criarRotaRapida() {
+    try {
+      if (!novaRotaNome.trim()) {
+        alert("Nome da rota é obrigatório")
+        return
+      }
+
+      const response = await api.post("/rotas-entrega", {
+        nome: novaRotaNome,
+        valorFrete: novaRotaValorFrete || 0
+      })
+
+      const rota = response.data
+
+      setRotaId(rota.id)
+      setValorFrete(rota.valorFrete)
+
+      setModalRotaAberto(false)
+      setNovaRotaNome("")
+      setNovaRotaValorFrete("")
+
+      carregarDados()
+    } catch (error) {
+      console.log(error)
+      alert(
+        error.response?.data?.error ||
+        "Erro ao cadastrar rota"
       )
     }
   }
@@ -346,26 +426,39 @@ export function Pedidos() {
           disabled={origemPedido === "INTERNO"}
         />
 
-          <AutocompleteCliente
-            clienteId={clienteId}
-            onSelecionar={(cliente) => {
-              setClienteId(cliente ? cliente.id : "")
 
-              if (cliente) {
-                if (!nomeRecebedor) {
-                  setNomeRecebedor(cliente.nome || "")
-                }
+          <div className="flex gap-2">
+          <div className="flex-1">
+            <AutocompleteCliente
+              clienteId={clienteId}
+              onSelecionar={(cliente) => {
+                setClienteId(cliente ? cliente.id : "")
 
-                if (!contatoRecebedor) {
-                  setContatoRecebedor(cliente.telefone || "")
-                }
+                if (cliente) {
+                  if (!nomeRecebedor) {
+                    setNomeRecebedor(cliente.nome || "")
+                  }
 
-                if (!enderecoEntrega) {
-                  setEnderecoEntrega(cliente.endereco || "")
+                  if (!contatoRecebedor) {
+                    setContatoRecebedor(cliente.telefone || "")
+                  }
+
+                  if (!enderecoEntrega) {
+                    setEnderecoEntrega(cliente.endereco || "")
+                  }
                 }
-              }
-            }}
-          />
+              }}
+            />
+          </div>
+
+  <Button
+    type="button"
+    variant="secondary"
+    onClick={() => setModalClienteAberto(true)}
+  >
+    +
+  </Button>
+</div>
 
           <Select
             value={vendedorId}
@@ -416,17 +509,29 @@ export function Pedidos() {
             </option>
           </Select>
 
-          <Select
-            value={rotaId}
-            onChange={(e) => aplicarRotaSelecionada(e.target.value)}
+          <div className="flex gap-2">
+          <div className="flex-1">
+            <Select
+              value={rotaId}
+              onChange={(e) => aplicarRotaSelecionada(e.target.value)}
+            >
+              <option value="">Selecione a rota</option>
+              {rotas.map((rota) => (
+                <option key={rota.id} value={rota.id}>
+                  {rota.nome}
+                </option>
+              ))}
+            </Select>
+          </div>
+
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setModalRotaAberto(true)}
           >
-            <option value="">Selecione a rota</option>
-            {rotas.map((rota) => (
-              <option key={rota.id} value={rota.id}>
-                {rota.nome}
-              </option>
-            ))}
-          </Select>
+            ➕ Rota
+          </Button>
+        </div>
 
           <Input
             type="number"
@@ -689,6 +794,109 @@ export function Pedidos() {
 
 
       </div>
+
+      {modalClienteAberto && (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-xl">
+        <h2 className="text-xl font-bold mb-4">
+          Novo Cliente
+        </h2>
+
+        <div className="grid grid-cols-1 gap-4">
+          <Input
+            type="text"
+            placeholder="Nome do cliente"
+            value={novoClienteNome}
+            onChange={(e) => setNovoClienteNome(e.target.value)}
+          />
+
+          <Input
+            type="text"
+            placeholder="Documento CPF/CNPJ"
+            value={novoClienteDocumento}
+            onChange={(e) => setNovoClienteDocumento(e.target.value)}
+          />
+
+          <Input
+            type="text"
+            placeholder="Telefone"
+            value={novoClienteTelefone}
+            onChange={(e) => setNovoClienteTelefone(e.target.value)}
+          />
+
+          <Input
+            type="text"
+            placeholder="Endereço"
+            value={novoClienteEndereco}
+            onChange={(e) => setNovoClienteEndereco(e.target.value)}
+          />
+        </div>
+
+        <div className="flex justify-end gap-2 mt-6">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setModalClienteAberto(false)}
+          >
+            Cancelar
+          </Button>
+
+          <Button
+            type="button"
+            variant="primary"
+            onClick={criarClienteRapido}
+          >
+            Salvar Cliente
+          </Button>
+        </div>
+      </div>
+    </div>
+  )}
+
+    {modalRotaAberto && (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-xl">
+        <h2 className="text-xl font-bold mb-4">
+          Nova Rota
+        </h2>
+
+        <div className="grid grid-cols-1 gap-4">
+          <Input
+            type="text"
+            placeholder="Nome da rota"
+            value={novaRotaNome}
+            onChange={(e) => setNovaRotaNome(e.target.value)}
+          />
+
+          <Input
+            type="number"
+            step="0.01"
+            placeholder="Valor do frete"
+            value={novaRotaValorFrete}
+            onChange={(e) => setNovaRotaValorFrete(e.target.value)}
+          />
+        </div>
+
+        <div className="flex justify-end gap-2 mt-6">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setModalRotaAberto(false)}
+          >
+            Cancelar
+          </Button>
+
+          <Button
+            type="button"
+            variant="primary"
+            onClick={criarRotaRapida}
+          >
+            Salvar Rota
+          </Button>
+        </div>
+      </div>
+    </div>
+  )}
 
     </div>
   )
