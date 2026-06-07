@@ -134,6 +134,7 @@ export async function criarPedido(req, res) {
     const {
       origemPedido,
       numeroPedidoManual,
+      tipoPedido,
       clienteId,
       vendedorId,
       dataEntrega,
@@ -218,6 +219,11 @@ export async function criarPedido(req, res) {
       data: {
         origemPedido: origemTratada,
         numeroPedidoManual: numeroManualTratado,
+        tipoPedido: tipoPedido || "COM_PRODUCAO",
+        status:
+          tipoPedido === "DIRETO_ENTREGA"
+            ? "PRONTO_ENTREGA"
+            : "ABERTO",
         clienteId,
         vendedorId,
         dataEntrega: dataEntrega ? new Date(dataEntrega) : null,
@@ -272,6 +278,7 @@ export async function atualizarPedido(req, res) {
     const {
       origemPedido,
       numeroPedidoManual,
+      tipoPedido,
       clienteId,
       vendedorId,
       dataEntrega,
@@ -384,6 +391,7 @@ export async function atualizarPedido(req, res) {
       data: {
         origemPedido: origemTratada,
         numeroPedidoManual: numeroManualTratado,
+        tipoPedido: tipoPedido || "COM_PRODUCAO",
         clienteId,
         vendedorId,
         dataEntrega: dataEntrega ? new Date(dataEntrega) : null,

@@ -132,6 +132,9 @@ export function PlanosCorte() {
     (pedido) => pedido.id === pedidoId
   )
 
+  const pedidoDiretoEntrega =
+    pedidoSelecionado?.tipoPedido === "DIRETO_ENTREGA"
+
   return (
     <div>
       <div className="bg-white p-6 rounded-2xl shadow-md mb-8">
@@ -173,7 +176,13 @@ export function PlanosCorte() {
         )}
       </div>
 
-      {pedidoId && (
+      {pedidoId && pedidoDiretoEntrega && (
+        <div className="bg-yellow-50 border border-yellow-300 text-yellow-800 p-4 rounded-2xl mb-8">
+          Este pedido é direto para entrega e não possui plano de corte.
+        </div>
+      )}
+
+      {pedidoId && !pedidoDiretoEntrega && (
         <form
           onSubmit={handleSubmit}
           className="bg-white p-6 rounded-2xl shadow-md mb-8"
@@ -249,7 +258,7 @@ export function PlanosCorte() {
         </form>
       )}
 
-      {pedidoId && (
+      {pedidoId && !pedidoDiretoEntrega && (
         <div className="bg-white rounded-2xl shadow-md overflow-hidden">
           <Table>
             <thead>

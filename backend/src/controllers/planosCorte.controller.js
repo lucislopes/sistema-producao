@@ -103,6 +103,12 @@ export async function criarPlanoCorte(req, res) {
       })
     }
 
+    if (pedido.tipoPedido === "DIRETO_ENTREGA") {
+      return res.status(400).json({
+        error: "Este pedido é direto para entrega e não permite plano de corte"
+      })
+    }
+
     if (["ENTREGUE", "CANCELADO"].includes(pedido.status)) {
       return res.status(400).json({
         error: "Não é possível criar plano para pedido encerrado"

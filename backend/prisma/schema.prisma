@@ -75,6 +75,7 @@ model RotaEntrega {
 model Pedido {
   id                 String            @id @default(cuid())
   numeroPedido       Int               @default(autoincrement())
+  tipoPedido         TipoPedido        @default(COM_PRODUCAO)
   clienteId          String
   vendedorId         String
   dataPedido         DateTime          @default(now())
@@ -209,6 +210,11 @@ enum StatusServico {
   INICIADO
   CONCLUIDO
   CANCELADO
+}
+
+enum TipoPedido {
+  COM_PRODUCAO
+  DIRETO_ENTREGA
 }
 
 enum TipoHistorico {

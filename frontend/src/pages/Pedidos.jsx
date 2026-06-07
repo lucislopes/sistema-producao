@@ -57,6 +57,8 @@ export function Pedidos() {
   const [novaRotaNome, setNovaRotaNome] = useState("")
   const [novaRotaValorFrete, setNovaRotaValorFrete] = useState("")
 
+  const [tipoPedido, setTipoPedido] = useState("COM_PRODUCAO")
+
 
 
   async function carregarDados() {
@@ -101,6 +103,7 @@ export function Pedidos() {
     const dados = {
       origemPedido,
       numeroPedidoManual,
+      tipoPedido,
       clienteId,
       vendedorId,
       dataEntrega,
@@ -206,7 +209,10 @@ export function Pedidos() {
   function editarPedido(pedido) {
     setOrigemPedido(pedido.origemPedido || "INTERNO")
     setNumeroPedidoManual(pedido.numeroPedidoManual || "")
-    setEditandoId(pedido.id)
+    setTipoPedido(
+      pedido.tipoPedido || "COM_PRODUCAO"
+    )
+      setEditandoId(pedido.id)
     setUpdatedAtOriginal(pedido.updatedAt || "")
     setClienteId(pedido.clienteId)
     setVendedorId(pedido.vendedorId)
@@ -230,6 +236,7 @@ export function Pedidos() {
   function limparFormulario() {
     setOrigemPedido("INTERNO")
     setNumeroPedidoManual("")
+    setTipoPedido("COM_PRODUCAO")
     setEditandoId(null)
     setUpdatedAtOriginal("")
     setClienteId("")
@@ -418,14 +425,24 @@ export function Pedidos() {
           <option value="EXTERNO">Pedido de outro sistema</option>
         </Select>
 
-        <Input
-          type="text"
-          placeholder="Número do pedido externo"
-          value={numeroPedidoManual}
-          onChange={(e) => setNumeroPedidoManual(e.target.value)}
-          disabled={origemPedido === "INTERNO"}
-        />
+        {origemPedido === "EXTERNO" ? (
+          <Input
+            type="text"
+            placeholder="Número do pedido externo"
+            value={numeroPedidoManual}
+            onChange={(e) => setNumeroPedidoManual(e.target.value)}
+          />
+        ) : (
+          <div />
+        )}
 
+        <Select
+          value={tipoPedido}
+          onChange={(e) => setTipoPedido(e.target.value)}
+        >
+          <option value="COM_PRODUCAO">Pedido com produção</option>
+          <option value="DIRETO_ENTREGA">Pedido direto para entrega</option>
+        </Select>
 
           <div className="flex gap-2">
           <div className="flex-1">
@@ -570,19 +587,21 @@ export function Pedidos() {
             onChange={(e) => setEnderecoEntrega(e.target.value)} 
             />
 
-          <Select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-          >
-            <option value="ABERTO">Aberto</option>
-            <option value="EM_SEPARACAO">Em Separação</option>
-            <option value="EM_PRODUCAO">Em Produção</option>
-            <option value="CONCLUIDO">Concluído</option>
-            <option value="PRONTO_ENTREGA">Pronto Entrega</option>
-            <option value="SAIU_ENTREGA">Saiu Entrega</option>
-            <option value="ENTREGUE">Entregue</option>
-            <option value="CANCELADO">Cancelado</option>
-          </Select>
+          {editandoId && (
+            <Select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            >
+              <option value="ABERTO">Aberto</option>
+              <option value="EM_SEPARACAO">Em Separação</option>
+              <option value="EM_PRODUCAO">Em Produção</option>
+              <option value="CONCLUIDO">Concluído</option>
+              <option value="PRONTO_ENTREGA">Pronto Entrega</option>
+              <option value="SAIU_ENTREGA">Saiu Entrega</option>
+              <option value="ENTREGUE">Entregue</option>
+              <option value="CANCELADO">Cancelado</option>
+            </Select>
+          )}
 
           <textarea
             placeholder="Observações"
@@ -745,12 +764,14 @@ export function Pedidos() {
                       Detalhes
                     </Link>
 
-                    <Link
-                      to={`/planos-corte?pedidoId=${pedido.id}`}
-                      className="inline-flex items-center justify-center rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white hover:bg-purple-700"
-                    >
-                      Planos
-                    </Link>
+                    {pedido.tipoPedido !== "DIRETO_ENTREGA" && (
+                      <Link
+                        to={`/planos-corte?pedidoId=${pedido.id}`}
+                        className="inline-flex items-center justify-center rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white hover:bg-purple-700"
+                      >
+                        Planos
+                      </Link>
+                    )}
                   </div>
                 </Td>
                 
