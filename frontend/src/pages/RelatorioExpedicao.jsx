@@ -3,7 +3,7 @@ import { api } from "../services/api"
 import { CabecalhoImpressao } from "../components/CabecalhoImpressao"
 import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
-import { Table, Th } from "../components/ui/Table"
+import { Table, Th, Td } from "../components/ui/Table"
 import { Button } from "../components/ui/Button"
 import {
   Download,
@@ -422,17 +422,17 @@ export function RelatorioExpedicao() {
           Amanhã
         </Button>
 
-        <Button type="button" onClick={filtroProximos5Dias} className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+        <Button type="button" onClick={filtroProximos5Dias} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
           <CalendarDays size={16} />
           Próximos 5 dias
         </Button>
 
-        <Button type="button" onClick={filtroSemana} className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+        <Button type="button" onClick={filtroSemana} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
           <CalendarDays size={16} />
           Esta semana
         </Button>
 
-        <Button type="button" onClick={filtroMes} className="bg-cyan-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+        <Button type="button" onClick={filtroMes} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
           <CalendarDays size={16} />
           Este mês
         </Button>
@@ -520,7 +520,7 @@ export function RelatorioExpedicao() {
           </p>
 
           <p className="text-gray-600">
-            Total de entregas: {pedidos.length}
+            {pedidos.length} entrega{pedidos.length === 1 ? "" : "s"} encontrada{pedidos.length === 1 ? "" : "s"}
           </p>
         </div>
 
@@ -544,45 +544,48 @@ export function RelatorioExpedicao() {
                 key={pedido.id}
                 className={obterClasseLinha(pedido.dataEntrega)}
               >
-                <td className="p-3 border font-bold">
+                <Td className="font-bold text-blue-700">
                   {obterNumeroPedido(pedido)}
-                </td>
+                </Td>
 
-                <td className="p-3 border">
+                <Td>
                   {pedido.cliente?.nome}
-                </td>
+                </Td>
 
-                <td className="p-3 border">
+                <Td>
                   {formatarData(pedido.dataEntrega)}
-                </td>
+                </Td>
 
-                <td className="p-3 border">
+                <Td>
                   {pedido.rota?.nome || "-"}
-                </td>
+                </Td>
 
-                <td className="p-3 border">
+                <Td>
                   {pedido.nomeRecebedor || "-"}
-                </td>
+                </Td>
 
-                <td className="p-3 border">
+                <Td>
                   {pedido.contatoRecebedor || "-"}
-                </td>
+                </Td>
 
-                <td className="p-3 border">
+                <Td
+                  className="max-w-[280px] truncate"
+                  title={pedido.enderecoEntrega || "-"}
+                >
                   {pedido.enderecoEntrega || "-"}
-                </td>
+                </Td>
 
-                <td className="p-3 border">
+                <Td className="font-medium">
                   {obterStatus(pedido.status)}
-                </td>
+                </Td>
               </tr>
             ))}
 
             {pedidos.length === 0 && (
               <tr>
-                <td className="p-4 border" colSpan="8">
+                <Td className="p-4" colSpan="8">
                   Nenhuma entrega encontrada para este período.
-                </td>
+                </Td>
               </tr>
             )}
           </tbody>

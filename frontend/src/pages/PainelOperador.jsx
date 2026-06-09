@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useState } from "react"
 import { api } from "../services/api"
+import {
+  RefreshCw,
+  ClipboardList,
+  UserCheck,
+  PlayCircle,
+  CheckCircle2,
+  Hand,
+  Package,
+  Layers
+} from "lucide-react"
 
 export function PainelOperador() {
   const [servicosDisponiveis, setServicosDisponiveis] = useState([])
@@ -100,26 +110,101 @@ export function PainelOperador() {
     }
   }
 
+  function ResumoCard({ titulo, valor, icon: Icon, tipo = "normal" }) {
+    const classes = {
+      normal: {
+        card: "bg-white border-gray-200",
+        icon: "bg-gray-100 text-gray-700"
+      },
+      info: {
+        card: "bg-blue-50 border-blue-300",
+        icon: "bg-blue-100 text-blue-700"
+      },
+      sucesso: {
+        card: "bg-green-50 border-green-300",
+        icon: "bg-green-100 text-green-700"
+      }
+    }
+
+    const estilo = classes[tipo] || classes.normal
+
+    return (
+      <div className={`rounded-xl border p-4 shadow-sm ${estilo.card}`}>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm text-gray-600">{titulo}</p>
+            <strong className="text-2xl font-bold block mt-1">
+              {valor}
+            </strong>
+          </div>
+
+          {Icon && (
+            <div className={`p-3 rounded-xl ${estilo.icon}`}>
+              <Icon size={24} />
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  const totalDisponiveis = servicosDisponiveis.length
+
+  const totalMeusServicos = meusServicos.length
+
+  const totalMeusEmProducao = meusServicos.filter(
+    (servico) => servico.status === "INICIADO"
+  ).length
+
+  const totalMeusConcluidos = meusServicos.filter(
+    (servico) => servico.status === "CONCLUIDO"
+  ).length
+
   return (
     <div className="space-y-10">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">
-          Painel do Operador
-        </h1>
-
+      <div className="flex justify-end">
         <button
           onClick={carregarDados}
           disabled={carregando}
-          className="bg-gray-800 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+          className="bg-gray-800 text-white px-4 py-2 rounded-lg disabled:opacity-50 flex items-center gap-2"
         >
+          <RefreshCw size={16} />
           {carregando ? "Atualizando..." : "Atualizar"}
         </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <ResumoCard
+          titulo="Para Assumir"
+          valor={totalDisponiveis}
+          icon={ClipboardList}
+        />
+
+        <ResumoCard
+          titulo="Meus Serviços"
+          valor={totalMeusServicos}
+          icon={UserCheck}
+        />
+
+        <ResumoCard
+          titulo="Em Produção"
+          valor={totalMeusEmProducao}
+          tipo="info"
+          icon={PlayCircle}
+        />
+
+        <ResumoCard
+          titulo="Concluídos"
+          valor={totalMeusConcluidos}
+          tipo="sucesso"
+          icon={CheckCircle2}
+        />
       </div>
 
       {/* SERVIÇOS DISPONÍVEIS */}
       <section>
         <h2 className="text-xl font-bold mb-4">
-          Serviços Disponíveis
+          Serviços para Assumir
         </h2>
 
         <div className="grid grid-cols-1 gap-4">
@@ -129,8 +214,11 @@ export function PainelOperador() {
               className="bg-white p-5 rounded-2xl shadow-md border"
             >
               <h3 className="text-lg font-bold mb-2">
-                Pedido #{grupo.pedido.numeroPedido} -{" "}
-                {grupo.pedido.cliente?.nome || "Cliente não informado"}
+                <span className="inline-flex items-center gap-2">
+                  <Package size={18} />
+                  Pedido #{grupo.pedido.numeroPedido} -{" "}
+                  {grupo.pedido.cliente?.nome || "Cliente não informado"}
+                </span>
               </h3>
 
               <p className="text-gray-600 mb-4">
@@ -143,8 +231,11 @@ export function PainelOperador() {
                   className="border rounded-xl p-4 mb-4 bg-gray-50"
                 >
                   <h4 className="font-bold mb-3">
-                    Plano {itemPlano.plano.numeroPlano} -{" "}
-                    {itemPlano.plano.quantidadeChapas} chapas
+                    <span className="inline-flex items-center gap-2">
+                      <Layers size={16} />
+                      Plano {itemPlano.plano.numeroPlano} -{" "}
+                      {itemPlano.plano.quantidadeChapas} chapas
+                    </span>
                   </h4>
 
                   <div className="flex flex-col gap-3">
@@ -169,10 +260,13 @@ export function PainelOperador() {
                         </div>
 
                         <button
-                          onClick={() => assumirServico(servico.id)}
+                          onClick={() => assumirServico(servico.id, "INICIADO")}
                           className="bg-blue-600 text-white px-4 py-2 rounded-lg whitespace-nowrap hover:bg-blue-700"
                         >
-                          Assumir
+                          <span className="inline-flex items-center gap-2">
+                            <Hand size={16} />
+                            Assumir
+                          </span>
                         </button>
                       </div>
                     ))}
@@ -193,7 +287,7 @@ export function PainelOperador() {
       {/* MEUS SERVIÇOS */}
       <section>
         <h2 className="text-xl font-bold mb-4">
-          Meus Serviços
+          Meus Serviços em Andamento
         </h2>
 
         <div className="grid grid-cols-1 gap-4">
@@ -203,8 +297,11 @@ export function PainelOperador() {
               className="bg-white p-5 rounded-2xl shadow-md border"
             >
               <h3 className="text-lg font-bold mb-2">
-                Pedido #{grupo.pedido.numeroPedido} -{" "}
-                {grupo.pedido.cliente?.nome || "Cliente não informado"}
+                <span className="inline-flex items-center gap-2">
+                  <Package size={18} />
+                  Pedido #{grupo.pedido.numeroPedido} -{" "}
+                  {grupo.pedido.cliente?.nome || "Cliente não informado"}
+                </span>
               </h3>
 
               <p className="text-gray-600 mb-4">
@@ -217,8 +314,11 @@ export function PainelOperador() {
                   className="border rounded-xl p-4 mb-4 bg-gray-50"
                 >
                   <h4 className="font-bold mb-3">
-                    Plano {itemPlano.plano.numeroPlano} -{" "}
-                    {itemPlano.plano.quantidadeChapas} chapas
+                    <span className="inline-flex items-center gap-2">
+                      <Layers size={16} />
+                      Plano {itemPlano.plano.numeroPlano} -{" "}
+                      {itemPlano.plano.quantidadeChapas} chapas
+                    </span>
                   </h4>
 
                   <div className="flex flex-col gap-3">
@@ -250,7 +350,10 @@ export function PainelOperador() {
                               }
                               className="bg-green-600 text-white px-4 py-2 rounded-lg whitespace-nowrap hover:bg-green-700"
                             >
-                              Iniciar
+                              <span className="inline-flex items-center gap-2">
+                                <PlayCircle size={16} />
+                                Iniciar
+                              </span>
                             </button>
                           )}
 
@@ -261,7 +364,10 @@ export function PainelOperador() {
                               }
                               className="bg-blue-700 text-white px-4 py-2 rounded-lg whitespace-nowrap hover:bg-blue-800"
                             >
-                              Concluir
+                              <span className="inline-flex items-center gap-2">
+                                <CheckCircle2 size={16} />
+                                Concluir
+                              </span>
                             </button>
                           )}
 

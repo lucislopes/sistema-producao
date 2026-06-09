@@ -546,8 +546,6 @@ export async function assumirServico(req, res) {
       where: { id },
       data: {
         operadorId: usuario.funcionario.id,
-        status: "INICIADO",
-        dataInicio: new Date()
       },
       include: {
         plano: true
@@ -612,9 +610,32 @@ export async function alterarStatusServico(req, res) {
       status
     }
 
-    if (status === "INICIADO" && !servicoAtual.dataInicio) {
-      dados.dataInicio = new Date()
+    if (status === "INICIADO") {
+    dados.dataInicio = servicoAtual.dataInicio || new Date()
+
+    if (!servicoAtual.operadorId) {
+      const usuario = await prisma.usuario.findUnique({
+        where: { id: req.user.id },
+        include: {
+          funcionario: true
+        }
+      })
+
+      if (!usuario || !usuario.funcionario) {
+        return res.status(404).json({
+          error: "Usuário não possui funcionário vinculado"
+        })
+      }
+
+      if (!usuario.funcionario.ativo) {
+        return res.status(400).json({
+          error: "Funcionário inativo"
+        })
+      }
+
+      dados.operadorId = usuario.funcionario.id
     }
+  }
 
     if (status === "CONCLUIDO" && !servicoAtual.dataFim) {
       dados.dataFim = new Date()

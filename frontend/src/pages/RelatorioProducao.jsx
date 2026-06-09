@@ -6,6 +6,23 @@ import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
 import { Table, Th, Td } from "../components/ui/Table"
 
+import {
+  Download,
+  Printer,
+  CalendarDays,
+  Search,
+  Eraser,
+  Factory,
+  ClipboardList,
+  CheckCircle2,
+  Filter,
+  User,
+  Wrench,
+  Clock,
+  Trophy,
+  Zap
+} from "lucide-react"
+
 export function RelatorioProducao() {
   const [servicos, setServicos] = useState([])
   const [operadores, setOperadores] = useState([])
@@ -184,6 +201,158 @@ export function RelatorioProducao() {
     })
   }
 
+  function ResumoCard({ titulo, valor, tipo = "normal", icon: Icon }) {
+    const classes = {
+      normal: {
+        card: "bg-white border-gray-200",
+        icon: "bg-gray-100 text-gray-700"
+      },
+      perigo: {
+        card: "bg-red-50 border-red-300",
+        icon: "bg-red-100 text-red-700"
+      },
+      sucesso: {
+        card: "bg-green-50 border-green-300",
+        icon: "bg-green-100 text-green-700"
+      },
+      info: {
+        card: "bg-blue-50 border-blue-300",
+        icon: "bg-blue-100 text-blue-700"
+      }
+    }
+
+    const estilo = classes[tipo] || classes.normal
+
+    return (
+      <div className={`rounded-xl shadow-sm border p-4 ${estilo.card}`}>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm text-gray-600">{titulo}</p>
+            <strong className="text-2xl font-bold block mt-1">
+              {valor}
+            </strong>
+          </div>
+
+          {Icon && (
+            <div className={`p-3 rounded-xl ${estilo.icon}`}>
+              <Icon size={24} />
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  function CardServico({ item }) {
+    return (
+      <div
+        className={`bg-white border-l-4 ${classeServico(
+          item.nome
+        )} border border-gray-200 rounded-xl p-4 shadow-sm`}
+      >
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div>
+            <p className="text-sm text-gray-500">Serviço</p>
+            <h3 className="font-bold text-gray-800 flex items-center gap-2">
+              <span>{iconeServico(item.nome)}</span>
+              {item.nome}
+            </h3>
+          </div>
+
+          <div className="bg-gray-100 text-gray-700 p-3 rounded-xl">
+            <Wrench size={22} />
+          </div>
+        </div>
+
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-500">Total</span>
+            <strong>{item.total}</strong>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-gray-500">Em produção</span>
+            <strong className="text-blue-700">{item.producao}</strong>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-gray-500">Concluídos</span>
+            <strong className="text-green-700">{item.concluidos}</strong>
+          </div>
+
+          <div className="border-t pt-2 flex justify-between">
+            <span className="text-gray-500">Tempo médio</span>
+            <strong>{formatarTempoMedio(item.tempoMedio)}</strong>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  function CardDestaque({ titulo, principal, detalhe, icon: Icon, iconClass = "bg-blue-100 text-blue-700" }) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm text-gray-500">{titulo}</p>
+
+            <strong className="text-xl font-bold block mt-1 text-gray-800">
+              {principal || "-"}
+            </strong>
+
+            <p className="text-sm text-gray-500 mt-1">
+              {detalhe}
+            </p>
+          </div>
+
+          {Icon && (
+            <div className={`${iconClass} p-3 rounded-xl`}>
+              <Icon size={24} />
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  function ehHoje(data) {
+    if (!data) return false
+    const hoje = new Date().toISOString().substring(0, 10)
+    return String(data).substring(0, 10) === hoje
+  }
+
+  function iconeServico(nome) {
+    const icones = {
+      Corte: "🪚",
+      Encabeçamento: "📏",
+      Engrosso: "📐",
+      Furação: "🔩",
+      "Painel Ripado": "🧱",
+      "Corte Usinado": "⚙️",
+      Usinagem: "⚙️",
+      Outros: "🔧"
+    }
+
+    return icones[nome] || "🔧"
+  }
+
+  function classeServico(nome) {
+    const classes = {
+      Corte: "border-blue-300",
+      Encabeçamento: "border-green-300",
+      Engrosso: "border-yellow-300",
+      Furação: "border-purple-300",
+      "Painel Ripado": "border-orange-300",
+      "Corte Usinado": "border-cyan-300",
+      Usinagem: "border-indigo-300",
+      Outros: "border-gray-300"
+    }
+
+    return classes[nome] || "border-gray-300"
+  }
+
+
+
   function filtroStatusRapido(novoStatus) {
     setStatus(novoStatus)
     setPage(1)
@@ -279,9 +448,125 @@ export function RelatorioProducao() {
     (item) => item.status === "CONCLUIDO"
   ).length
 
-  const cancelados = servicos.filter(
-    (item) => item.status === "CANCELADO"
-  ).length
+  function calcularDuracaoMinutos(inicio, fim) {
+    if (!inicio || !fim) return 0
+
+    const dataInicio = new Date(inicio)
+    const dataFim = new Date(fim)
+
+    const diff = dataFim - dataInicio
+
+    if (diff <= 0) return 0
+
+    return Math.round(diff / 60000)
+  }
+
+    function formatarTempoMedio(minutos) {
+      if (!minutos || minutos <= 0) return "-"
+
+      if (minutos < 60) {
+        return `${minutos} min`
+      }
+
+      const horas = Math.floor(minutos / 60)
+      const restoMinutos = minutos % 60
+
+      return `${horas}h ${restoMinutos}min`
+    }
+
+    const servicosConcluidosComTempo = servicos.filter(
+      (item) =>
+        item.status === "CONCLUIDO" &&
+        item.dataInicio &&
+        item.dataFim
+    )
+
+    const tempoTotalMinutos = servicosConcluidosComTempo.reduce(
+      (acc, item) =>
+        acc + calcularDuracaoMinutos(item.dataInicio, item.dataFim),
+      0
+    )
+
+    const tempoMedioGeral =
+      servicosConcluidosComTempo.length > 0
+        ? Math.round(tempoTotalMinutos / servicosConcluidosComTempo.length)
+        : 0
+
+        const resumoPorServico = tiposServico
+          .map((tipo) => {
+            const itens = servicos.filter(
+              (item) => item.tipoServico?.nome === tipo.nome
+            )
+
+            const concluidosComTempo = itens.filter(
+              (item) =>
+                item.status === "CONCLUIDO" &&
+                item.dataInicio &&
+                item.dataFim
+            )
+
+            const tempoTotal = concluidosComTempo.reduce(
+              (acc, item) =>
+                acc + calcularDuracaoMinutos(item.dataInicio, item.dataFim),
+              0
+            )
+
+            const tempoMedio =
+              concluidosComTempo.length > 0
+                ? Math.round(tempoTotal / concluidosComTempo.length)
+                : 0
+
+            return {
+              nome: tipo.nome,
+              total: itens.length,
+              abertos: itens.filter((item) => item.status === "ABERTO").length,
+              producao: itens.filter((item) => item.status === "INICIADO").length,
+              concluidos: itens.filter((item) => item.status === "CONCLUIDO").length,
+              cancelados: itens.filter((item) => item.status === "CANCELADO").length,
+              tempoMedio
+            }
+          })
+          .filter((item) => item.total > 0)
+
+          const producaoHoje = servicos.filter(
+            (item) =>
+              item.status === "CONCLUIDO" &&
+              ehHoje(item.dataFim)
+          ).length
+
+          const operadoresEnvolvidos = new Set(
+            servicos
+              .filter((item) => item.operador?.id)
+              .map((item) => item.operador.id)
+          ).size
+
+          const servicoMaisExecutado =
+          resumoPorServico.length > 0
+            ? [...resumoPorServico].sort((a, b) => b.total - a.total)[0]
+            : null
+
+          const resumoOperadores = operadores.map((operador) => {
+            const concluidosOperador = servicos.filter(
+              (item) =>
+                item.operador?.id === operador.id &&
+                item.status === "CONCLUIDO"
+            )
+
+            return {
+              nome: operador.nome,
+              total: concluidosOperador.length
+            }
+          })
+
+          const operadorDestaque =
+            resumoOperadores.length > 0
+              ? [...resumoOperadores].sort((a, b) => b.total - a.total)[0]
+              : null
+
+
+
+
+  
 
   return (
     <div>
@@ -290,100 +575,157 @@ export function RelatorioProducao() {
           <Button
             type="button"
             onClick={exportarCSV}
-            className="bg-green-700 text-white px-6 py-3 rounded-lg"
+            className="bg-green-700 text-white px-6 py-3 rounded-lg flex items-center gap-2"
           >
+            <Download size={18} />
             Exportar CSV
           </Button>
 
           <Button
             type="button"
             onClick={imprimir}
-            className="bg-gray-800 text-white px-6 py-3 rounded-lg"
+            className="bg-gray-800 text-white px-6 py-3 rounded-lg flex items-center gap-2"
           >
+            <Printer size={18} />
             Imprimir
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 no-print">
-        <div className="bg-white border border-gray-300 rounded-xl p-4">
-          <p className="text-sm text-gray-600">Total</p>
-          <strong className="text-2xl">{totalServicos}</strong>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-6 no-print">
+        <ResumoCard
+          titulo="Total"
+          valor={totalServicos}
+          icon={ClipboardList}
+        />
 
-        <div className="bg-gray-50 border border-gray-300 rounded-xl p-4">
-          <p className="text-sm text-gray-600">Abertos</p>
-          <strong className="text-2xl">{abertos}</strong>
-        </div>
+        <ResumoCard
+          titulo="Em Produção"
+          valor={iniciados}
+          tipo="info"
+          icon={Factory}
+        />
 
-        <div className="bg-blue-50 border border-blue-300 rounded-xl p-4">
-          <p className="text-sm text-gray-600">Em Produção</p>
-          <strong className="text-2xl">{iniciados}</strong>
-        </div>
+        <ResumoCard
+          titulo="Concluídos"
+          valor={concluidos}
+          tipo="sucesso"
+          icon={CheckCircle2}
+        />
 
-        <div className="bg-green-50 border border-green-300 rounded-xl p-4">
-          <p className="text-sm text-gray-600">Concluídos</p>
-          <strong className="text-2xl">{concluidos}</strong>
-        </div>
+        <ResumoCard
+          titulo="Produção Hoje"
+          valor={producaoHoje}
+          tipo="sucesso"
+          icon={Zap}
+        />
 
-        <div className="bg-red-50 border border-red-300 rounded-xl p-4">
-          <p className="text-sm text-gray-600">Cancelados</p>
-          <strong className="text-2xl">{cancelados}</strong>
-        </div>
+        <ResumoCard
+          titulo="Tempo Médio"
+          valor={formatarTempoMedio(tempoMedioGeral)}
+          tipo="info"
+          icon={Clock}
+        />
+
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-4 no-print">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 no-print">
+        <CardDestaque
+          titulo="🏆 Serviço Líder"
+          principal={servicoMaisExecutado?.nome}
+          detalhe={
+            servicoMaisExecutado
+              ? `${servicoMaisExecutado.total} serviço${servicoMaisExecutado.total === 1 ? "" : "s"} executado${servicoMaisExecutado.total === 1 ? "" : "s"}`
+              : "Nenhum serviço no período"
+          }
+          icon={Trophy}
+        />
+
+        <CardDestaque
+          titulo="👤 Operador Destaque"
+          principal={operadorDestaque?.nome}
+          detalhe={
+            operadorDestaque
+              ? `${operadorDestaque.total} serviço${operadorDestaque.total === 1 ? "" : "s"} concluído${operadorDestaque.total === 1 ? "" : "s"}`
+              : "Nenhum operador no período"
+          }
+          icon={User}
+          iconClass="bg-green-100 text-green-700"
+        />
+      </div>
+
+      <div className="mb-6 no-print">
+        <h3 className="text-lg font-semibold mb-3">
+          Produção por Serviço
+        </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {resumoPorServico.map((item) => (
+            <CardServico key={item.nome} item={item} />
+          ))}
+        </div>
+      </div>
+      
+      <div className="flex flex-wrap items-center gap-2 mb-4 no-print">
         <Button
           type="button"
           onClick={filtroHoje}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
+          <CalendarDays size={16} />
           Hoje
         </Button>
 
         <Button
           type="button"
           onClick={filtroSemana}
-          className="bg-purple-600 text-white px-4 py-2 rounded-lg"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
+          <CalendarDays size={16} />
           Esta semana
         </Button>
 
         <Button
           type="button"
           onClick={filtroMes}
-          className="bg-cyan-600 text-white px-4 py-2 rounded-lg"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
+          <CalendarDays size={16} />
           Este mês
         </Button>
+
+        <div className="h-8 w-px bg-gray-300 mx-2" />
 
         <Button
           type="button"
           onClick={() => filtroStatusRapido("ABERTO")}
-          className="bg-gray-600 text-white px-4 py-2 rounded-lg"
+          className="bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
+          <Filter size={16} />
           Abertos
         </Button>
 
         <Button
           type="button"
           onClick={() => filtroStatusRapido("INICIADO")}
-          className="bg-blue-700 text-white px-4 py-2 rounded-lg"
+          className="bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
+          <Factory size={16} />
           Em Produção
         </Button>
 
         <Button
           type="button"
           onClick={() => filtroStatusRapido("CONCLUIDO")}
-          className="bg-green-700 text-white px-4 py-2 rounded-lg"
+          className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
+          <CheckCircle2 size={16} />
           Concluídos
         </Button>
       </div>
 
       <div className="bg-white p-6 rounded-2xl shadow-md mb-8 no-print">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           <Input
             type="date"
             value={dataInicio}
@@ -403,7 +745,7 @@ export function RelatorioProducao() {
             onChange={(e) => setBusca(e.target.value)}
           />
 
-          <Select
+        <Select
             value={operadorId}
             onChange={(e) => setOperadorId(e.target.value)}
           >
@@ -415,6 +757,11 @@ export function RelatorioProducao() {
               </option>
             ))}
           </Select>
+
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          
 
           <Select
             value={tipoServicoId}
@@ -440,6 +787,7 @@ export function RelatorioProducao() {
             <option value="CANCELADO">Cancelado</option>
           </Select>
 
+        
           <Select
             value={limit}
             onChange={(e) => {
@@ -447,17 +795,28 @@ export function RelatorioProducao() {
               setPage(1)
             }}
           >
-            <option value={25}>25 por página</option>
-            <option value={50}>50 por página</option>
-            <option value={100}>100 por página</option>
+            <option value={25}>25 registros</option>
+            <option value={50}>50 registros</option>
+            <option value={100}>100 registros</option>
           </Select>
 
-          <div className="flex grid-cols-1 md:grid-cols-3 gap-4" >
-            <Button variant="Primary" onClick={buscar} className="bg-blue-600 text-white px-6 py-3 rounded-lg">
+          <div className="flex gap-3">
+            <Button
+              variant="Primary"
+              onClick={buscar}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg flex items-center justify-center gap-2"
+            >
+              <Search size={18} />
               Buscar
-            </Button> 
+            </Button>
 
-            <Button variant="secondary" onClick={limparFiltros} className="bg-gray-500 text-white px-6 py-3 rounded-lg">
+            <Button
+              type="button"
+              onClick={limparFiltros}
+              variant=""
+              className="bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 px-6 py-3 rounded-lg flex items-center justify-center gap-2"
+            >
+              <Eraser size={18} />
               Limpar
             </Button>
           </div>
@@ -478,7 +837,7 @@ export function RelatorioProducao() {
           </h2>
 
           <p className="text-gray-600">
-            Total encontrado: {paginacao.total}
+            {paginacao.total} serviço{paginacao.total === 1 ? "" : "s"} encontrado{paginacao.total === 1 ? "" : "s"}
           </p>
         </div>
 
@@ -498,8 +857,8 @@ export function RelatorioProducao() {
 
           <tbody>
             {servicos.map((item) => (
-              <tr key={item.id} className="border-t">
-                <Td className="font-bold">
+              <tr key={item.id}>
+                <Td className="font-bold text-blue-700">
                   {obterNumeroPedido(item.plano?.pedido)}
                 </Td>
 
@@ -507,12 +866,15 @@ export function RelatorioProducao() {
                   {item.plano?.pedido?.cliente?.nome || "-"}
                 </Td>
 
-                <Td>
+                <Td className="font-medium text-indigo-700">
                   {item.plano?.numeroPlano || "-"}
                 </Td>
 
-                <Td>
-                  {item.tipoServico?.nome || "-"}
+                <Td className="font-medium text-indigo-700">
+                  <span className="inline-flex items-center gap-2">
+                    <span>{iconeServico(item.tipoServico?.nome)}</span>
+                    {item.tipoServico?.nome || "-"}
+                  </span>
                 </Td>
 
                 <Td>
@@ -539,18 +901,28 @@ export function RelatorioProducao() {
 
             {servicos.length === 0 && (
               <tr>
-                <td className="p-4 border" colSpan="8">
+                <Td className="p-4" colSpan="8">
                   Nenhum serviço encontrado.
-                </td>
+                </Td>
               </tr>
             )}
           </tbody>
         </Table>
 
         <div className="flex justify-between items-center mt-4 no-print">
-          <p className="text-sm text-gray-600">
-            Página {paginacao.page} de {paginacao.totalPages} — Total: {paginacao.total}
-          </p>
+          <div className="flex flex-wrap gap-4 text-gray-600">
+            <p>
+              {paginacao.total} serviço{paginacao.total === 1 ? "" : "s"} encontrado{paginacao.total === 1 ? "" : "s"}
+            </p>
+
+            <p>
+              {operadoresEnvolvidos} operador{operadoresEnvolvidos === 1 ? "" : "es"} envolvido{operadoresEnvolvidos === 1 ? "" : "s"}
+            </p>
+
+            <p>
+              Tempo médio: {formatarTempoMedio(tempoMedioGeral)}
+            </p>
+          </div>
 
           <div className="flex gap-2">
             <Button

@@ -11,18 +11,16 @@ export async function produtividadeOperadores(req, res) {
     }
 
     if (dataInicio || dataFim) {
-      where.updatedAt = {}
+      where.dataFim = {}
 
       if (dataInicio) {
-        const inicio = new Date(dataInicio)
-        inicio.setHours(0, 0, 0, 0)
-        where.updatedAt.gte = inicio
+        const inicio = new Date(`${dataInicio}T00:00:00`)
+        where.dataFim.gte = inicio
       }
 
       if (dataFim) {
-        const fim = new Date(dataFim)
-        fim.setHours(23, 59, 59, 999)
-        where.updatedAt.lte = fim
+        const fim = new Date(`${dataFim}T23:59:59`)
+        where.dataFim.lte = fim
       }
     }
 
@@ -46,7 +44,6 @@ export async function produtividadeOperadores(req, res) {
           total: 0,
           abertos: 0,
           iniciados: 0,
-          pausados: 0,
           concluidos: 0,
           cancelados: 0
         }
@@ -56,7 +53,6 @@ export async function produtividadeOperadores(req, res) {
 
       if (servico.status === "ABERTO") mapa[operadorId].abertos += 1
       if (servico.status === "INICIADO") mapa[operadorId].iniciados += 1
-      if (servico.status === "PAUSADO") mapa[operadorId].pausados += 1
       if (servico.status === "CONCLUIDO") mapa[operadorId].concluidos += 1
       if (servico.status === "CANCELADO") mapa[operadorId].cancelados += 1
     })
@@ -66,7 +62,6 @@ export async function produtividadeOperadores(req, res) {
     )
 
     return res.json(resultado)
-
   } catch (error) {
     console.log(error)
 

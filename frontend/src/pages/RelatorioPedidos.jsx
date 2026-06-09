@@ -4,7 +4,7 @@ import { CabecalhoImpressao } from "../components/CabecalhoImpressao"
 import { Button } from "../components/ui/Button"
 import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
-import { Table, Th } from "../components/ui/Table"
+import { Table, Th, Td } from "../components/ui/Table"
 import { BadgePrazo } from "../components/ui/BadgePrazo"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
 
@@ -245,6 +245,15 @@ export function RelatorioPedidos() {
     })
   }
 
+  function filtroAtrasados() {
+    setStatus("")
+    setPage(1)
+
+    carregarRelatorio(1, {
+      situacaoPrazo: "ATRASADO"
+    })
+  }
+
   function filtroSemana() {
     const hoje = new Date()
 
@@ -310,19 +319,11 @@ export function RelatorioPedidos() {
     (p) => p.status === "EM_SEPARACAO"
   ).length
 
-  const emProducao = pedidos.filter(
-    (p) => p.status === "EM_PRODUCAO"
+  const Entregue = pedidos.filter(
+    (p) => p.status === "ENTREGUE"
   ).length
 
-  const prontoEntrega = pedidos.filter(
-    (p) => p.status === "PRONTO_ENTREGA"
-  ).length
-
-  const saiuEntrega = pedidos.filter(
-    (p) => p.status === "SAIU_ENTREGA"
-  ).length
-
-  const atrasados = pedidos.filter(
+  const Atrasado = pedidos.filter(
     (p) => p.situacaoPrazo === "ATRASADO"
   ).length
 
@@ -355,7 +356,7 @@ export function RelatorioPedidos() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-4 mb-6 no-print">
+      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-6 no-print">
 
   <div className="bg-white border border-gray-300 rounded-xl p-4 shadow-sm">
     <div className="flex items-center justify-between">
@@ -389,66 +390,34 @@ export function RelatorioPedidos() {
     </div>
   </div>
 
-  <div className="bg-sky-50 border border-sky-300 rounded-xl p-4 shadow-sm">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm text-sky-700">Em Produção</p>
-        <strong className="text-3xl font-bold text-sky-800">
-          {emProducao}
-        </strong>
-      </div>
-
-      <Factory
-        size={30}
-        className="text-sky-500 shrink-0"
-      />
-    </div>
-  </div>
-
-  <div className="bg-green-50 border border-green-300 rounded-xl p-4 shadow-sm">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm text-green-700">Pronto Entrega</p>
-        <strong className="text-3xl font-bold text-green-800">
-          {prontoEntrega}
-        </strong>
-      </div>
-
-      <PackageCheck
-        size={30}
-        className="text-green-500 shrink-0"
-      />
-    </div>
-  </div>
-
-  <div className="bg-indigo-50 border border-indigo-300 rounded-xl p-4 shadow-sm">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm text-indigo-700">Saiu Entrega</p>
-        <strong className="text-3xl font-bold text-indigo-800">
-          {saiuEntrega}
-        </strong>
-      </div>
-
-      <Truck
-        size={30}
-        className="text-indigo-500 shrink-0"
-      />
-    </div>
-  </div>
-
   <div className="bg-red-50 border border-red-300 rounded-xl p-4 shadow-sm">
     <div className="flex items-center justify-between">
       <div>
         <p className="text-sm text-red-700">Atrasados</p>
         <strong className="text-3xl font-bold text-red-800">
-          {atrasados}
+          {Atrasado}
         </strong>
       </div>
 
-      <TriangleAlert
+      <Factory
         size={30}
         className="text-red-500 shrink-0"
+      />
+    </div>
+  </div>
+
+  <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-4 shadow-sm">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm text-sky-700">Entregue</p>
+        <strong className="text-3xl font-bold text-emerald-800">
+          {Entregue}
+        </strong>
+      </div>
+
+      <PackageCheck
+        size={30}
+        className="text-emerald-500 shrink-0"
       />
     </div>
   </div>
@@ -470,7 +439,7 @@ export function RelatorioPedidos() {
   </div>
 
 </div>
-
+      
       <div className="flex flex-wrap gap-2 mb-4 no-print">
         <Button
           type="button"
@@ -478,79 +447,63 @@ export function RelatorioPedidos() {
           className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
           <CalendarDays size={16} />
-          <span>Hoje</span>
+          Hoje
         </Button>
 
         <Button
           type="button"
           onClick={filtroProximos5Dias}
-          className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
           <CalendarDays size={16} />
-          <span>Próximos 5 Dias</span>
+          Próximos 5 Dias
         </Button>
 
         <Button
           type="button"
           onClick={filtroSemana}
-          className="bg-green-500 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
           <CalendarDays size={16} />
-          <span>Esta Semana</span>
+          Esta Semana
         </Button>
 
         <Button
           type="button"
           onClick={filtroMes}
-          className="bg-cyan-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
           <CalendarDays size={16} />
-          <span>Este Mês</span>
+          Este Mês
         </Button>
 
+        <div className="h-8 w-px bg-gray-300 mx-2" />
+     
         <Button
           type="button"
-          onClick={() => filtroStatusRapido("EM_PRODUCAO")}
-          className="bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+          onClick={filtroAtrasados}
+          className="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
-          <Filter size={16} />
-          <span>Em Produção</span>
-        </Button>
-
-        <Button
-          type="button"
-          onClick={() => filtroStatusRapido("PRONTO_ENTREGA")}
-          className="bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-        >
-          <Filter size={16} />
-          <span>Pronto Entrega</span>
-        </Button>
-
-        <Button
-          type="button"
-          onClick={() => filtroStatusRapido("SAIU_ENTREGA")}
-          className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-        >
-          <Filter size={16} />
-          <span>Saiu Entrega</span>
+          <TriangleAlert size={16} />
+          Atrasados
         </Button>
 
         <Button
           type="button"
           onClick={() => filtroStatusRapido("ENTREGUE")}
-          className="bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+          className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
-          <Filter size={16} />
-          <span>Entregues</span>
+          <PackageCheck size={16} />
+          Entregues
         </Button>
 
         <Button
           type="button"
           onClick={() => filtroStatusRapido("CANCELADO")}
-          className="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+          className="bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
           <Filter size={16} />
-          <span>Cancelados</span>
+          Cancelados
         </Button>
       </div>
 
@@ -617,25 +570,21 @@ export function RelatorioPedidos() {
               setPage(1)
             }}
           >
-            <option value={25}>25 por página</option>
-            <option value={50}>50 por página</option>
-            <option value={100}>100 por página</option>
+            <option value={25}>25 registros</option>
+            <option value={50}>50 registros</option>
+            <option value={100}>100 registros</option>
           </Select>
           <div className="flex grid-cols-1 md:grid-cols-3 gap-4" >
             <Button variant="Primary" onClick={buscar} className="bg-blue-600 text-white px-6 py-3 rounded-lg flex items-center gap-2">
              <Search size={18} /> Buscar
             </Button> 
 
-            <Button variant="secondary" onClick={limparFiltros} className="bg-gray-500 text-white px-6 py-3 rounded-lg flex items-center gap-2">
+            <Button variant="" onClick={limparFiltros} className="bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 px-6 py-3 rounded-lg flex items-center gap-2">
               <Eraser size={18} />Limpar
             </Button>
           </div>
         </div>
-        
-        
         </div>
-
-        
 
       <CabecalhoImpressao
         empresa={empresa}
@@ -656,14 +605,16 @@ export function RelatorioPedidos() {
           </h2>
 
           <p className="text-gray-600">
-            Total encontrado: {paginacao.total}
+            {paginacao.total} pedido{paginacao.total === 1 ? "" : "s"} encontrado{paginacao.total === 1 ? "" : "s"}
           </p>
         </div>
 
         <Table>
           <thead>
             <tr>
-              <Th>Pedido</Th>
+              <Th className="uppercase text-xs tracking-wide">
+                Pedido
+              </Th>
               <Th>Cliente</Th>
               <Th>Vendedor</Th>
               <Th>Data Entrega</Th>
@@ -680,45 +631,42 @@ export function RelatorioPedidos() {
                 key={item.id}
                 className={obterClassePrazo(item.situacaoPrazo)}
               >
-                <td className="p-3 border font-bold">
+                <Td className="font-bold text-blue-700">
                   {obterNumeroPedido(item)}
-                </td>
+                </Td>
 
-                <td className="p-3 border">
-                  {item.cliente?.nome}
-                </td>
+                <Td>{item.cliente?.nome}</Td>
 
-                <td className="p-3 border">
-                  {item.vendedor?.nome}
-                </td>
+                <Td>{item.vendedor?.nome}</Td>
 
-                <td className="p-3 border">
-                  {formatarData(item.dataEntrega)}
-                </td>
+                <Td>{formatarData(item.dataEntrega)}</Td>
 
-                <td className="p-3 border">
+                <Td
+                  className="max-w-[250px] truncate"
+                  title={item.enderecoEntrega || item.cliente?.endereco || "-"}
+                >
                   {item.enderecoEntrega || item.cliente?.endereco || "-"}
-                </td>
+                </Td>
 
-                <td className="p-3 border">
+                <Td>
                   <BadgeStatus status={item.status} />
-                </td>
+                </Td>
 
-                <td className="p-3 border">
+                <Td>
                   <BadgePrazo prazo={item.situacaoPrazo} />
-                </td>
+                </Td>
 
-                <td className="p-3 border">
+                <Td className="font-semibold text-green-700">
                   {formatarMoeda(item.valorTotal)}
-                </td>
+                </Td>
               </tr>
             ))}
 
             {pedidos.length === 0 && (
               <tr>
-                <td className="p-4 border" colSpan="8">
+                <Td className="p-4 border" colSpan="8">
                   Nenhum pedido encontrado.
-                </td>
+                </Td>
               </tr>
             )}
           </tbody>
@@ -726,7 +674,7 @@ export function RelatorioPedidos() {
 
         <div className="flex justify-between items-center mt-4 no-print">
           <p className="text-sm text-gray-600">
-            Página {paginacao.page} de {paginacao.totalPages} — Total: {paginacao.total}
+            Página {paginacao.page} de {paginacao.totalPages}
           </p>
 
           <div className="flex gap-2">

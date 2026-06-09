@@ -3,6 +3,14 @@ import { Link } from "react-router-dom"
 import { api } from "../services/api"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
 import { Table, Th, Td } from "../components/ui/Table"
+import {
+  Bell,
+  TriangleAlert,
+  UserX,
+  Package,
+  PackageCheck,
+  Eye
+} from "lucide-react"
 
 function obterNumeroPedido(pedido) {
   if (
@@ -48,97 +56,137 @@ export function Alertas() {
     return <div>Carregando...</div>
   }
 
-  const totalAlertas =
-    alertas.pedidosAtrasados.length +
-    alertas.servicosSemOperador.length +
-    alertas.pedidosEmSeparacao.length +
-    alertas.pedidosProntoEntrega.length
+    const totalAlertas =
+      alertas.pedidosAtrasados.length +
+      alertas.servicosSemOperador.length +
+      alertas.pedidosEmSeparacao.length +
+      alertas.pedidosProntoEntrega.length
 
-  return (
-    <div>
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-8">
-        <ResumoCard
-          titulo="Total Alertas"
-          valor={totalAlertas}
-          tipo={totalAlertas > 0 ? "perigo" : "normal"}
-        />
+    return (
+      
+      <div>
+         <p className="text-sm text-gray-500 mb-4">
+          Monitoramento automático atualizado a cada 30 segundos.
+        </p> 
+        {totalAlertas === 0 && (
+          <div className="bg-green-50 border border-green-300 text-green-800 rounded-xl p-4 mb-6">
+            ✅ Tudo certo. Nenhum alerta crítico no momento.
+          </div>
+        )}
 
-        <ResumoCard
-          titulo="Pedidos Atrasados"
-          valor={alertas.pedidosAtrasados.length}
-          tipo={alertas.pedidosAtrasados.length > 0 ? "perigo" : "normal"}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-8">
+          <ResumoCard
+            titulo="Total Alertas"
+            valor={totalAlertas}
+            tipo={totalAlertas > 0 ? "perigo" : "normal"}
+            icon={Bell}
+          />
 
-        <ResumoCard
-          titulo="Sem Operador"
-          valor={alertas.servicosSemOperador.length}
-          tipo={alertas.servicosSemOperador.length > 0 ? "info" : "normal"}
-        />
+          <ResumoCard
+            titulo="Pedidos Atrasados"
+            valor={alertas.pedidosAtrasados.length}
+            tipo={alertas.pedidosAtrasados.length > 0 ? "perigo" : "normal"}
+            icon={TriangleAlert}
+          />
 
-        <ResumoCard
-          titulo="Em Separação"
-          valor={alertas.pedidosEmSeparacao.length}
-          tipo={alertas.pedidosEmSeparacao.length > 0 ? "alerta" : "normal"}
-        />
+          <ResumoCard
+            titulo="Sem Operador"
+            valor={alertas.servicosSemOperador.length}
+            tipo={alertas.servicosSemOperador.length > 0 ? "info" : "normal"}
+            icon={UserX}
+          />
 
-        <ResumoCard
-          titulo="Pronto Entrega"
-          valor={alertas.pedidosProntoEntrega.length}
-          tipo={alertas.pedidosProntoEntrega.length > 0 ? "info" : "normal"}
-        />
+          <ResumoCard
+            titulo="Em Separação"
+            valor={alertas.pedidosEmSeparacao.length}
+            tipo={alertas.pedidosEmSeparacao.length > 0 ? "alerta" : "normal"}
+            icon={Package}
+          />
+
+          <ResumoCard
+            titulo="Pronto Entrega"
+            valor={alertas.pedidosProntoEntrega.length}
+            tipo={alertas.pedidosProntoEntrega.length > 0 ? "sucesso" : "normal"}
+            icon={PackageCheck}
+          />
+        </div>
+
+        {alertas.pedidosAtrasados.length > 0 && (
+          <SecaoPedidos
+            titulo="Pedidos Atrasados"
+            pedidos={alertas.pedidosAtrasados}
+            formatarData={formatarData}
+          />
+        )}
+        {alertas.servicosSemOperador.length > 0 && (
+          <SecaoServicos
+            titulo="Serviços Sem Operador"
+            servicos={alertas.servicosSemOperador}
+          />
+        )}
+        {alertas.pedidosEmSeparacao.length > 0 && (
+          <SecaoPedidos
+            titulo="Pedidos Em Separação"
+            pedidos={alertas.pedidosEmSeparacao}
+            formatarData={formatarData}
+          />
+        )}
+        {alertas.pedidosProntoEntrega.length > 0 && (
+          <SecaoPedidos
+            titulo="Pedidos Prontos para Entrega"
+            pedidos={alertas.pedidosProntoEntrega}
+            formatarData={formatarData}
+          />
+        )}
       </div>
-
-      <SecaoPedidos
-        titulo="Pedidos Atrasados"
-        pedidos={alertas.pedidosAtrasados}
-        formatarData={formatarData}
-      />
-
-      <SecaoServicos
-        titulo="Serviços Sem Operador"
-        servicos={alertas.servicosSemOperador}
-      />
-
-      <SecaoPedidos
-        titulo="Pedidos Em Separação"
-        pedidos={alertas.pedidosEmSeparacao}
-        formatarData={formatarData}
-      />
-
-      <SecaoPedidos
-        titulo="Pedidos Prontos para Entrega"
-        pedidos={alertas.pedidosProntoEntrega}
-        formatarData={formatarData}
-      />
-    </div>
-  )
-}
-
-function ResumoCard({ titulo, valor, tipo }) {
-  const classes = {
-    normal: "bg-white border-gray-200",
-    perigo: "bg-red-50 border-red-500",
-    alerta: "bg-yellow-50 border-yellow-500",
-    info: "bg-blue-50 border-blue-500"
+    )
   }
 
-  return (
-    <div
-      className={`
-        rounded-xl shadow-sm border p-4
-        ${classes[tipo || "normal"]}
-      `}
-    >
-      <p className="text-sm text-gray-600">
-        {titulo}
-      </p>
+  function ResumoCard({ titulo, valor, tipo = "normal", icon: Icon }) {
+    const classes = {
+      normal: {
+        card: "bg-white border-gray-200",
+        icon: "bg-gray-100 text-gray-700"
+      },
+      perigo: {
+        card: "bg-red-50 border-red-300",
+        icon: "bg-red-100 text-red-700"
+      },
+      alerta: {
+        card: "bg-yellow-50 border-yellow-300",
+        icon: "bg-yellow-100 text-yellow-700"
+      },
+      info: {
+        card: "bg-blue-50 border-blue-300",
+        icon: "bg-blue-100 text-blue-700"
+      },
+      sucesso: {
+        card: "bg-green-50 border-green-300",
+        icon: "bg-green-100 text-green-700"
+      }
+    }
 
-      <strong className="text-xl font-bold">
-        {valor}
-      </strong>
-    </div>
-  )
-}
+    const estilo = classes[tipo] || classes.normal
+
+    return (
+      <div className={`rounded-xl shadow-sm border p-4 ${estilo.card}`}>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm text-gray-600">{titulo}</p>
+            <strong className="text-2xl font-bold block mt-1">
+              {valor}
+            </strong>
+          </div>
+
+          {Icon && (
+            <div className={`p-3 rounded-xl ${estilo.icon}`}>
+              <Icon size={24} />
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
 
 function SecaoPedidos({ titulo, pedidos, formatarData }) {
   return (
@@ -185,8 +233,9 @@ function SecaoPedidos({ titulo, pedidos, formatarData }) {
               <Td>
                 <Link
                   to={`/pedidos/${pedido.id}`}
-                  className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm"
+                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm"
                 >
+                  <Eye size={15} />
                   Ver
                 </Link>
               </Td>
@@ -256,8 +305,9 @@ function SecaoServicos({ titulo, servicos }) {
               <Td>
                 <Link
                   to={`/pedidos/${servico.plano?.pedido?.id}`}
-                  className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm"
+                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm"
                 >
+                  <Eye size={15} />
                   Ver
                 </Link>
               </Td>
@@ -267,7 +317,7 @@ function SecaoServicos({ titulo, servicos }) {
           {servicos.length === 0 && (
             <tr>
               <Td colSpan="7">
-                Nenhum item encontrado.
+                Tudo certo por aqui.
               </Td>
             </tr>
           )}

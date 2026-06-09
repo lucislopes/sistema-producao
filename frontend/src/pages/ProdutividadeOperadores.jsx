@@ -4,6 +4,19 @@ import { Input } from "../components/ui/Input"
 import { Table, Th, Td } from "../components/ui/Table"
 import { Button } from "../components/ui/Button"
 import { CabecalhoImpressao } from "../components/CabecalhoImpressao"
+import {
+  Download,
+  Printer,
+  CalendarDays,
+  Search,
+  Eraser,
+  ClipboardList,
+  Factory,
+  CheckCircle2,
+  CircleX,
+  Trophy,
+  Users
+} from "lucide-react"
 
 export function ProdutividadeOperadores() {
   const [dados, setDados] = useState([])
@@ -170,6 +183,52 @@ export function ProdutividadeOperadores() {
     0
   )
 
+  const melhorOperador =
+  dados.length > 0 ? dados[0] : null
+
+
+  function ResumoCard({ titulo, valor, tipo = "normal", icon: Icon }) {
+  const classes = {
+    normal: {
+      card: "bg-white border-gray-200",
+      icon: "bg-gray-100 text-gray-700"
+    },
+    alerta: {
+      card: "bg-yellow-50 border-yellow-300",
+      icon: "bg-yellow-100 text-yellow-700"
+    },
+    sucesso: {
+      card: "bg-green-50 border-green-300",
+      icon: "bg-green-100 text-green-700"
+    },
+    info: {
+      card: "bg-blue-50 border-blue-300",
+      icon: "bg-blue-100 text-blue-700"
+    }
+  }
+
+  const estilo = classes[tipo] || classes.normal
+
+  return (
+    <div className={`rounded-xl shadow-sm border p-4 ${estilo.card}`}>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm text-gray-600">{titulo}</p>
+          <strong className="text-2xl font-bold block mt-1">
+            {valor}
+          </strong>
+        </div>
+
+        {Icon && (
+          <div className={`p-3 rounded-xl ${estilo.icon}`}>
+            <Icon size={24} />
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6 no-print">
@@ -177,43 +236,55 @@ export function ProdutividadeOperadores() {
           <Button
             type="button"
             onClick={exportarCSV}
-            className="bg-green-700 text-white px-6 py-3 rounded-lg"
+            className="bg-green-700 text-white px-6 py-3 rounded-lg flex items-center gap-2"
           >
+            <Download size={18} />
             Exportar CSV
           </Button>
 
           <Button
             type="button"
             onClick={imprimir}
-            className="bg-gray-800 text-white px-6 py-3 rounded-lg"
+            className="bg-gray-800 text-white px-6 py-3 rounded-lg flex items-center gap-2"
           >
+            <Printer size={18} />
             Imprimir
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6 no-print">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-6 no-print">
         <ResumoCard
-          titulo="Total"
+          titulo="Total Serviços"
           valor={totalServicos}
+          icon={ClipboardList}
+        />
+
+        <ResumoCard
+          titulo="Operadores"
+          valor={dados.length}
+          icon={Users}
         />
 
         <ResumoCard
           titulo="Em Produção"
           valor={totalEmProducao}
           tipo="info"
+          icon={Factory}
         />
 
         <ResumoCard
           titulo="Concluídos"
           valor={totalConcluidos}
           tipo="sucesso"
+          icon={CheckCircle2}
         />
 
         <ResumoCard
-          titulo="Cancelados"
-          valor={totalCancelados}
-          tipo={totalCancelados > 0 ? "alerta" : "normal"}
+          titulo="Melhor Operador"
+          valor={melhorOperador?.operador || "-"}
+          tipo="sucesso"
+          icon={Trophy}
         />
       </div>
 
@@ -221,24 +292,27 @@ export function ProdutividadeOperadores() {
         <button
           type="button"
           onClick={filtroHoje}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
+          <CalendarDays size={16} />
           Hoje
         </button>
 
         <button
           type="button"
           onClick={filtroSemana}
-          className="bg-purple-600 text-white px-4 py-2 rounded-lg"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
+          <CalendarDays size={16} />
           Esta semana
         </button>
 
         <button
           type="button"
           onClick={filtroMes}
-          className="bg-cyan-600 text-white px-4 py-2 rounded-lg"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
+          <CalendarDays size={16} />
           Este mês
         </button>
       </div>
@@ -258,21 +332,24 @@ export function ProdutividadeOperadores() {
           />
 
           <div className="flex gap-3">
-            <button
+            <Button
               type="button"
-              onClick={carregarProdutividade}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg"
+              onClick={() => carregarProdutividade()}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg flex items-center justify-center gap-2"
             >
+              <Search size={18} />
               Buscar
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="button"
               onClick={limparFiltros}
-              className="bg-gray-500 text-white px-6 py-3 rounded-lg"
+              variant=""
+              className="bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 px-6 py-3 rounded-lg flex items-center justify-center gap-2"
             >
+              <Eraser size={18} />
               Limpar
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -341,11 +418,11 @@ export function ProdutividadeOperadores() {
           <tbody>
             {dados.map((item, index) => (
               <tr key={item.operadorId} className="border-t">
-                <Td className="font-bold">
+                <Td className="font-bold text-blue-700">
                   {index + 1}º
                 </Td>
 
-                <Td>
+                <Td className="font-semibold">
                   {item.operador}
                 </Td>
 
@@ -353,15 +430,15 @@ export function ProdutividadeOperadores() {
                   {item.total || 0}
                 </Td>
 
-                <Td>
+                <Td className="text-blue-700 font-medium">
                   {item.iniciados || 0}
                 </Td>
 
-                <Td className="font-bold">
+                <Td className="text-green-700 font-bold">
                   {item.concluidos || 0}
                 </Td>
 
-                <Td>
+                <Td className="text-red-700 font-medium">
                   {item.cancelados || 0}
                 </Td>
               </tr>
@@ -381,28 +458,3 @@ export function ProdutividadeOperadores() {
   )
 }
 
-function ResumoCard({ titulo, valor, tipo }) {
-  const classes = {
-    normal: "bg-white border-gray-200",
-    alerta: "bg-yellow-50 border-yellow-500",
-    sucesso: "bg-green-50 border-green-500",
-    info: "bg-blue-50 border-blue-500"
-  }
-
-  return (
-    <div
-      className={`
-        rounded-xl shadow-sm border p-4
-        ${classes[tipo || "normal"]}
-      `}
-    >
-      <p className="text-sm text-gray-600">
-        {titulo}
-      </p>
-
-      <strong className="text-2xl font-bold">
-        {valor}
-      </strong>
-    </div>
-  )
-}
