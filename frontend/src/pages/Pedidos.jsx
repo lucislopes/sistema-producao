@@ -14,7 +14,6 @@ import {
   ClipboardList,
   UserPlus,
   Route,
-  MapPinned,
   FileText,
   Search,
   Filter,
@@ -640,7 +639,7 @@ export function Pedidos() {
 
           <textarea
             placeholder="Observações"
-            className="border p-3 rounded-lg md:col-span-2"
+            className="border border-gray-300 p-3 rounded-lg md:col-span-2"
             value={observacoes}
             onChange={(e) => setObservacoes(e.target.value)}
           />
@@ -652,7 +651,7 @@ export function Pedidos() {
               size="sm"
               type="button"
               variant="secondary"
-              className="flex items-center gap-2 px-5 py-3"
+              className="flex items-center gap-2 px-3 py-3"
               onClick={limparFormulario}
             >
               <X size={16} />
@@ -792,15 +791,15 @@ export function Pedidos() {
           </div>
         </div>
 
-      <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+      <div className="bg-white shadow-md">
         <Table>
           <thead>
             <tr>
               <Th>Pedido</Th>
               <Th>Cliente</Th>
               <Th>Vendedor</Th>
-              <Th>Entrega</Th>
-              <Th>Data</Th> 
+              <Th>Tipo Entrega</Th>
+              <Th>Data Entrega</Th>
               <Th>Status</Th>
               <Th>Ações</Th>
             </tr>
@@ -957,20 +956,19 @@ export function Pedidos() {
             Cancelar
           </Button>
 
-          <div className="mt-6 flex justify-end gap-2">
             <Button
               size="sm"
               variant="primary"
-              type="submit"
+              type="button"
+              onClick={criarClienteRapido}
               className="flex items-center gap-2 px-6 py-3"
             >
               <Save size={16} />
-              Salvar Pedido
+              Salvar Cliente
             </Button>
           </div>
         </div>
       </div>
-    </div>
   )}
 
     {modalRotaAberto && (
