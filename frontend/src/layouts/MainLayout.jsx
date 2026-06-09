@@ -1,5 +1,40 @@
-import { Outlet, NavLink, Link, useNavigate, useLocation } from "react-router-dom"
-import { useContext, useEffect, useRef, useState } from "react"
+import {
+  Outlet,
+  NavLink,
+  Link,
+  useNavigate,
+  useLocation
+} from "react-router-dom"
+import {
+  useContext,
+  useEffect,
+  useRef,
+  useState
+} from "react"
+
+import {
+  LayoutDashboard,
+  ShoppingCart,
+  ClipboardList,
+  Scissors,
+  ListChecks,
+  Truck,
+  Factory,
+  Columns3,
+  BarChart3,
+  FileText,
+  Bell,
+  Users,
+  UserCog,
+  MapPinned,
+  Wrench,
+  Settings,
+  KeyRound,
+  LogOut,
+  ChevronDown,
+  ChevronRight,
+  Zap
+} from "lucide-react"
 
 import { AuthContext } from "../contexts/AuthContext"
 import { BuscaGlobal } from "../components/BuscaGlobal"
@@ -17,6 +52,16 @@ export function MainLayout() {
   const isVendedorOperador = funcao === "VENDEDOR_OPERADOR"
 
   const [menuAberto, setMenuAberto] = useState(false)
+  const [gruposAbertos, setGruposAbertos] = useState({
+    Principal: true,
+    Dashboards: false,
+    Operação: true,
+    Produção: true,
+    Relatórios: false,
+    Cadastros: false,
+    Sistema: false
+  })
+
   const menuRef = useRef(null)
 
   useEffect(() => {
@@ -36,27 +81,53 @@ export function MainLayout() {
     }
   }, [])
 
+  function alternarGrupo(titulo) {
+    setGruposAbertos((atual) => ({
+      ...atual,
+      [titulo]: !atual[titulo]
+    }))
+  }
+
   function MenuGrupo({ titulo, children }) {
+    const aberto = gruposAbertos[titulo]
+
     return (
       <div>
-        <p className="text-xs uppercase text-gray-400 font-bold mt-5 mb-2">
-          {titulo}
-        </p>
+        <button
+          type="button"
+          onClick={() => alternarGrupo(titulo)}
+          className="
+            w-full flex items-center justify-between
+            text-xs uppercase text-gray-400 font-bold
+            mt-5 mb-2 hover:text-gray-200 transition
+          "
+        >
+          <span>{titulo}</span>
 
-        <div className="flex flex-col gap-1">
-          {children}
-        </div>
+          {aberto ? (
+            <ChevronDown size={15} />
+          ) : (
+            <ChevronRight size={15} />
+          )}
+        </button>
+
+        {aberto && (
+          <div className="flex flex-col gap-1">
+            {children}
+          </div>
+        )}
       </div>
     )
   }
 
-  function MenuLink({ to, children }) {
+  function MenuLink({ to, icon: Icon, children }) {
     return (
       <NavLink
         to={to}
         className={({ isActive }) =>
           `
           text-sm px-3 py-2 rounded-lg transition
+          flex items-center gap-2
           ${
             isActive
               ? "bg-gray-800 text-white font-semibold"
@@ -65,7 +136,8 @@ export function MainLayout() {
           `
         }
       >
-        {children}
+        {Icon && <Icon size={17} />}
+        <span>{children}</span>
       </NavLink>
     )
   }
@@ -77,6 +149,9 @@ export function MainLayout() {
 
     const titulos = {
       "/dashboard": "Dashboard",
+      "/dashboard/producao": "Dashboard Produção",
+      "/dashboard/expedicao": "Dashboard Expedição",
+      "/dashboard/comercial": "Dashboard Comercial",
       "/clientes": "Clientes",
       "/pedidos": "Pedidos",
       "/funcionarios": "Funcionários",
@@ -107,32 +182,48 @@ export function MainLayout() {
   return (
     <div className="flex min-h-screen bg-gray-100">
       <aside className="w-64 bg-gray-900 text-white p-4 min-h-screen overflow-y-auto sticky top-0 no-print">
-        <h1 className="text-2xl font-bold mb-8">
+        <h1 className="text-2xl font-bold mb-6">
           Produção
         </h1>
 
         <nav className="flex flex-col">
           <MenuGrupo titulo="Principal">
-            <MenuLink to="/dashboard">
+            <MenuLink to="/dashboard" icon={LayoutDashboard}>
               Dashboard
             </MenuLink>
           </MenuGrupo>
 
           {(isAdmin || isVendedor || isVendedorOperador) && (
+            <MenuGrupo titulo="Dashboards">
+              <MenuLink to="/dashboard/producao" icon={Factory}>
+                Produção
+              </MenuLink>
+
+              <MenuLink to="/dashboard/expedicao" icon={Truck}>
+                Expedição
+              </MenuLink>
+
+              <MenuLink to="/dashboard/comercial" icon={BarChart3}>
+                Comercial
+              </MenuLink>
+            </MenuGrupo>
+          )}
+
+          {(isAdmin || isVendedor || isVendedorOperador) && (
             <MenuGrupo titulo="Operação">
-              <MenuLink to="/pedidos">
+              <MenuLink to="/pedidos" icon={ShoppingCart}>
                 Pedidos
               </MenuLink>
 
-              <MenuLink to="/planos-corte">
+              <MenuLink to="/planos-corte" icon={Scissors}>
                 Planos de Corte
               </MenuLink>
 
-              <MenuLink to="/servicos-plano">
+              <MenuLink to="/servicos-plano" icon={ListChecks}>
                 Serviços do Plano
               </MenuLink>
 
-              <MenuLink to="/expedicao">
+              <MenuLink to="/expedicao" icon={Truck}>
                 Expedição
               </MenuLink>
             </MenuGrupo>
@@ -140,11 +231,11 @@ export function MainLayout() {
 
           {(isAdmin || isOperador || isVendedorOperador) && (
             <MenuGrupo titulo="Produção">
-              <MenuLink to="/painel-operador">
+              <MenuLink to="/painel-operador" icon={Factory}>
                 Painel Operador
               </MenuLink>
 
-              <MenuLink to="/kanban">
+              <MenuLink to="/kanban" icon={Columns3}>
                 Kanban
               </MenuLink>
             </MenuGrupo>
@@ -152,23 +243,23 @@ export function MainLayout() {
 
           {(isAdmin || isVendedor || isVendedorOperador) && (
             <MenuGrupo titulo="Relatórios">
-              <MenuLink to="/relatorio-expedicao">
+              <MenuLink to="/relatorio-expedicao" icon={FileText}>
                 Expedição
               </MenuLink>
 
-              <MenuLink to="/relatorio-pedidos">
+              <MenuLink to="/relatorio-pedidos" icon={ClipboardList}>
                 Pedidos
               </MenuLink>
 
-              <MenuLink to="/relatorio-producao">
+              <MenuLink to="/relatorio-producao" icon={BarChart3}>
                 Produção
               </MenuLink>
 
-              <MenuLink to="/alertas">
+              <MenuLink to="/alertas" icon={Bell}>
                 Alertas
               </MenuLink>
 
-              <MenuLink to="/produtividade-operadores">
+              <MenuLink to="/produtividade-operadores" icon={Users}>
                 Produtividade
               </MenuLink>
             </MenuGrupo>
@@ -176,19 +267,19 @@ export function MainLayout() {
 
           {isAdmin && (
             <MenuGrupo titulo="Cadastros">
-              <MenuLink to="/clientes">
+              <MenuLink to="/clientes" icon={Users}>
                 Clientes
               </MenuLink>
 
-              <MenuLink to="/funcionarios">
+              <MenuLink to="/funcionarios" icon={UserCog}>
                 Funcionários
               </MenuLink>
 
-              <MenuLink to="/rotas-entrega">
+              <MenuLink to="/rotas-entrega" icon={MapPinned}>
                 Rotas de Entrega
               </MenuLink>
 
-              <MenuLink to="/tipos-servico">
+              <MenuLink to="/tipos-servico" icon={Wrench}>
                 Tipos de Serviço
               </MenuLink>
             </MenuGrupo>
@@ -196,7 +287,7 @@ export function MainLayout() {
 
           {isAdmin && (
             <MenuGrupo titulo="Sistema">
-              <MenuLink to="/configuracao-empresa">
+              <MenuLink to="/configuracao-empresa" icon={Settings}>
                 Configurações
               </MenuLink>
             </MenuGrupo>
@@ -218,6 +309,7 @@ export function MainLayout() {
               className={({ isActive }) =>
                 `
                 text-sm px-3 py-2 rounded-lg transition
+                flex items-center gap-2
                 ${
                   isActive
                     ? "bg-gray-800 text-white font-semibold"
@@ -226,14 +318,16 @@ export function MainLayout() {
                 `
               }
             >
+              <KeyRound size={17} />
               Alterar Senha
             </NavLink>
 
             <button
               type="button"
-              className="text-left text-sm text-gray-100 hover:text-white hover:bg-gray-800 px-3 py-2 rounded-lg transition"
+              className="text-left text-sm text-gray-100 hover:text-white hover:bg-gray-800 px-3 py-2 rounded-lg transition flex items-center gap-2"
               onClick={sair}
             >
+              <LogOut size={17} />
               Sair
             </button>
           </div>
@@ -256,58 +350,65 @@ export function MainLayout() {
             <button
               type="button"
               onClick={() => setMenuAberto(!menuAberto)}
-              className="px-4 py-2 rounded-xl bg-gray-900 text-white text-sm hover:bg-gray-800 transition"
+              className="px-4 py-2 rounded-xl bg-gray-900 text-white text-sm hover:bg-gray-800 transition flex items-center gap-2"
             >
-              ⚡ Ações
+              <Zap size={16} />
+              Ações
             </button>
 
             {menuAberto && (
-              <div className="absolute right-0 mt-2 w-56 bg-white border rounded-xl shadow-lg z-50 overflow-hidden">
+              <div className="absolute right-0 mt-2 w-60 bg-white border rounded-xl shadow-lg z-50 overflow-hidden">
                 <Link
                   to="/pedidos"
-                  className="block px-4 py-3 hover:bg-gray-100 text-sm"
+                  className="flex items-center gap-2 px-4 py-3 hover:bg-gray-100 text-sm"
                   onClick={() => setMenuAberto(false)}
                 >
+                  <ShoppingCart size={16} />
                   Pedidos
                 </Link>
 
                 <Link
                   to="/expedicao"
-                  className="block px-4 py-3 hover:bg-gray-100 text-sm"
+                  className="flex items-center gap-2 px-4 py-3 hover:bg-gray-100 text-sm"
                   onClick={() => setMenuAberto(false)}
                 >
+                  <Truck size={16} />
                   Expedição
                 </Link>
 
                 <Link
                   to="/kanban"
-                  className="block px-4 py-3 hover:bg-gray-100 text-sm"
+                  className="flex items-center gap-2 px-4 py-3 hover:bg-gray-100 text-sm"
                   onClick={() => setMenuAberto(false)}
                 >
+                  <Columns3 size={16} />
                   Kanban
                 </Link>
 
                 <Link
                   to="/alertas"
-                  className="block px-4 py-3 hover:bg-gray-100 text-sm"
+                  className="flex items-center gap-2 px-4 py-3 hover:bg-gray-100 text-sm"
                   onClick={() => setMenuAberto(false)}
                 >
+                  <Bell size={16} />
                   Alertas
                 </Link>
 
                 <Link
                   to="/relatorio-pedidos"
-                  className="block px-4 py-3 hover:bg-gray-100 text-sm"
+                  className="flex items-center gap-2 px-4 py-3 hover:bg-gray-100 text-sm"
                   onClick={() => setMenuAberto(false)}
                 >
+                  <ClipboardList size={16} />
                   Relatório de Pedidos
                 </Link>
 
                 <Link
                   to="/relatorio-expedicao"
-                  className="block px-4 py-3 hover:bg-gray-100 text-sm"
+                  className="flex items-center gap-2 px-4 py-3 hover:bg-gray-100 text-sm"
                   onClick={() => setMenuAberto(false)}
                 >
+                  <FileText size={16} />
                   Relatório de Expedição
                 </Link>
               </div>

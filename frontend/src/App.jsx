@@ -26,6 +26,9 @@ import { Alertas } from "./pages/Alertas"
 import { ProdutividadeOperadores } from "./pages/ProdutividadeOperadores"
 import { ConfiguracaoEmpresa } from "./pages/ConfiguracaoEmpresa"
 import { MinhaSenha } from "./pages/MinhaSenha"
+import { DashboardProducao } from "./pages/dashboard/DashboardProducao"
+import { DashboardExpedicao } from "./pages/dashboard/DashboardExpedicao"
+import { DashboardComercial } from "./pages/dashboard/DashboardComercial"
 
 export default function App() {
 
@@ -143,6 +146,9 @@ export default function App() {
           />
 
           <Route path="/minha-senha" element={<MinhaSenha />} />
+          <Route path="/dashboard/producao" element={<DashboardProducao />} />
+          <Route path="/dashboard/expedicao" element={<DashboardExpedicao />} />
+          <Route path="/dashboard/comercial" element={<DashboardComercial />} />
 
         </Route>
 

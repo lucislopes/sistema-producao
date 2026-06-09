@@ -5,6 +5,18 @@ import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
 import { Table, Th } from "../components/ui/Table"
 import { Button } from "../components/ui/Button"
+import {
+  Download,
+  Printer,
+  TriangleAlert,
+  CalendarDays,
+  PackageCheck,
+  Truck,
+  Search,
+  Eraser,
+  MapPinned,
+  Filter
+} from "lucide-react"
 
 
 export function RelatorioExpedicao() {
@@ -123,6 +135,52 @@ export function RelatorioExpedicao() {
     }
 
     return ""
+  }
+
+  function ResumoCard({ titulo, valor, tipo = "normal", icon: Icon }) {
+    const classes = {
+      normal: {
+        card: "bg-white border-gray-200",
+        icon: "bg-gray-100 text-gray-700"
+      },
+      perigo: {
+        card: "bg-red-50 border-red-300",
+        icon: "bg-red-100 text-red-700"
+      },
+      alerta: {
+        card: "bg-yellow-50 border-yellow-300",
+        icon: "bg-yellow-100 text-yellow-700"
+      },
+      sucesso: {
+        card: "bg-green-50 border-green-300",
+        icon: "bg-green-100 text-green-700"
+      },
+      info: {
+        card: "bg-blue-50 border-blue-300",
+        icon: "bg-blue-100 text-blue-700"
+      }
+    }
+
+    const estilo = classes[tipo] || classes.normal
+
+    return (
+      <div className={`rounded-xl shadow-sm border p-4 ${estilo.card}`}>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm text-gray-600">{titulo}</p>
+            <strong className="text-2xl font-bold block mt-1">
+              {valor}
+            </strong>
+          </div>
+
+          {Icon && (
+            <div className={`p-3 rounded-xl ${estilo.icon}`}>
+              <Icon size={24} />
+            </div>
+          )}
+        </div>
+      </div>
+    )
   }
 
   function filtroHoje() {
@@ -306,81 +364,76 @@ export function RelatorioExpedicao() {
           <Button
             type="button"
             onClick={exportarCSV}
-            className="bg-green-700 text-white px-6 py-3 rounded-lg"
+            className="bg-green-700 text-white px-6 py-3 rounded-lg flex items-center gap-2"
           >
+            <Download size={18} />
             Exportar CSV
           </Button>
 
           <Button
             type="button"
             onClick={imprimir}
-            className="bg-gray-800 text-white px-6 py-3 rounded-lg"
+            className="bg-gray-800 text-white px-6 py-3 rounded-lg flex items-center gap-2"
           >
+            <Printer size={18} />
             Imprimir
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 no-print">
-        <div className="bg-red-50 border border-red-300 rounded-xl p-4">
-          <p className="text-sm text-gray-600">Atrasados</p>
-          <strong className="text-2xl">{atrasados}</strong>
-        </div>
+        <ResumoCard
+          titulo="Atrasados"
+          valor={atrasados}
+          tipo={atrasados > 0 ? "perigo" : "normal"}
+          icon={TriangleAlert}
+        />
 
-        <div className="bg-yellow-50 border border-yellow-300 rounded-xl p-4">
-          <p className="text-sm text-gray-600">Hoje</p>
-          <strong className="text-2xl">{hojeQtd}</strong>
-        </div>
+        <ResumoCard
+          titulo="Hoje"
+          valor={hojeQtd}
+          tipo="alerta"
+          icon={CalendarDays}
+        />
 
-        <div className="bg-green-50 border border-green-300 rounded-xl p-4">
-          <p className="text-sm text-gray-600">Pronto Entrega</p>
-          <strong className="text-2xl">{prontoEntrega}</strong>
-        </div>
+        <ResumoCard
+          titulo="Pronto Entrega"
+          valor={prontoEntrega}
+          tipo="sucesso"
+          icon={PackageCheck}
+        />
 
-        <div className="bg-blue-50 border border-blue-300 rounded-xl p-4">
-          <p className="text-sm text-gray-600">Saiu Entrega</p>
-          <strong className="text-2xl">{saiuEntrega}</strong>
-        </div>
+        <ResumoCard
+          titulo="Saiu Entrega"
+          valor={saiuEntrega}
+          tipo="info"
+          icon={Truck}
+        />
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4 no-print">
-        <Button
-          type="button"
-          onClick={filtroHoje}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg"
-        >
+        <Button type="button" onClick={filtroHoje} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+          <CalendarDays size={16} />
           Hoje
         </Button>
 
-        <Button
-          type="button"
-          onClick={filtroAmanha}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg"
-        >
+        <Button type="button" onClick={filtroAmanha} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+          <CalendarDays size={16} />
           Amanhã
         </Button>
 
-        <Button
-          type="button"
-          onClick={filtroProximos5Dias}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg"
-        >
+        <Button type="button" onClick={filtroProximos5Dias} className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+          <CalendarDays size={16} />
           Próximos 5 dias
         </Button>
 
-        <Button
-          type="button"
-          onClick={filtroSemana}
-          className="bg-purple-600 text-white px-4 py-2 rounded-lg"
-        >
+        <Button type="button" onClick={filtroSemana} className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+          <CalendarDays size={16} />
           Esta semana
         </Button>
 
-        <Button
-          type="button"
-          onClick={filtroMes}
-          className="bg-cyan-600 text-white px-4 py-2 rounded-lg"
-        >
+        <Button type="button" onClick={filtroMes} className="bg-cyan-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+          <CalendarDays size={16} />
           Este mês
         </Button>
       </div>
@@ -431,16 +484,19 @@ export function RelatorioExpedicao() {
           <Button
             type="button"
             onClick={() => carregarRelatorio()}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg"
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg flex items-center justify-center gap-2"
           >
+            <Search size={18} />
             Buscar
           </Button>
 
           <Button
             type="button"
             onClick={limparFiltros}
-            className="bg-gray-500 text-white px-6 py-3 rounded-lg"
+            variant=""
+            className="bg-red-50 text-red-700 border border-red-200 px-6 py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-red-100"
           >
+            <Eraser size={18} />
             Limpar
           </Button>
         </div>

@@ -8,6 +8,22 @@ import { Table, Th } from "../components/ui/Table"
 import { BadgePrazo } from "../components/ui/BadgePrazo"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
 
+import {
+  Download,
+  Printer,
+  CalendarDays,
+  Search,
+  Eraser,
+  ClipboardList,
+  Package,
+  Factory,
+  PackageCheck,
+  Truck,
+  TriangleAlert,
+  DollarSign,
+  Filter
+} from "lucide-react"
+
 export function RelatorioPedidos() {
   const [pedidos, setPedidos] = useState([])
   const [vendedores, setVendedores] = useState([])
@@ -319,110 +335,227 @@ export function RelatorioPedidos() {
     <div>
       <div className="flex justify-between items-center mb-6 no-print">
         <div className="flex gap-2">
-          <Button variant="success" onClick={exportarCSV} className="bg-green-700 text-white px-6 py-3 rounded-lg">
+          <Button
+            type="button"
+            onClick={exportarCSV}
+            className="bg-green-700 text-white px-6 py-3 rounded-lg flex items-center gap-2"
+          >
+            <Download size={18} />
             Exportar CSV
           </Button>
 
-          <Button variant="dark" onClick={imprimir} className="bg-gray-800 text-white px-6 py-3 rounded-lg">
+          <Button
+            type="button"
+            onClick={imprimir}
+            className="bg-gray-800 text-white px-6 py-3 rounded-lg flex items-center gap-2"
+          >
+            <Printer size={18} />
             Imprimir
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-7 gap-4 mb-6 no-print">
-        <div className="bg-white border border-gray-300 rounded-xl p-4">
-          <p className="text-sm text-gray-600">Total Pedidos</p>
-          <strong className="text-2xl">{totalPedidos}</strong>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-4 mb-6 no-print">
 
-        <div className="bg-blue-50 border border-blue-300 rounded-xl p-4">
-          <p className="text-sm text-gray-600">Em Separação</p>
-          <strong className="text-2xl">{emSeparacao}</strong>
-        </div>
-
-        <div className="bg-blue-50 border border-blue-300 rounded-xl p-4">
-          <p className="text-sm text-gray-600">Em Produção</p>
-          <strong className="text-2xl">{emProducao}</strong>
-        </div>
-
-        <div className="bg-green-50 border border-green-300 rounded-xl p-4">
-          <p className="text-sm text-gray-600">Pronto Entrega</p>
-          <strong className="text-2xl">{prontoEntrega}</strong>
-        </div>
-
-        <div className="bg-indigo-50 border border-indigo-300 rounded-xl p-4">
-          <p className="text-sm text-gray-600">Saiu Entrega</p>
-          <strong className="text-2xl">{saiuEntrega}</strong>
-        </div>
-
-        <div className="bg-red-50 border border-red-300 rounded-xl p-4">
-          <p className="text-sm text-gray-600">Atrasados</p>
-          <strong className="text-2xl">{atrasados}</strong>
-        </div>
-
-        <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-4">
-          <p className="text-sm text-gray-600">Valor Exibido</p>
-          <strong className="text-2xl">
-            {formatarMoeda(valorTotalPedidos)}
-          </strong>
-        </div>
+  <div className="bg-white border border-gray-300 rounded-xl p-4 shadow-sm">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm text-gray-500">Total Pedidos</p>
+        <strong className="text-3xl font-bold text-gray-800">
+          {totalPedidos}
+        </strong>
       </div>
 
+      <ClipboardList
+        size={30}
+        className="text-gray-400 shrink-0"
+      />
+    </div>
+  </div>
+
+  <div className="bg-blue-50 border border-blue-300 rounded-xl p-4 shadow-sm">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm text-blue-700">Em Separação</p>
+        <strong className="text-3xl font-bold text-blue-800">
+          {emSeparacao}
+        </strong>
+      </div>
+
+      <Package
+        size={30}
+        className="text-blue-500 shrink-0"
+      />
+    </div>
+  </div>
+
+  <div className="bg-sky-50 border border-sky-300 rounded-xl p-4 shadow-sm">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm text-sky-700">Em Produção</p>
+        <strong className="text-3xl font-bold text-sky-800">
+          {emProducao}
+        </strong>
+      </div>
+
+      <Factory
+        size={30}
+        className="text-sky-500 shrink-0"
+      />
+    </div>
+  </div>
+
+  <div className="bg-green-50 border border-green-300 rounded-xl p-4 shadow-sm">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm text-green-700">Pronto Entrega</p>
+        <strong className="text-3xl font-bold text-green-800">
+          {prontoEntrega}
+        </strong>
+      </div>
+
+      <PackageCheck
+        size={30}
+        className="text-green-500 shrink-0"
+      />
+    </div>
+  </div>
+
+  <div className="bg-indigo-50 border border-indigo-300 rounded-xl p-4 shadow-sm">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm text-indigo-700">Saiu Entrega</p>
+        <strong className="text-3xl font-bold text-indigo-800">
+          {saiuEntrega}
+        </strong>
+      </div>
+
+      <Truck
+        size={30}
+        className="text-indigo-500 shrink-0"
+      />
+    </div>
+  </div>
+
+  <div className="bg-red-50 border border-red-300 rounded-xl p-4 shadow-sm">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm text-red-700">Atrasados</p>
+        <strong className="text-3xl font-bold text-red-800">
+          {atrasados}
+        </strong>
+      </div>
+
+      <TriangleAlert
+        size={30}
+        className="text-red-500 shrink-0"
+      />
+    </div>
+  </div>
+
+  <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-4 shadow-sm">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm text-emerald-700">Valor Exibido</p>
+        <strong className="text-xl font-bold text-emerald-800">
+          {formatarMoeda(valorTotalPedidos)}
+        </strong>
+      </div>
+
+      <DollarSign
+        size={30}
+        className="text-emerald-500 shrink-0"
+      />
+    </div>
+  </div>
+
+</div>
+
       <div className="flex flex-wrap gap-2 mb-4 no-print">
-        <Button type="button" onClick={filtroHoje} className="bg-blue-600 text-white px-4 py-2 rounded-lg">
-          Hoje
-        </Button>
-
-        <Button type="button" onClick={filtroProximos5Dias} className="bg-purple-600 text-white px-4 py-2 rounded-lg">
-          Próximos 5 Dias
-        </Button>
-
-        <Button type="button" onClick={filtroSemana} className="bg-green-500 text-white px-4 py-2 rounded-lg" >
-          Esta Semana
-        </Button>
-
-        <Button type="button" onClick={filtroMes} className="bg-cyan-600 text-white px-4 py-2 rounded-lg">
-          Este Mês
+        <Button
+          type="button"
+          onClick={filtroHoje}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+        >
+          <CalendarDays size={16} />
+          <span>Hoje</span>
         </Button>
 
         <Button
           type="button"
-          onClick={() => filtroStatusRapido("EM_PRODUCAO") } className="bg-gray-600 text-white px-4 py-2 rounded-lg"
+          onClick={filtroProximos5Dias}
+          className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
-          Em Produção
+          <CalendarDays size={16} />
+          <span>Próximos 5 Dias</span>
         </Button>
 
         <Button
           type="button"
-          onClick={() => filtroStatusRapido("PRONTO_ENTREGA")} className="bg-blue-700 text-white px-4 py-2 rounded-lg"
+          onClick={filtroSemana}
+          className="bg-green-500 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
-          Pronto Entrega
+          <CalendarDays size={16} />
+          <span>Esta Semana</span>
         </Button>
 
         <Button
           type="button"
-          onClick={() => filtroStatusRapido("SAIU_ENTREGA")} className="bg-green-700 text-white px-4 py-2 rounded-lg"
+          onClick={filtroMes}
+          className="bg-cyan-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
-          Saiu Entrega
+          <CalendarDays size={16} />
+          <span>Este Mês</span>
         </Button>
 
         <Button
           type="button"
-          onClick={() => filtroStatusRapido("ENTREGUE")} className="bg-blue-500 text-white px-4 py-2 rounded-lg"
+          onClick={() => filtroStatusRapido("EM_PRODUCAO")}
+          className="bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
-          Entregues
+          <Filter size={16} />
+          <span>Em Produção</span>
         </Button>
 
         <Button
           type="button"
-          onClick={() => filtroStatusRapido("CANCELADO")} className="bg-red-600 text-white px-4 py-2 rounded-lg"
+          onClick={() => filtroStatusRapido("PRONTO_ENTREGA")}
+          className="bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
-          Cancelados
+          <Filter size={16} />
+          <span>Pronto Entrega</span>
+        </Button>
+
+        <Button
+          type="button"
+          onClick={() => filtroStatusRapido("SAIU_ENTREGA")}
+          className="bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+        >
+          <Filter size={16} />
+          <span>Saiu Entrega</span>
+        </Button>
+
+        <Button
+          type="button"
+          onClick={() => filtroStatusRapido("ENTREGUE")}
+          className="bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+        >
+          <Filter size={16} />
+          <span>Entregues</span>
+        </Button>
+
+        <Button
+          type="button"
+          onClick={() => filtroStatusRapido("CANCELADO")}
+          className="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+        >
+          <Filter size={16} />
+          <span>Cancelados</span>
         </Button>
       </div>
 
       <div className="bg-white p-6 rounded-2xl shadow-md mb-8 no-print">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Input
             type="date"
             value={dataInicio}
@@ -489,12 +622,12 @@ export function RelatorioPedidos() {
             <option value={100}>100 por página</option>
           </Select>
           <div className="flex grid-cols-1 md:grid-cols-3 gap-4" >
-            <Button variant="Primary" onClick={buscar} className="bg-blue-600 text-white px-6 py-3 rounded-lg">
-              Buscar
+            <Button variant="Primary" onClick={buscar} className="bg-blue-600 text-white px-6 py-3 rounded-lg flex items-center gap-2">
+             <Search size={18} /> Buscar
             </Button> 
 
-            <Button variant="secondary" onClick={limparFiltros} className="bg-gray-500 text-white px-6 py-3 rounded-lg">
-              Limpar
+            <Button variant="secondary" onClick={limparFiltros} className="bg-gray-500 text-white px-6 py-3 rounded-lg flex items-center gap-2">
+              <Eraser size={18} />Limpar
             </Button>
           </div>
         </div>

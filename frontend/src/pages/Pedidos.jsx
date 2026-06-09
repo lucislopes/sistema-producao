@@ -8,6 +8,26 @@ import { Select } from "../components/ui/Select"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
 import { Table, Th, Td } from "../components/ui/Table"
 
+import {
+  SquarePen,
+  Eye,
+  ClipboardList,
+  UserPlus,
+  Route,
+  MapPinned,
+  FileText,
+  Search,
+  Filter,
+  Factory,
+  Package,
+  CheckCircle,
+  TriangleAlert,
+  CalendarDays,
+  Eraser,
+  Save,
+  X
+} from "lucide-react"
+
 export function Pedidos() {
   const [pedidos, setPedidos] = useState([])
   const [clientes, setClientes] = useState([])
@@ -344,7 +364,7 @@ export function Pedidos() {
     ).length
   }
 
-  function ResumoCard({ titulo, valor, tipo }) {
+  function ResumoCard({ titulo, valor, tipo, icon: Icon }) {
     const classes = {
       normal: "bg-white border-gray-200",
       perigo: "bg-red-50 border-red-500",
@@ -359,17 +379,26 @@ export function Pedidos() {
           ${classes[tipo || "normal"]}
         `}
       >
-        <p className="text-sm text-gray-600">
-          {titulo}
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-600">
+              {titulo}
+            </p>
 
-        <strong className="text-2xl font-bold">
-          {valor}
-        </strong>
+            <strong className="text-2xl font-bold">
+              {valor}
+            </strong>
+          </div>
+
+          {Icon && (
+            <div className="bg-white/70 p-3 rounded-xl">
+              <Icon size={24} />
+            </div>
+          )}
+        </div>
       </div>
     )
-  }
-
+  }    
 
   return (
     <div>
@@ -377,28 +406,33 @@ export function Pedidos() {
         <ResumoCard
           titulo="Total"
           valor={resumoPedidos.total}
+          icon={Package}
         />
 
         <ResumoCard
           titulo="Abertos"
           valor={resumoPedidos.abertos}
+          icon={ClipboardList}
         />
 
         <ResumoCard
           titulo="Em Produção"
           valor={resumoPedidos.emProducao}
+          icon={Factory}
         />
 
         <ResumoCard
           titulo="Atrasados"
           valor={resumoPedidos.atrasados}
           tipo={resumoPedidos.atrasados > 0 ? "perigo" : "normal"}
+          icon={TriangleAlert}
         />
 
         <ResumoCard
           titulo="Entregues"
           valor={resumoPedidos.entregues}
           tipo="sucesso"
+          icon={CheckCircle}
         />
       </div>
 
@@ -406,7 +440,8 @@ export function Pedidos() {
         onSubmit={handleSubmit}
         className="bg-white p-6 rounded-2xl shadow-md mb-8"
       >
-        <h2 className="text-xl font-bold mb-4">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <FileText size={22} />
           {editandoId ? "Editar Pedido" : "Novo Pedido"}
         </h2>
 
@@ -473,7 +508,7 @@ export function Pedidos() {
     variant="secondary"
     onClick={() => setModalClienteAberto(true)}
   >
-    +
+    <UserPlus size={18} />
   </Button>
 </div>
 
@@ -542,12 +577,12 @@ export function Pedidos() {
           </div>
 
           <Button
-            type="button"
-            variant="secondary"
-            onClick={() => setModalRotaAberto(true)}
-          >
-            ➕ Rota
-          </Button>
+          type="button"
+          variant="secondary"
+          onClick={() => setModalRotaAberto(true)}
+        >
+          <Route size={18} />
+        </Button>
         </div>
 
           <Input
@@ -611,79 +646,138 @@ export function Pedidos() {
           />
         </div>
 
-        <div className="mt-4 flex gap-2">
-          <Button size="sm"
-            variant="primary" 
-            type="submit">
-              {editandoId ? "Atualizar Pedido" : "Salvar Pedido"}
-          </Button>
-
+        <div className="mt-6 pt-4 flex justify-end gap-2">
           {editandoId && (
-            <Button size="sm"
+            <Button
+              size="sm"
               type="button"
-              variant = "secondary"
+              variant="secondary"
+              className="flex items-center gap-2 px-5 py-3"
               onClick={limparFormulario}
             >
+              <X size={16} />
               Cancelar
             </Button>
           )}
+
+          <Button
+            size="sm"
+            variant="primary"
+            type="submit"
+            className="flex items-center gap-2 px-6 py-3"
+          >
+            {editandoId ? (
+              <>
+                <SquarePen size={16} />
+                Atualizar Pedido
+              </>
+            ) : (
+              <>
+                <Save size={16} />
+                Salvar Pedido
+              </>
+            )}
+          </Button>
         </div>
       </form>
 
         <div className="bg-white p-4 rounded-2xl shadow-md mb-4">
           <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4 items-end">
 
-            <Input
-              type="text"
-              placeholder="Buscar por número ou cliente..."
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-            />
+            <div className="relative">
+              <Search
+                size={18}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
 
-            <Select
-              value={filtroStatus}
-              onChange={(e) => setFiltroStatus(e.target.value)}
-            >
-              <option value="">Todos os status</option>
-              <option value="ABERTO">Aberto</option>
-              <option value="EM_SEPARACAO">Em Separação</option>
-              <option value="EM_PRODUCAO">Em Produção</option>
-              <option value="CONCLUIDO">Concluído</option>
-              <option value="PRONTO_ENTREGA">Pronto Entrega</option>
-              <option value="SAIU_ENTREGA">Saiu Entrega</option>
-              <option value="ENTREGUE">Entregue</option>
-              <option value="CANCELADO">Cancelado</option>
-            </Select>
+              <Input
+                type="text"
+                placeholder="Buscar por número ou cliente..."
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                className="pl-10"
+              />
+            </div>
 
-            <Input
-              type="date"
-              value={dataInicio}
-              onChange={(e) => setDataInicio(e.target.value)}
-            />
+            <div className="relative">
+              <Filter
+                size={18}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
 
-            <Input
-              type="date"
-              value={dataFim}
-              onChange={(e) => setDataFim(e.target.value)}
-            />
+              <Select
+                value={filtroStatus}
+                onChange={(e) => setFiltroStatus(e.target.value)}
+                className="pl-10"
+              >
+                <option value="">Todos os status</option>
+                <option value="ABERTO">Aberto</option>
+                <option value="EM_SEPARACAO">Em Separação</option>
+                <option value="EM_PRODUCAO">Em Produção</option>
+                <option value="CONCLUIDO">Concluído</option>
+                <option value="PRONTO_ENTREGA">Pronto Entrega</option>
+                <option value="SAIU_ENTREGA">Saiu Entrega</option>
+                <option value="ENTREGUE">Entregue</option>
+                <option value="CANCELADO">Cancelado</option>
+              </Select>
+            </div>
 
-            <Select
-              value={limit}
-              onChange={(e) => {
-                setLimit(Number(e.target.value))
-                setPage(1)
-              }}
-            >
-              <option value={25}>25 por página</option>
-              <option value={50}>50 por página</option>
-              <option value={100}>100 por página</option>
-            </Select>
+            <div className="relative">
+              <CalendarDays
+                size={18}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+
+              <Input
+                type="date"
+                value={dataInicio}
+                onChange={(e) => setDataInicio(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            <div className="relative">
+              <CalendarDays
+                size={18}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+
+              <Input
+                type="date"
+                value={dataFim}
+                onChange={(e) => setDataFim(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            <div>
+
+              <Select
+                value={limit}
+                onChange={(e) => {
+                  setLimit(Number(e.target.value))
+                  setPage(1)
+                }}
+              >
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </Select>
+            </div>
 
             <Button
               size="sm"
               type="button"
-              variant="secondary"
-              className="w-full"
+              variant=""
+             className="
+              w-full flex items-center justify-center gap-2 py-3
+              bg-red-50
+              text-red-700
+              border
+              border-red-200
+              hover:bg-red-100
+                 "
+              title="Limpar filtros"
               onClick={() => {
                 setBusca("")
                 setFiltroStatus("")
@@ -691,6 +785,7 @@ export function Pedidos() {
                 setDataFim("")
               }}
             >
+              <Eraser size={16} />
               Limpar
             </Button>
 
@@ -754,14 +849,14 @@ export function Pedidos() {
                       variant="secondary"
                       onClick={() => editarPedido(pedido)}
                     >
-                      Editar
+                      <SquarePen size={16} />
                     </Button>
 
                     <Link
                       to={`/pedidos/${pedido.id}`}
                       className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
                     >
-                      Detalhes
+                      <Eye size={16} />
                     </Link>
 
                     {pedido.tipoPedido !== "DIRETO_ENTREGA" && (
@@ -769,7 +864,7 @@ export function Pedidos() {
                         to={`/planos-corte?pedidoId=${pedido.id}`}
                         className="inline-flex items-center justify-center rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white hover:bg-purple-700"
                       >
-                        Planos
+                        <ClipboardList size={16} /> Planos
                       </Link>
                     )}
                   </div>
@@ -853,7 +948,7 @@ export function Pedidos() {
           />
         </div>
 
-        <div className="flex justify-end gap-2 mt-6">
+        <div className="flex justify-end gap-2 mt-6" size="sm">
           <Button
             type="button"
             variant="secondary"
@@ -862,13 +957,17 @@ export function Pedidos() {
             Cancelar
           </Button>
 
-          <Button
-            type="button"
-            variant="primary"
-            onClick={criarClienteRapido}
-          >
-            Salvar Cliente
-          </Button>
+          <div className="mt-6 flex justify-end gap-2">
+            <Button
+              size="sm"
+              variant="primary"
+              type="submit"
+              className="flex items-center gap-2 px-6 py-3"
+            >
+              <Save size={16} />
+              Salvar Pedido
+            </Button>
+          </div>
         </div>
       </div>
     </div>
@@ -912,6 +1011,7 @@ export function Pedidos() {
             variant="primary"
             onClick={criarRotaRapida}
           >
+            <Save size={16} />
             Salvar Rota
           </Button>
         </div>
