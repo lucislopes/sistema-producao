@@ -5,6 +5,17 @@ import { Button } from "../components/ui/Button"
 import { Select } from "../components/ui/Select"
 import { Table, Th, Td } from "../components/ui/Table"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
+import {
+  SquarePen,
+  Trash2,
+  Save,
+  X,
+  ClipboardList,
+  PlayCircle,
+  CheckCircle2,
+  Clock
+} from "lucide-react"
+
 
 export function ServicosPlano() {
   const [pedidos, setPedidos] = useState([])
@@ -193,10 +204,86 @@ export function ServicosPlano() {
     (plano) => plano.id === planoId
   )
 
+  function statusServicoTexto(status) {
+    const mapa = {
+      ABERTO: "Aberto",
+      INICIADO: "Em Produção",
+      CONCLUIDO: "Concluído",
+      CANCELADO: "Cancelado"
+    }
+
+    return mapa[status] || status
+  }
+
+  function statusPedidoTexto(status) {
+    const mapa = {
+      ABERTO: "Aberto",
+      EM_PRODUCAO: "Em Produção",
+      PRONTO_ENTREGA: "Pronto Entrega",
+      SAIU_ENTREGA: "Saiu Entrega",
+      ENTREGUE: "Entregue",
+      CANCELADO: "Cancelado"
+    }
+
+    return mapa[status] || status
+  }
+
+  function ResumoCard({ titulo, valor, icon: Icon, tipo = "normal" }) {
+    const classes = {
+      normal: {
+        card: "bg-white border-gray-200",
+        icon: "bg-gray-100 text-gray-700"
+      },
+      info: {
+        card: "bg-blue-50 border-blue-300",
+        icon: "bg-blue-100 text-blue-700"
+      },
+      sucesso: {
+        card: "bg-green-50 border-green-300",
+        icon: "bg-green-100 text-green-700"
+      }
+    }
+
+    const estilo = classes[tipo] || classes.normal
+
+    return (
+      <div className={`rounded-xl shadow-sm border p-4 ${estilo.card}`}>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm text-gray-600">{titulo}</p>
+            <strong className="text-2xl font-bold block mt-1">
+              {valor}
+            </strong>
+          </div>
+
+          {Icon && (
+            <div className={`p-3 rounded-xl ${estilo.icon}`}>
+              <Icon size={24} />
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  const totalServicos = servicos.length
+
+  const abertos = servicos.filter(
+    (servico) => servico.status === "ABERTO"
+  ).length
+
+  const iniciados = servicos.filter(
+    (servico) => servico.status === "INICIADO"
+  ).length
+
+  const concluidos = servicos.filter(
+    (servico) => servico.status === "CONCLUIDO"
+  ).length
+
   return (
     <div>
-      <div className="bg-white p-6 rounded-2xl shadow-md mb-8">
-        <div className="grid grid-cols-2 gap-4">
+    <div className="bg-white p-6 rounded-2xl shadow-md mb-8">
+      <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block mb-2 font-semibold">
               Pedido
@@ -248,27 +335,65 @@ export function ServicosPlano() {
         </div>
 
         {pedidoSelecionado && (
-          <div className="mt-4 text-sm text-gray-700">
-            <p>
-              <strong>Cliente:</strong> {pedidoSelecionado.cliente?.nome}
-            </p>
-            <p>
-              <strong>Status pedido:</strong> {pedidoSelecionado.status}
-            </p>
+          <div className="mt-4 flex flex-wrap items-center gap-6 text-sm text-gray-700">
+            <div>
+              <strong>Cliente:</strong>{" "}
+              {pedidoSelecionado.cliente?.nome || "-"}
+            </div>
+
+            <div>
+              <strong>Status:</strong>{" "}
+              <span className="ml-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                {statusPedidoTexto(pedidoSelecionado.status)}
+              </span>
+            </div>
+
+            {planoSelecionado && (
+              <>
+                <div>
+                  <strong>Plano:</strong>{" "}
+                  {planoSelecionado.numeroPlano}
+                </div>
+
+                <div>
+                  <strong>Chapas:</strong>{" "}
+                  {planoSelecionado.quantidadeChapas}
+                </div>
+              </>
+            )}
           </div>
         )}
 
-        {planoSelecionado && (
-          <div className="mt-4 text-sm text-gray-700">
-            <p>
-              <strong>Plano:</strong> {planoSelecionado.numeroPlano}
-            </p>
-            <p>
-              <strong>Chapas:</strong> {planoSelecionado.quantidadeChapas}
-            </p>
+        {planoId && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <ResumoCard
+              titulo="Serviços"
+              valor={totalServicos}
+              icon={ClipboardList}
+            />
+
+            <ResumoCard
+              titulo="Abertos"
+              valor={abertos}
+              icon={Clock}
+            />
+
+            <ResumoCard
+              titulo="Em Produção"
+              valor={iniciados}
+              tipo="info"
+              icon={PlayCircle}
+            />
+
+            <ResumoCard
+              titulo="Concluídos"
+              valor={concluidos}
+              tipo="sucesso"
+              icon={CheckCircle2}
+            />
           </div>
         )}
-      </div>
+        </div>
 
       {planoId && (
         <form
@@ -279,64 +404,108 @@ export function ServicosPlano() {
             {editandoId ? "Editar Serviço" : "Novo Serviço"}
           </h2>
 
+          {editandoId && (
+            <div className="mb-4 rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-sm font-medium text-yellow-800">
+              ✏️ Editando Serviço
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
-            <Select
-              value={tipoServicoId}
-              onChange={(e) => setTipoServicoId(e.target.value)}
-              required
-            >
-              <option value="">Selecione o serviço</option>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Tipo de Serviço *
+              </label>
 
-              {tiposServico.map((tipo) => (
-                <option key={tipo.id} value={tipo.id}>
-                  {tipo.nome}
-                </option>
-              ))}
-            </Select>
+              <Select
+                value={tipoServicoId}
+                onChange={(e) => setTipoServicoId(e.target.value)}
+                required
+              >
+                <option value="">Selecione o serviço</option>
 
-            <Select
-              value={operadorId}
-              onChange={(e) => setOperadorId(e.target.value)}
-            >
-              <option value="">Sem operador</option>
+                {tiposServico.map((tipo) => (
+                  <option key={tipo.id} value={tipo.id}>
+                    {tipo.nome}
+                  </option>
+                ))}
+              </Select>
+            </div>
 
-              {operadores.map((operador) => (
-                <option key={operador.id} value={operador.id}>
-                  {operador.nome}
-                </option>
-              ))}
-            </Select>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Operador
+              </label>
 
-            <Select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-            >
-              <option value="ABERTO">Aberto</option>
-              <option value="INICIADO">Iniciado</option>
-              <option value="CONCLUIDO">Concluído</option>
-              <option value="CANCELADO">Cancelado</option>
-            </Select>
+              <Select
+                value={operadorId}
+                onChange={(e) => setOperadorId(e.target.value)}
+              >
+                <option value="">Sem operador</option>
 
-            <textarea
-              placeholder="Observações"
-              className="border p-3 rounded-lg col-span-2"
-              value={observacoes}
-              onChange={(e) => setObservacoes(e.target.value)}
-            />
+                {operadores.map((operador) => (
+                  <option key={operador.id} value={operador.id}>
+                    {operador.nome}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
+            {editandoId && (
+              <Select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+              >
+                <option value="ABERTO">Aberto</option>
+                <option value="INICIADO">Em Produção</option>
+                <option value="CONCLUIDO">Concluído</option>
+                <option value="CANCELADO">Cancelado</option>
+              </Select>
+            )}
+
+            <div className="col-span-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Observações
+              </label>
+
+              <textarea
+                placeholder="Observações do serviço..."
+                rows={2}
+                className="w-full border border-gray-300 p-3 rounded-lg resize-none"
+                value={observacoes}
+                onChange={(e) => setObservacoes(e.target.value)}
+              />
+            </div>
           </div>
 
-          <div className="mt-4 flex gap-2">
+          <div className="mt-6 flex justify-end gap-2">
             <Button
+              size="sm"
               type="submit"
+              variant="primary"
+              className="flex items-center gap-2 px-6 py-3"
             >
-              {editandoId ? "Atualizar Serviço" : "Salvar Serviço"}
+              {editandoId ? (
+                <>
+                  <SquarePen size={16} />
+                  Atualizar Serviço
+                </>
+              ) : (
+                <>
+                  <Save size={16} />
+                  Salvar Serviço
+                </>
+              )}
             </Button>
 
             {editandoId && (
               <Button
+                size="sm"
                 type="button"
+                variant="secondary"
                 onClick={limparFormulario}
+                className="flex items-center gap-2 px-5 py-3"
               >
+                <X size={16} />
                 Cancelar
               </Button>
             )}
@@ -346,12 +515,26 @@ export function ServicosPlano() {
 
       {planoId && (
         <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+          <div className="p-6 pb-3">
+            <h2 className="text-xl font-bold">
+              Serviços Cadastrados
+            </h2>
+
+            <p className="text-sm text-gray-600">
+              {servicos.length} serviço{servicos.length === 1 ? "" : "s"} cadastrado{servicos.length === 1 ? "" : "s"} neste plano.
+            </p>
+          </div>
+
+
+    <div className="px-6 pb-6">
+        <div className="overflow-hidden rounded-xl border border-gray-200">
           <Table >
             <thead >
               <tr>
                 <Th >Serviço</Th>
                 <Th >Operador</Th>
                 <Th >Status</Th>
+                <Th>Observações</Th>
                 <Th >Ações</Th>
               </tr>
             </thead>
@@ -371,27 +554,43 @@ export function ServicosPlano() {
                     <BadgeStatus status={servico.status} />
                   </Td>
 
-                  <Td >
-                    <Button size="sm" onClick={() => editarServico(servico)}>
-                      Editar
-                    </Button>
+                  <Td className="max-w-[280px] truncate">
+                    {servico.observacoes || "-"}
+                  </Td>
+                  
+                  <Td className="w-[120px]">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => editarServico(servico)}
+                      >
+                        <SquarePen size={16} />
+                      </Button>
 
-                    <Button size="sm" variant="danger" onClick={() => excluirServico(servico.id)}>
-                      Excluir
-                    </Button>
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        onClick={() => excluirServico(servico.id)}
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    </div>
                   </Td>
                 </tr>
               ))}
 
               {servicos.length === 0 && (
                 <tr>
-                  <Td>
+                  <Td colSpan="4" className="text-center text-gray-500 py-6">
                     Nenhum serviço cadastrado para este plano.
                   </Td>
                 </tr>
               )}
             </tbody>
           </Table>
+        </div>
+        </div>
         </div>
       )}
     </div>
