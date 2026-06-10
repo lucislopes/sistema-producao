@@ -33,7 +33,8 @@ import {
   LogOut,
   ChevronDown,
   ChevronRight,
-  Zap
+  Zap,
+  TriangleAlert
 } from "lucide-react"
 
 import { AuthContext } from "../contexts/AuthContext"
@@ -209,23 +210,29 @@ export function MainLayout() {
             </MenuGrupo>
           )}
 
-          {(isAdmin || isVendedor || isVendedorOperador) && (
+          {(isAdmin || isVendedor || isVendedorOperador || isOperador) && (
             <MenuGrupo titulo="Operação">
-              <MenuLink to="/pedidos" icon={ShoppingCart}>
-                Pedidos
-              </MenuLink>
+              {(isAdmin || isVendedor || isVendedorOperador) && (
+                <>
+                  <MenuLink to="/pedidos" icon={ShoppingCart}>
+                    Pedidos
+                  </MenuLink>
 
-              <MenuLink to="/planos-corte" icon={Scissors}>
-                Planos de Corte
-              </MenuLink>
+                  <MenuLink to="/planos-corte" icon={Scissors}>
+                    Planos de Corte
+                  </MenuLink>
+                </>
+              )}
 
               <MenuLink to="/servicos-plano" icon={ListChecks}>
                 Serviços do Plano
               </MenuLink>
 
-              <MenuLink to="/expedicao" icon={Truck}>
-                Expedição
-              </MenuLink>
+              {(isAdmin || isVendedor || isVendedorOperador) && (
+                <MenuLink to="/expedicao" icon={Truck}>
+                  Expedição
+                </MenuLink>
+              )}
             </MenuGrupo>
           )}
 
@@ -241,26 +248,38 @@ export function MainLayout() {
             </MenuGrupo>
           )}
 
-          {(isAdmin || isVendedor || isVendedorOperador) && (
+          {(isAdmin || isVendedor || isVendedorOperador || isOperador) && (
             <MenuGrupo titulo="Relatórios">
-              <MenuLink to="/relatorio-expedicao" icon={FileText}>
-                Expedição
+              {(isAdmin || isVendedor || isVendedorOperador) && (
+                <>
+                  <MenuLink to="/relatorio-expedicao" icon={FileText}>
+                    Expedição
+                  </MenuLink>
+
+                  <MenuLink to="/relatorio-pedidos" icon={ClipboardList}>
+                    Pedidos
+                  </MenuLink>
+
+                  <MenuLink to="/relatorio-producao" icon={BarChart3}>
+                    Produção
+                  </MenuLink>
+
+                  <MenuLink to="/alertas" icon={Bell}>
+                    Alertas
+                  </MenuLink>
+
+                  <MenuLink to="/produtividade-operadores" icon={Users}>
+                    Produtividade
+                  </MenuLink>
+                </>
+              )}
+
+              <MenuLink to="/relatorio-servicos" icon={ListChecks}>
+                Serviços
               </MenuLink>
 
-              <MenuLink to="/relatorio-pedidos" icon={ClipboardList}>
-                Pedidos
-              </MenuLink>
-
-              <MenuLink to="/relatorio-producao" icon={BarChart3}>
-                Produção
-              </MenuLink>
-
-              <MenuLink to="/alertas" icon={Bell}>
-                Alertas
-              </MenuLink>
-
-              <MenuLink to="/produtividade-operadores" icon={Users}>
-                Produtividade
+              <MenuLink to="/relatorio-pendencias" icon={TriangleAlert}>
+                Pendências
               </MenuLink>
             </MenuGrupo>
           )}

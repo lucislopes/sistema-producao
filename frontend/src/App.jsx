@@ -29,6 +29,8 @@ import { MinhaSenha } from "./pages/MinhaSenha"
 import { DashboardProducao } from "./pages/dashboard/DashboardProducao"
 import { DashboardExpedicao } from "./pages/dashboard/DashboardExpedicao"
 import { DashboardComercial } from "./pages/dashboard/DashboardComercial"
+import { RelatorioServicos } from "./pages/RelatorioServicos"
+import { RelatorioPendencias } from "./pages/RelatorioPendencias"
 
 export default function App() {
 
@@ -149,6 +151,8 @@ export default function App() {
           <Route path="/dashboard/producao" element={<DashboardProducao />} />
           <Route path="/dashboard/expedicao" element={<DashboardExpedicao />} />
           <Route path="/dashboard/comercial" element={<DashboardComercial />} />
+          <Route path="/relatorio-servicos" element={<RelatorioServicos />} />
+          <Route path="/relatorio-pendencias" element={<RelatorioPendencias />} />
 
         </Route>
 

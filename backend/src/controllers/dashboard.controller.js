@@ -1,5 +1,7 @@
 import { prisma } from "../lib/prisma.js"
 
+
+
 export async function obterDashboard(req, res) {
   try {
     const hoje = new Date()
@@ -11,17 +13,31 @@ export async function obterDashboard(req, res) {
       baseData = "entrega"
     } = req.query
 
-    const inicioPeriodo = dataInicio
-      ? new Date(dataInicio)
-      : new Date(hoje.getFullYear(), hoje.getMonth(), 1)
+    function criarDataLocal(data, fimDoDia = false) {
+      if (!data) return null
 
-    inicioPeriodo.setHours(0, 0, 0, 0)
+      const [ano, mes, dia] = data.split("-").map(Number)
+
+      const novaData = new Date(
+        ano,
+        mes - 1,
+        dia,
+        fimDoDia ? 23 : 0,
+        fimDoDia ? 59 : 0,
+        fimDoDia ? 59 : 0,
+        fimDoDia ? 999 : 0
+      )
+
+      return novaData
+    }
+
+    const inicioPeriodo = dataInicio
+      ? criarDataLocal(dataInicio, false)
+      : new Date(hoje.getFullYear(), hoje.getMonth(), 1, 0, 0, 0, 0)
 
     const fimPeriodo = dataFim
-      ? new Date(dataFim)
+      ? criarDataLocal(dataFim, true)
       : new Date()
-
-    fimPeriodo.setHours(23, 59, 59, 999)
 
     const campoDataPedido =
       baseData === "pedido"
@@ -328,6 +344,31 @@ export async function obterDashboard(req, res) {
       totalSla > 0
         ? Math.round((pedidosDentroPrazo / totalSla) * 100)
         : 100
+
+
+console.log("BASE:", baseData)
+console.log("PERIODO:", inicioPeriodo, fimPeriodo)
+console.log("PRONTO ENTREGA:", pedidosProntoEntrega)
+
+const testePronto = await prisma.pedido.findMany({
+  where: {
+    status: "PRONTO_ENTREGA"
+  },
+  select: {
+    numeroPedido: true,
+    status: true,
+    tipoPedido: true,
+    createdAt: true,
+    dataEntrega: true
+  }
+})
+
+console.log("TODOS PRONTO ENTREGA:", testePronto)
+
+
+
+
+
 
     return res.json({
       baseData,

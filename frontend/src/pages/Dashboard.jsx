@@ -19,28 +19,30 @@ import { SecaoDashboard } from "./dashboard/components/SecaoDashboard"
 
 export function Dashboard() {
   const [dados, setDados] = useState(null)
-  const [baseData, setBaseData] = useState("entrega")
+  const [baseData, setBaseData] = useState("pedido")
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null)
+
+  function formatarDataLocal(data) {
+    const ano = data.getFullYear()
+    const mes = String(data.getMonth() + 1).padStart(2, "0")
+    const dia = String(data.getDate()).padStart(2, "0")
+
+    return `${ano}-${mes}-${dia}`
+  }
 
   const hoje = new Date()
 
-  const primeiroDiaMes = new Date(
-    hoje.getFullYear(),
-    hoje.getMonth(),
-    1
+  const primeiroDiaMes = formatarDataLocal(
+    new Date(hoje.getFullYear(), hoje.getMonth(), 1)
   )
-    .toISOString()
-    .substring(0, 10)
 
-  const hojeFormatado = new Date()
-    .toISOString()
-    .substring(0, 10)
+  const hojeFormatado = formatarDataLocal(hoje)
 
   const [dataInicio, setDataInicio] = useState(primeiroDiaMes)
   const [dataFim, setDataFim] = useState(hojeFormatado)
 
   function formatarDataFiltro(data) {
-    return data.toISOString().substring(0, 10)
+    return formatarDataLocal(data)
   }
 
   function aplicarPeriodo(tipo) {

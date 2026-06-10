@@ -22,7 +22,7 @@ export function DashboardFiltro({
       <div className="flex flex-wrap gap-3 items-center">
         <select
           className="border p-3 rounded-lg"
-          value={baseData}
+          value={baseData}z
           onChange={(e) => setBaseData(e.target.value)}
         >
           <option value="entrega">Data prevista de entrega</option>

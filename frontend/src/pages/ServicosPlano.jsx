@@ -558,8 +558,9 @@ export function ServicosPlano() {
                     {servico.observacoes || "-"}
                   </Td>
                   
-                  <Td className="w-[120px]">
-                    <div className="flex items-center justify-end gap-2">
+                  <Td className="w-[140px]">
+                    <div className="flex gap-2">
+
                       <Button
                         size="sm"
                         variant="secondary"
