@@ -35,27 +35,65 @@ export function DashboardProducao() {
   }
 
   function aplicarPeriodo(tipo) {
-    const hoje = new Date()
-    let inicio = new Date(hoje)
-    let fim = new Date(hoje)
+  const hoje = new Date()
 
-    if (tipo === "semana") inicio.setDate(hoje.getDate() - 7)
-    if (tipo === "15dias") inicio.setDate(hoje.getDate() - 15)
-    if (tipo === "30dias") inicio.setDate(hoje.getDate() - 30)
+  let inicio = new Date(hoje)
+  let fim = new Date(hoje)
 
-    if (tipo === "mes") {
-      inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
-      fim = new Date(hoje)
-    }
-
-    if (tipo === "ano") {
-      inicio = new Date(hoje.getFullYear(), 0, 1)
-      fim = new Date(hoje)
-    }
-
-    setDataInicio(formatarDataFiltro(inicio))
-    setDataFim(formatarDataFiltro(fim))
+  if (tipo === "hoje") {
+    inicio = new Date(hoje)
+    fim = new Date(hoje)
   }
+
+  if (tipo === "semana") {
+    if (baseData === "entrega") {
+      inicio = new Date(hoje)
+      fim = new Date(hoje)
+      fim.setDate(fim.getDate() + 7)
+    } else {
+      inicio = new Date(hoje)
+      fim = new Date(hoje)
+      inicio.setDate(inicio.getDate() - 7)
+    }
+  }
+
+  if (tipo === "15dias") {
+    if (baseData === "entrega") {
+      inicio = new Date(hoje)
+      fim = new Date(hoje)
+      fim.setDate(fim.getDate() + 15)
+    } else {
+      inicio = new Date(hoje)
+      fim = new Date(hoje)
+      inicio.setDate(inicio.getDate() - 15)
+    }
+  }
+
+  if (tipo === "30dias") {
+    if (baseData === "entrega") {
+      inicio = new Date(hoje)
+      fim = new Date(hoje)
+      fim.setDate(fim.getDate() + 30)
+    } else {
+      inicio = new Date(hoje)
+      fim = new Date(hoje)
+      inicio.setDate(inicio.getDate() - 30)
+    }
+  }
+
+  if (tipo === "mes") {
+    inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
+    fim = new Date(hoje)
+  }
+
+  if (tipo === "ano") {
+    inicio = new Date(hoje.getFullYear(), 0, 1)
+    fim = new Date(hoje)
+  }
+
+  setDataInicio(formatarDataFiltro(inicio))
+  setDataFim(formatarDataFiltro(fim))
+}
 
   async function carregarDashboard() {
     try {

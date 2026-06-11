@@ -1,7 +1,5 @@
 import { prisma } from "../lib/prisma.js"
 
-
-
 export async function obterDashboard(req, res) {
   try {
     const hoje = new Date()
@@ -18,7 +16,7 @@ export async function obterDashboard(req, res) {
 
       const [ano, mes, dia] = data.split("-").map(Number)
 
-      const novaData = new Date(
+      return new Date(
         ano,
         mes - 1,
         dia,
@@ -27,8 +25,6 @@ export async function obterDashboard(req, res) {
         fimDoDia ? 59 : 0,
         fimDoDia ? 999 : 0
       )
-
-      return novaData
     }
 
     const inicioPeriodo = dataInicio
@@ -41,7 +37,7 @@ export async function obterDashboard(req, res) {
 
     const campoDataPedido =
       baseData === "pedido"
-        ? "createdAt"
+        ? "dataPedido"
         : "dataEntrega"
 
     const filtroPeriodoPedido = {
@@ -73,7 +69,7 @@ export async function obterDashboard(req, res) {
       }
 
       return {
-        createdAt: {
+        dataPedido: {
           gte: inicioPeriodo,
           lte: fimPeriodo
         },
@@ -100,7 +96,7 @@ export async function obterDashboard(req, res) {
       }
 
       return {
-        createdAt: {
+        dataPedido: {
           gte: inicioPeriodo,
           lte: fimPeriodo
         },
@@ -128,7 +124,7 @@ export async function obterDashboard(req, res) {
       }
 
       return {
-        createdAt: {
+        dataPedido: {
           gte: inicioPeriodo,
           lte: fimPeriodo
         },
@@ -164,7 +160,13 @@ export async function obterDashboard(req, res) {
       financeiroProducao,
       financeiroConcluido,
       financeiroEntregue,
-      financeiroTotal
+      financeiroTotal,
+
+      totalPedidosPeriodo,
+      clientesAtendidos,
+      vendedoresAtivos,
+      rankingVendedores,
+      rankingClientes
     ] = await Promise.all([
       prisma.pedido.count({
         where: {
@@ -242,7 +244,6 @@ export async function obterDashboard(req, res) {
 
       prisma.servicoPlano.groupBy({
         by: ["operadorId"],
-
         where: {
           status: "CONCLUIDO",
           operadorId: {
@@ -250,11 +251,9 @@ export async function obterDashboard(req, res) {
           },
           ...filtroPeriodoServico
         },
-
         _count: {
           operadorId: true
         },
-
         orderBy: {
           _count: {
             operadorId: "desc"
@@ -320,6 +319,61 @@ export async function obterDashboard(req, res) {
         _avg: {
           valorTotal: true
         }
+      }),
+
+      prisma.pedido.count({
+        where: {
+          ...filtroPeriodoPedido
+        }
+      }),
+
+      prisma.pedido.findMany({
+        where: {
+          ...filtroPeriodoPedido
+        },
+        distinct: ["clienteId"],
+        select: {
+          clienteId: true
+        }
+      }),
+
+      prisma.pedido.findMany({
+        where: {
+          ...filtroPeriodoPedido
+        },
+        distinct: ["vendedorId"],
+        select: {
+          vendedorId: true
+        }
+      }),
+
+      prisma.pedido.groupBy({
+        by: ["vendedorId"],
+        where: {
+          ...filtroPeriodoPedido
+        },
+        _count: {
+          id: true
+        },
+        _sum: {
+          valorTotal: true
+        },
+        _avg: {
+          valorTotal: true
+        }
+      }),
+
+      prisma.pedido.groupBy({
+        by: ["clienteId"],
+        where: {
+          ...filtroPeriodoPedido
+        },
+        _count: {
+          id: true
+        },
+        _sum: {
+          valorTotal: true
+        }
       })
     ])
 
@@ -338,37 +392,55 @@ export async function obterDashboard(req, res) {
       })
     )
 
+    const rankingVendedoresCompleto = await Promise.all(
+      rankingVendedores.map(async (item) => {
+        const vendedor = await prisma.funcionario.findUnique({
+          where: {
+            id: item.vendedorId
+          }
+        })
+
+        return {
+          vendedorId: item.vendedorId,
+          nome: vendedor?.nome || "Sem nome",
+          pedidos: item._count.id,
+          valorTotal: Number(item._sum.valorTotal || 0),
+          ticketMedio: Number(item._avg.valorTotal || 0)
+        }
+      })
+    )
+
+    rankingVendedoresCompleto.sort(
+      (a, b) => b.valorTotal - a.valorTotal
+    )
+
+    const rankingClientesCompleto = await Promise.all(
+      rankingClientes.map(async (item) => {
+        const cliente = await prisma.cliente.findUnique({
+          where: {
+            id: item.clienteId
+          }
+        })
+
+        return {
+          clienteId: item.clienteId,
+          nome: cliente?.nome || "Sem nome",
+          pedidos: item._count.id,
+          valorTotal: Number(item._sum.valorTotal || 0)
+        }
+      })
+    )
+
+    rankingClientesCompleto.sort(
+      (a, b) => b.valorTotal - a.valorTotal
+    )
+
     const totalSla = pedidosDentroPrazo + pedidosForaPrazo
 
     const percentualSla =
       totalSla > 0
         ? Math.round((pedidosDentroPrazo / totalSla) * 100)
         : 100
-
-
-console.log("BASE:", baseData)
-console.log("PERIODO:", inicioPeriodo, fimPeriodo)
-console.log("PRONTO ENTREGA:", pedidosProntoEntrega)
-
-const testePronto = await prisma.pedido.findMany({
-  where: {
-    status: "PRONTO_ENTREGA"
-  },
-  select: {
-    numeroPedido: true,
-    status: true,
-    tipoPedido: true,
-    createdAt: true,
-    dataEntrega: true
-  }
-})
-
-console.log("TODOS PRONTO ENTREGA:", testePronto)
-
-
-
-
-
 
     return res.json({
       baseData,
@@ -404,6 +476,14 @@ console.log("TODOS PRONTO ENTREGA:", testePronto)
         entregue: Number(financeiroEntregue._sum.valorTotal || 0),
         total: Number(financeiroTotal._sum.valorTotal || 0),
         ticketMedio: Number(financeiroTotal._avg.valorTotal || 0)
+      },
+
+      comercial: {
+        totalPedidos: totalPedidosPeriodo,
+        clientesAtendidos: clientesAtendidos.length,
+        vendedoresAtivos: vendedoresAtivos.length,
+        rankingVendedores: rankingVendedoresCompleto,
+        rankingClientes: rankingClientesCompleto
       },
 
       leaderboard: leaderboardCompleto
