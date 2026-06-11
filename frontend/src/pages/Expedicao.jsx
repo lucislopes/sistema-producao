@@ -170,6 +170,17 @@ export function Expedicao() {
     ).values()
   )
 
+  function obterQuantidadeChapas(pedido) {
+  if (pedido.tipoPedido === "DIRETO_ENTREGA") {
+    return Number(pedido.quantidadeChapasDiretoEntrega || 0)
+  }
+
+  return pedido.planos?.reduce(
+    (total, plano) => total + Number(plano.quantidadeChapas || 0),
+    0
+  ) || 0
+}
+
   return (
     <div>
       <div className="bg-white p-4 rounded-2xl shadow-md mb-6">
@@ -226,7 +237,7 @@ export function Expedicao() {
           return (
             <div
               key={pedido.id}
-              className={`rounded-2xl shadow-md p-5 border-2 ${obterClasseCard(pedido.dataEntrega)}`}
+              className={`rounded-2xl shadow-md p-4 border-2 ${obterClasseCard(pedido.dataEntrega)}`}
             >
               <div className="flex justify-between gap-6 items-start">
                 <div className="flex-1">
@@ -244,31 +255,60 @@ export function Expedicao() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-gray-700">
-                    <p>
-                      <strong>Cliente:</strong> {pedido.cliente?.nome}
-                    </p>
+                  <div className="mt-3 grid grid-cols-1 md:grid-cols-4 gap-3 text-sm text-gray-700">
+                    <div>
+                      <span className="block text-xs text-gray-500">Cliente</span>
+                      <strong>{pedido.cliente?.nome || "-"}</strong>
+                    </div>
 
-                    <p>
-                      <strong>Rota:</strong> {pedido.rota?.nome || "-"}
-                    </p>
+                    <div>
+                      <span className="block text-xs text-gray-500">Data Pedido</span>
+                      <strong>{formatarData(pedido.dataPedido || pedido.createdAt)}</strong>
+                    </div>
 
-                    <p>
-                      <strong>Entrega:</strong> {formatarData(pedido.dataEntrega)}
-                    </p>
+                    <div>
+                      <span className="block text-xs text-gray-500">Entrega</span>
+                      <strong>{formatarData(pedido.dataEntrega)}</strong>
+                    </div>
 
-                    <p>
-                      <strong>Recebedor:</strong> {pedido.nomeRecebedor || "-"}
-                    </p>
+                    <div>
+                      <span className="block text-xs text-gray-500">Chapas</span>
+                      <strong>{obterQuantidadeChapas(pedido)}</strong>
+                    </div>
 
-                    <p>
-                      <strong>Contato:</strong> {pedido.contatoRecebedor || "-"}
-                    </p>
+                    <div>
+                      <span className="block text-xs text-gray-500">Tipo</span>
+                      <strong>
+                        {pedido.tipoEntrega === "CLIENTE_RETIRA"
+                          ? "Cliente Retira"
+                          : "Empresa Entrega"}
+                      </strong>
+                    </div>
 
-                    <p className="md:col-span-2">
-                      <strong>Endereço:</strong> {pedido.enderecoEntrega || "-"}
-                    </p>
-                  </div>
+                    {pedido.tipoEntrega === "ENTREGA_EMPRESA" && (
+                      <>
+                        <div>
+                          <span className="block text-xs text-gray-500">Rota</span>
+                          <strong>{pedido.rota?.nome || "-"}</strong>
+                        </div>
+
+                        <div>
+                          <span className="block text-xs text-gray-500">Recebedor</span>
+                          <strong>{pedido.nomeRecebedor || "-"}</strong>
+                        </div>
+
+                        <div>
+                          <span className="block text-xs text-gray-500">Contato</span>
+                          <strong>{pedido.contatoRecebedor || "-"}</strong>
+                        </div>
+
+                        <div className="md:col-span-4">
+                          <span className="block text-xs text-gray-500">Endereço</span>
+                          <strong>{pedido.enderecoEntrega || "-"}</strong>
+                        </div>
+                      </>
+                    )}
+                </div>
                 </div>
 
                 <div className="flex flex-col gap-2 min-w-[180px]">

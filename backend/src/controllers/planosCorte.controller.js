@@ -3,13 +3,16 @@ import { registrarHistoricoPedido } from "../utils/registrarHistoricoPedido.js"
 
 function calcularDataEntregaPorChapas(quantidadeChapas) {
   const data = new Date()
+  const qtd = Number(quantidadeChapas)
 
-  if (quantidadeChapas <= 5) {
-    data.setDate(data.getDate() + 2)
-  } else if (quantidadeChapas <= 15) {
-    data.setDate(data.getDate() + 4)
+  if (qtd <= 3) {
+    data.setDate(data.getDate() + 3)
+  } else if (qtd <= 5) {
+    data.setDate(data.getDate() + 5)
+  } else if (qtd <= 9) {
+    data.setDate(data.getDate() + 6)
   } else {
-    data.setDate(data.getDate() + 7)
+    data.setDate(data.getDate() + 10)
   }
 
   return data
@@ -145,16 +148,19 @@ export async function criarPlanoCorte(req, res) {
       }
     })
 
-    const dataSugerida = calcularDataEntregaPorChapas(qtdChapas)
+    const dadosAtualizacaoPedido = {
+      status: "EM_SEPARACAO"
+    }
+
+    if (!pedido.dataEntrega) {
+      dadosAtualizacaoPedido.dataEntrega = calcularDataEntregaPorChapas(qtdChapas)
+    }
 
     await prisma.pedido.update({
       where: {
         id: pedidoId
       },
-      data: {
-        dataEntrega: dataSugerida,
-        status: "EM_SEPARACAO"
-      }
+      data: dadosAtualizacaoPedido
     })
 
     await registrarHistoricoPedido({
@@ -273,17 +279,6 @@ export async function atualizarPlanoCorte(req, res) {
         medidaEncabecamento,
         compraExterna: Boolean(compraExterna),
         observacoes
-      }
-    })
-
-    const dataSugerida = calcularDataEntregaPorChapas(qtdChapas)
-
-    await prisma.pedido.update({
-      where: {
-        id: plano.pedidoId
-      },
-      data: {
-        dataEntrega: dataSugerida
       }
     })
 

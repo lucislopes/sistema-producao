@@ -21,7 +21,8 @@ router.get(
   roleMiddleware(
     "ADMIN",
     "VENDEDOR",
-    "VENDEDOR_OPERADOR"
+    "VENDEDOR_OPERADOR",
+    "OPERADOR"
   ),
   listarOperadores
 )

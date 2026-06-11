@@ -20,25 +20,25 @@ router.use(authMiddleware)
 
 router.get(
   "/disponiveis",
-  roleMiddleware("OPERADOR", "ADMIN", "VENDEDOR_OPERADOR"),
+  roleMiddleware("ADMIN", "VENDEDOR", "OPERADOR", "VENDEDOR_OPERADOR"),
   listarServicosDisponiveis
 )
 
 router.get(
   "/meus",
-  roleMiddleware("OPERADOR", "ADMIN", "VENDEDOR_OPERADOR"),
+  roleMiddleware("ADMIN", "VENDEDOR", "OPERADOR", "VENDEDOR_OPERADOR"),
   listarMeusServicos
 )
 
 router.put(
   "/assumir/:id",
-  roleMiddleware("OPERADOR", "ADMIN", "VENDEDOR_OPERADOR"),
+  roleMiddleware("ADMIN", "VENDEDOR", "OPERADOR", "VENDEDOR_OPERADOR"),
   assumirServico
 )
 
 router.put(
   "/status/:id",
-  roleMiddleware("OPERADOR", "ADMIN", "VENDEDOR_OPERADOR"),
+  roleMiddleware("ADMIN", "VENDEDOR", "OPERADOR", "VENDEDOR_OPERADOR"),
   alterarStatusServico
 )
 
@@ -50,13 +50,13 @@ router.get(
 
 router.post(
   "/",
-  roleMiddleware("ADMIN", "VENDEDOR", "VENDEDOR_OPERADOR"),
+  roleMiddleware("ADMIN", "VENDEDOR", "OPERADOR", "VENDEDOR_OPERADOR"),
   criarServicoPlano
 )
 
 router.put(
   "/:id",
-  roleMiddleware("ADMIN", "VENDEDOR", "VENDEDOR_OPERADOR"),
+  roleMiddleware("ADMIN", "VENDEDOR", "OPERADOR", "VENDEDOR_OPERADOR"),
   atualizarServicoPlano
 )
 

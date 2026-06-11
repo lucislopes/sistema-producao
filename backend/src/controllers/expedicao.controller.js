@@ -11,26 +11,33 @@ const STATUS_EXPEDICAO_PERMITIDOS = [
 export async function listarExpedicao(req, res) {
   try {
     const pedidos = await prisma.pedido.findMany({
-      where: {
-        status: {
-          in: [
-            "CONCLUIDO",
-            "PRONTO_ENTREGA",
-            "SAIU_ENTREGA"
-          ]
-        }
-      },
+  where: {
+    status: {
+      in: [
+        "CONCLUIDO",
+        "PRONTO_ENTREGA",
+        "SAIU_ENTREGA"
+      ]
+    }
+  },
 
-      include: {
-        cliente: true,
-        rota: true,
-        vendedor: true
-      },
+  include: {
+    cliente: true,
+    rota: true,
+    vendedor: true,
 
-      orderBy: {
-        dataEntrega: "asc"
+    planos: {
+      select: {
+        id: true,
+        quantidadeChapas: true
       }
-    })
+    }
+  },
+
+  orderBy: {
+    dataEntrega: "asc"
+  }
+})
 
     return res.json(pedidos)
   } catch (error) {

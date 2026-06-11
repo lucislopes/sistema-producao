@@ -85,14 +85,21 @@ export function RelatorioExpedicao() {
   function formatarData(data) {
     if (!data) return "-"
 
-    const dataTexto = String(data).substring(0, 10)
-    const [ano, mes, dia] = dataTexto.split("-")
+    const dataObj = new Date(data)
+
+    const dia = String(dataObj.getDate()).padStart(2, "0")
+    const mes = String(dataObj.getMonth() + 1).padStart(2, "0")
+    const ano = dataObj.getFullYear()
 
     return `${dia}/${mes}/${ano}`
   }
 
   function formatarDataFiltro(data) {
-    return data.toISOString().split("T")[0]
+    const ano = data.getFullYear()
+    const mes = String(data.getMonth() + 1).padStart(2, "0")
+    const dia = String(data.getDate()).padStart(2, "0")
+
+    return `${ano}-${mes}-${dia}`
   }
 
   function obterNumeroPedido(pedido) {
@@ -115,6 +122,17 @@ export function RelatorioExpedicao() {
     }
 
     return statusMap[status] || status
+  }
+
+  function obterQuantidadeChapas(pedido) {
+    if (pedido.tipoPedido === "DIRETO_ENTREGA") {
+      return Number(pedido.quantidadeChapasDiretoEntrega || 0)
+    }
+
+    return pedido.planos?.reduce(
+      (total, plano) => total + Number(plano.quantidadeChapas || 0),
+      0
+    ) || 0
   }
 
   function obterClasseLinha(dataEntrega) {
@@ -289,6 +307,7 @@ export function RelatorioExpedicao() {
       "Pedido",
       "Cliente",
       "Data Prevista",
+      "Chapas",
       "Rota",
       "Recebedor",
       "Contato",
@@ -300,6 +319,7 @@ export function RelatorioExpedicao() {
       obterNumeroPedido(pedido),
       pedido.cliente?.nome || "",
       formatarData(pedido.dataEntrega),
+      obterQuantidadeChapas(pedido),
       pedido.rota?.nome || "",
       pedido.nomeRecebedor || "",
       pedido.contatoRecebedor || "",
@@ -530,6 +550,7 @@ export function RelatorioExpedicao() {
               <Th>Pedido</Th>
               <Th>Cliente</Th>
               <Th>Prev. Entrega</Th>
+              <Th>Chapas</Th>
               <Th>Rota</Th>
               <Th>Recebedor</Th>
               <Th>Contato</Th>
@@ -554,6 +575,10 @@ export function RelatorioExpedicao() {
 
                 <Td>
                   {formatarData(pedido.dataEntrega)}
+                </Td>
+
+                <Td>
+                  {obterQuantidadeChapas(pedido)}
                 </Td>
 
                 <Td>
@@ -583,7 +608,7 @@ export function RelatorioExpedicao() {
 
             {pedidos.length === 0 && (
               <tr>
-                <Td className="p-4" colSpan="8">
+                <Td className="p-4" colSpan="9">
                   Nenhuma entrega encontrada para este período.
                 </Td>
               </tr>

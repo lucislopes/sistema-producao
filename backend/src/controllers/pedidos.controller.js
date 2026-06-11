@@ -22,7 +22,10 @@ function validarPedido({
     return "Tipo de entrega é obrigatório"
   }
 
-  if (!responsavelFrete) {
+  if (
+    tipoEntrega !== "CLIENTE_RETIRA" &&
+    !responsavelFrete
+  ) {
     return "Responsável pelo frete é obrigatório"
   }
 
@@ -143,6 +146,7 @@ export async function criarPedido(req, res) {
       rotaId,
       valorFrete,
       valorTotal,
+      quantidadeChapasDiretoEntrega,
       nomeRecebedor,
       contatoRecebedor,
       enderecoEntrega,
@@ -163,6 +167,23 @@ export async function criarPedido(req, res) {
       return res.status(400).json({
         error: erroValidacao
       })
+    }
+
+    let quantidadeChapasDiretoEntregaTratada = null
+
+    if (tipoPedido === "DIRETO_ENTREGA") {
+      quantidadeChapasDiretoEntregaTratada = Number(
+        quantidadeChapasDiretoEntrega
+      )
+
+      if (
+        Number.isNaN(quantidadeChapasDiretoEntregaTratada) ||
+        quantidadeChapasDiretoEntregaTratada <= 0
+      ) {
+        return res.status(400).json({
+          error: "Quantidade de chapas é obrigatória para pedido direto para entrega"
+        })
+      }
     }
 
     const origemTratada = origemPedido || "INTERNO"
@@ -228,23 +249,42 @@ export async function criarPedido(req, res) {
         vendedorId,
         dataEntrega: dataEntrega ? new Date(dataEntrega) : null,
         tipoEntrega,
-        responsavelFrete,
-        rotaId: rotaId || null,
+        responsavelFrete:
+          tipoEntrega === "CLIENTE_RETIRA"
+            ? null
+            : responsavelFrete,
+        rotaId:
+          tipoEntrega === "CLIENTE_RETIRA"
+            ? null
+            : rotaId || null,
         valorFrete:
-          valorFrete !== "" &&
-          valorFrete !== null &&
-          valorFrete !== undefined
-            ? Number(valorFrete)
-            : null,
+          tipoEntrega === "CLIENTE_RETIRA"
+            ? null
+            : (
+                valorFrete !== "" &&
+                valorFrete !== null &&
+                valorFrete !== undefined
+              )
+                ? Number(valorFrete)
+                : null,
         valorTotal:
           valorTotal !== "" &&
           valorTotal !== null &&
           valorTotal !== undefined
             ? Number(valorTotal)
             : null,
-        nomeRecebedor,
-        contatoRecebedor,
-        enderecoEntrega,
+        quantidadeChapasDiretoEntrega:
+          tipoPedido === "DIRETO_ENTREGA"
+            ? Number(quantidadeChapasDiretoEntrega)
+            : null,
+        nomeRecebedor:
+          tipoEntrega === "CLIENTE_RETIRA" ? null : nomeRecebedor,
+
+        contatoRecebedor:
+          tipoEntrega === "CLIENTE_RETIRA" ? null : contatoRecebedor,
+
+        enderecoEntrega:
+          tipoEntrega === "CLIENTE_RETIRA" ? null : enderecoEntrega,
         observacoes
       },
       include: {
@@ -287,6 +327,7 @@ export async function atualizarPedido(req, res) {
       rotaId,
       valorFrete,
       valorTotal,
+      quantidadeChapasDiretoEntrega,
       nomeRecebedor,
       contatoRecebedor,
       enderecoEntrega,
@@ -384,6 +425,23 @@ export async function atualizarPedido(req, res) {
       }
     }
 
+    let quantidadeChapasDiretoEntregaTratada = null
+
+      if (tipoPedido === "DIRETO_ENTREGA") {
+      quantidadeChapasDiretoEntregaTratada = Number(
+        quantidadeChapasDiretoEntrega
+      )
+
+      if (
+        Number.isNaN(quantidadeChapasDiretoEntregaTratada) ||
+        quantidadeChapasDiretoEntregaTratada <= 0
+      ) {
+        return res.status(400).json({
+          error: "Quantidade de chapas é obrigatória para pedido direto para entrega"
+        })
+      }
+    }         
+
     const pedido = await prisma.pedido.update({
       where: {
         id
@@ -396,23 +454,40 @@ export async function atualizarPedido(req, res) {
         vendedorId,
         dataEntrega: dataEntrega ? new Date(dataEntrega) : null,
         tipoEntrega,
-        responsavelFrete,
-        rotaId: rotaId || null,
+        responsavelFrete:
+          tipoEntrega === "CLIENTE_RETIRA"
+            ? null
+            : responsavelFrete,
+        rotaId:
+          tipoEntrega === "CLIENTE_RETIRA"
+            ? null
+            : rotaId || null,
         valorFrete:
-          valorFrete !== "" &&
-          valorFrete !== null &&
-          valorFrete !== undefined
-            ? Number(valorFrete)
-            : null,
+          tipoEntrega === "CLIENTE_RETIRA"
+            ? null
+            : (
+                valorFrete !== "" &&
+                valorFrete !== null &&
+                valorFrete !== undefined
+              )
+                ? Number(valorFrete)
+                : null, 
         valorTotal:
           valorTotal !== "" &&
           valorTotal !== null &&
           valorTotal !== undefined
             ? Number(valorTotal)
             : null,
-        nomeRecebedor,
-        contatoRecebedor,
-        enderecoEntrega,
+        quantidadeChapasDiretoEntrega: quantidadeChapasDiretoEntregaTratada,
+
+        nomeRecebedor:
+          tipoEntrega === "CLIENTE_RETIRA" ? null : nomeRecebedor,
+
+        contatoRecebedor:
+          tipoEntrega === "CLIENTE_RETIRA" ? null : contatoRecebedor,
+
+        enderecoEntrega:
+          tipoEntrega === "CLIENTE_RETIRA" ? null : enderecoEntrega,
         status,
         observacoes
       },

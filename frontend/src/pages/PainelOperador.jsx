@@ -207,7 +207,7 @@ export function PainelOperador() {
           Serviços para Assumir
         </h2>
 
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           {disponiveisAgrupados.map((grupo) => (
             <div
               key={grupo.pedido.id}
@@ -224,6 +224,19 @@ export function PainelOperador() {
               <p className="text-gray-600 mb-4">
                 Status pedido: {grupo.pedido.status}
               </p>
+
+              <p className="text-sm text-gray-600">
+  Entrega prevista:{" "}
+  {grupo.pedido.dataEntrega
+    ? new Date(grupo.pedido.dataEntrega).toLocaleDateString("pt-BR")
+    : "Não informada"}
+</p>
+
+{grupo.pedido.observacoes && (
+  <p className="text-sm text-gray-600 mt-1">
+    Obs. pedido: {grupo.pedido.observacoes}
+  </p>
+)}
 
               {grupo.planos.map((itemPlano) => (
                 <div
@@ -257,6 +270,14 @@ export function PainelOperador() {
                             Operador:{" "}
                             {servico.operador?.nome || "Sem operador"}
                           </p>
+
+                          {servico.observacoes && (
+  <p className="text-sm text-gray-600">
+    Obs. serviço: {servico.observacoes}
+  </p>
+)}
+
+                          
                         </div>
 
                         <button
@@ -290,7 +311,7 @@ export function PainelOperador() {
           Meus Serviços em Andamento
         </h2>
 
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           {meusServicosAgrupados.map((grupo) => (
             <div
               key={grupo.pedido.id}
@@ -307,6 +328,19 @@ export function PainelOperador() {
               <p className="text-gray-600 mb-4">
                 Status pedido: {grupo.pedido.status}
               </p>
+
+              <p className="text-sm text-gray-600">
+  Entrega prevista:{" "}
+  {grupo.pedido.dataEntrega
+    ? new Date(grupo.pedido.dataEntrega).toLocaleDateString("pt-BR")
+    : "Não informada"}
+</p>
+
+{grupo.pedido.observacoes && (
+  <p className="text-sm text-gray-600 mt-1">
+    Obs. pedido: {grupo.pedido.observacoes}
+  </p>
+)}
 
               {grupo.planos.map((itemPlano) => (
                 <div
@@ -341,6 +375,12 @@ export function PainelOperador() {
                             Status: {servico.status}
                           </p>
                         </div>
+
+                        {servico.observacoes && (
+  <p className="text-sm text-gray-600">
+    Obs. serviço: {servico.observacoes}
+  </p>
+)}
 
                         <div className="flex gap-2">
                           {servico.status === "ABERTO" && (

@@ -21,6 +21,8 @@ export function Dashboard() {
   const [dados, setDados] = useState(null)
   const [baseData, setBaseData] = useState("pedido")
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null)
+  const usuario = JSON.parse(localStorage.getItem("@usuario"))
+  const isOperador = usuario?.funcao === "OPERADOR"
 
   function formatarDataLocal(data) {
     const ano = data.getFullYear()
@@ -190,13 +192,15 @@ export function Dashboard() {
             link="/alertas"
           />
 
-          <CardIndicador
-            titulo="Faturamento"
-            valor={formatarMoeda(dados.financeiro.total)}
-            tipo="info"
-            icon={DollarSign}
-            link="/relatorio-pedidos"
-          />
+          {!isOperador && (
+            <CardIndicador
+              titulo="Faturamento"
+              valor={formatarMoeda(dados.financeiro.total)}
+              tipo="info"
+              icon={DollarSign}
+              link="/relatorio-pedidos"
+            />
+          )}
 
           <CardIndicador
             titulo="SLA"
@@ -217,19 +221,23 @@ export function Dashboard() {
             link="/dashboard/producao"
           />
 
-          <CardIndicador
-            titulo="Expedição"
-            valor="Abrir"
-            icon={Truck}
-            link="/dashboard/expedicao"
-          />
+          {!isOperador && (
+            <CardIndicador
+              titulo="Expedição"
+              valor="Abrir"
+              icon={Truck}
+              link="/dashboard/expedicao"
+            />
+          )}
 
-          <CardIndicador
-            titulo="Comercial"
-            valor="Abrir"
-            icon={ChartColumn}
-            link="/dashboard/comercial"
-          />
+          {!isOperador && (
+            <CardIndicador
+              titulo="Comercial"
+              valor="Abrir"
+              icon={ChartColumn}
+              link="/dashboard/comercial"
+            />
+          )}
 
           <CardIndicador
             titulo="Kanban"

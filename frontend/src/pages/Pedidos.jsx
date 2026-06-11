@@ -57,6 +57,9 @@ export function Pedidos() {
   const [dataInicio, setDataInicio] = useState("")
   const [dataFim, setDataFim] = useState("")
 
+  const [totalChapas, setTotalChapas] = useState("")
+  const [quantidadeChapasDiretoEntrega, setQuantidadeChapasDiretoEntrega] = useState("")
+
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(50)
   const [paginacao, setPaginacao] = useState({
@@ -127,13 +130,31 @@ export function Pedidos() {
       vendedorId,
       dataEntrega,
       tipoEntrega,
-      responsavelFrete,
-      rotaId,
-      valorFrete,
+
+      responsavelFrete:
+        tipoEntrega === "CLIENTE_RETIRA" ? null : responsavelFrete,
+
+      rotaId:
+        tipoEntrega === "CLIENTE_RETIRA" ? null : rotaId,
+
+      valorFrete:
+        tipoEntrega === "CLIENTE_RETIRA" ? null : valorFrete,
+
       valorTotal,
-      nomeRecebedor,
-      contatoRecebedor,
-      enderecoEntrega,
+
+      quantidadeChapasDiretoEntrega:
+        tipoPedido === "DIRETO_ENTREGA"
+          ? quantidadeChapasDiretoEntrega
+          : null,
+
+      nomeRecebedor:
+        tipoEntrega === "CLIENTE_RETIRA" ? null : nomeRecebedor,
+
+      contatoRecebedor:
+        tipoEntrega === "CLIENTE_RETIRA" ? null : contatoRecebedor,
+
+      enderecoEntrega:
+        tipoEntrega === "CLIENTE_RETIRA" ? null : enderecoEntrega,
       status,
       observacoes,
       updatedAt: updatedAtOriginal
@@ -231,7 +252,7 @@ export function Pedidos() {
     setTipoPedido(
       pedido.tipoPedido || "COM_PRODUCAO"
     )
-      setEditandoId(pedido.id)
+    setEditandoId(pedido.id)
     setUpdatedAtOriginal(pedido.updatedAt || "")
     setClienteId(pedido.clienteId)
     setVendedorId(pedido.vendedorId)
@@ -241,10 +262,11 @@ export function Pedidos() {
         : ""
     )
     setTipoEntrega(pedido.tipoEntrega)
-    setResponsavelFrete(pedido.responsavelFrete)
+    setResponsavelFrete(pedido.responsavelFrete || "CLIENTE")
     setRotaId(pedido.rotaId || "")
     setValorFrete(pedido.valorFrete || "")
     setValorTotal(pedido.valorTotal || "")
+    setTotalChapas(pedido.totalChapas || "")
     setNomeRecebedor(pedido.nomeRecebedor || "")
     setContatoRecebedor(pedido.contatoRecebedor || "")
     setEnderecoEntrega(pedido.enderecoEntrega || "")
@@ -266,6 +288,7 @@ export function Pedidos() {
     setRotaId("")
     setValorFrete("")
     setValorTotal("")
+    setTotalChapas("")
     setNomeRecebedor("")
     setContatoRecebedor("")
     setEnderecoEntrega("")
@@ -478,6 +501,16 @@ export function Pedidos() {
           <option value="DIRETO_ENTREGA">Pedido direto para entrega</option>
         </Select>
 
+        {tipoPedido === "DIRETO_ENTREGA" && (
+          <Input
+            type="number"
+            placeholder="Quantidade de chapas"
+            value={quantidadeChapasDiretoEntrega}
+            onChange={(e) => setQuantidadeChapasDiretoEntrega(e.target.value)}
+            required
+          />
+        )}
+
           <div className="flex gap-2">
           <div className="flex-1">
             <AutocompleteCliente
@@ -538,7 +571,20 @@ export function Pedidos() {
 
           <Select
             value={tipoEntrega}
-            onChange={(e) => setTipoEntrega(e.target.value)}
+            onChange={(e) => {
+              setTipoEntrega(e.target.value)
+
+              if (e.target.value === "CLIENTE_RETIRA") {
+                setResponsavelFrete("")
+                setRotaId("")
+                setValorFrete("")
+                setNomeRecebedor("")
+                setContatoRecebedor("")
+                setEnderecoEntrega("")
+              } else {
+                setResponsavelFrete("CLIENTE")
+              }
+            }}
           >
             <option value="ENTREGA_EMPRESA">
               Empresa Entrega
@@ -548,49 +594,53 @@ export function Pedidos() {
             </option>
           </Select>
 
-          <Select
-            value={responsavelFrete}
-            onChange={(e) => setResponsavelFrete(e.target.value)}
-          >
-            <option value="CLIENTE">
-              Frete Cliente
-            </option>
-            <option value="EMPRESA">
-              Frete Empresa
-            </option>
-          </Select>
-
-          <div className="flex gap-2">
-          <div className="flex-1">
-            <Select
-              value={rotaId}
-              onChange={(e) => aplicarRotaSelecionada(e.target.value)}
-            >
-              <option value="">Selecione a rota</option>
-              {rotas.map((rota) => (
-                <option key={rota.id} value={rota.id}>
-                  {rota.nome}
+          {tipoEntrega === "ENTREGA_EMPRESA" && (
+            <>
+              <Select
+                value={responsavelFrete}
+                onChange={(e) => setResponsavelFrete(e.target.value)}
+              >
+                <option value="CLIENTE">
+                  Frete Cliente
                 </option>
-              ))}
-            </Select>
-          </div>
+                <option value="EMPRESA">
+                  Frete Empresa
+                </option>
+              </Select>
 
-          <Button
-          type="button"
-          variant="secondary"
-          onClick={() => setModalRotaAberto(true)}
-        >
-          <Route size={18} />
-        </Button>
-        </div>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Select
+                    value={rotaId}
+                    onChange={(e) => aplicarRotaSelecionada(e.target.value)}
+                  >
+                    <option value="">Selecione a rota</option>
+                    {rotas.map((rota) => (
+                      <option key={rota.id} value={rota.id}>
+                        {rota.nome}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
 
-          <Input
-            type="number"
-            step="0.01"
-            placeholder="Valor frete"
-            value={valorFrete}
-            onChange={(e) => setValorFrete(e.target.value)}
-          />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setModalRotaAberto(true)}
+                >
+                  <Route size={18} />
+                </Button>
+              </div>
+
+              <Input
+                type="number"
+                step="0.01"
+                placeholder="Valor frete"
+                value={valorFrete}
+                onChange={(e) => setValorFrete(e.target.value)}
+              />
+            </>
+          )}
 
           <Input
             type="number"
@@ -600,26 +650,30 @@ export function Pedidos() {
             onChange={(e) => setValorTotal(e.target.value)}
           />
 
-          <Input
-            type="text"
-            placeholder="Nome recebedor"
-            value={nomeRecebedor}
-            onChange={(e) => setNomeRecebedor(e.target.value)}
-          />
+          {tipoEntrega === "ENTREGA_EMPRESA" && (
+            <>
+              <Input
+                type="text"
+                placeholder="Nome recebedor"
+                value={nomeRecebedor}
+                onChange={(e) => setNomeRecebedor(e.target.value)}
+              />
 
-          <Input
-            type="text"
-            placeholder="Contato recebedor"
-            value={contatoRecebedor}
-            onChange={(e) => setContatoRecebedor(e.target.value)}
-          />
+              <Input
+                type="text"
+                placeholder="Contato recebedor"
+                value={contatoRecebedor}
+                onChange={(e) => setContatoRecebedor(e.target.value)}
+              />
 
-          <Input 
-            type="text" 
-            placeholder="Endereço entrega" 
-            value={enderecoEntrega} 
-            onChange={(e) => setEnderecoEntrega(e.target.value)} 
-            />
+              <Input 
+                type="text" 
+                placeholder="Endereço entrega" 
+                value={enderecoEntrega} 
+                onChange={(e) => setEnderecoEntrega(e.target.value)} 
+                />
+              </>
+            )}
 
           {editandoId && (
             <Select

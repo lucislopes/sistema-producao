@@ -72,11 +72,11 @@ export async function relatorioExpedicao(req, res) {
       where.dataEntrega = {}
 
       if (dataInicio) {
-        where.dataEntrega.gte = criarDataLocal(dataInicio)
+        where.dataEntrega.gte = new Date(`${dataInicio}T03:00:00.000Z`)
       }
 
       if (dataFim) {
-        where.dataEntrega.lte = criarDataLocal(dataFim, true)
+        where.dataEntrega.lte = new Date(`${dataFim}T23:59:59.999-03:00`)
       }
     }
 
@@ -86,8 +86,15 @@ export async function relatorioExpedicao(req, res) {
       include: {
         cliente: true,
         rota: true,
-        vendedor: true
-      },
+        vendedor: true,
+
+       planos: {
+        select: {
+          id: true,
+          quantidadeChapas: true
+        }
+      }
+    },
 
       orderBy: [
         {

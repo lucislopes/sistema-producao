@@ -81,7 +81,7 @@ model Pedido {
   dataPedido         DateTime          @default(now())
   dataEntrega        DateTime?
   tipoEntrega        TipoEntrega
-  responsavelFrete   ResponsavelFrete
+  responsavelFrete   ResponsavelFrete?
   rotaId             String?
   valorFrete         Decimal?          @db.Decimal(10, 2)
   nomeRecebedor      String?
@@ -92,6 +92,7 @@ model Pedido {
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
   valorTotal         Decimal?          @db.Decimal(10, 2)
+  quantidadeChapasDiretoEntrega Int?
   numeroPedidoManual String?
   origemPedido       String            @default("INTERNO")
   historicos         HistoricoPedido[]
