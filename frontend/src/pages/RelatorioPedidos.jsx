@@ -586,19 +586,18 @@ export function RelatorioPedidos() {
         </div>
         </div>
 
-      <CabecalhoImpressao
-        empresa={empresa}
-        titulo="Relatório de Pedidos"
-        periodoInicio={dataInicio}
-        periodoFim={dataFim}
-        extra={
-          status
-            ? `Status filtrado: ${status}`
-            : ""
-        }
-      />
-
       <div className="bg-white rounded-2xl shadow-md p-6 print-area">
+        <CabecalhoImpressao
+          empresa={empresa}
+          titulo="Relatório de Pedidos"
+          periodoInicio={dataInicio}
+          periodoFim={dataFim}
+          extra={
+            status
+              ? `Status filtrado: ${status}`
+              : ""
+          }
+        />
         <div className="mb-6">
           <h2 className="text-2xl font-bold">
             Listagem de Pedidos

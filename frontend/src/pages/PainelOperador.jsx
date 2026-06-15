@@ -8,7 +8,8 @@ import {
   CheckCircle2,
   Hand,
   Package,
-  Layers
+  Layers,
+  RotateCcw
 } from "lucide-react"
 
 export function PainelOperador() {
@@ -97,7 +98,13 @@ export function PainelOperador() {
     }
   }
 
-  async function alterarStatus(id, status) {
+  async function alterarStatus(id, status, mensagemConfirmacao = null) {
+    if (mensagemConfirmacao) {
+      const confirmar = confirm(mensagemConfirmacao)
+
+      if (!confirmar) return
+    }
+
     try {
       await api.put(`/servicos-plano/status/${id}`, {
         status
@@ -106,7 +113,10 @@ export function PainelOperador() {
       await carregarDados()
     } catch (error) {
       console.log(error)
-      alert("Erro ao alterar status")
+      alert(
+        error.response?.data?.error ||
+        "Erro ao alterar status"
+      )
     }
   }
 
@@ -377,12 +387,12 @@ export function PainelOperador() {
                         </div>
 
                         {servico.observacoes && (
-  <p className="text-sm text-gray-600">
-    Obs. serviço: {servico.observacoes}
-  </p>
-)}
+                          <p className="text-sm text-gray-600">
+                            Obs. serviço: {servico.observacoes}
+                          </p>
+                        )}
 
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           {servico.status === "ABERTO" && (
                             <button
                               onClick={() =>
@@ -398,23 +408,53 @@ export function PainelOperador() {
                           )}
 
                           {servico.status === "INICIADO" && (
-                            <button
-                              onClick={() =>
-                                alterarStatus(servico.id, "CONCLUIDO")
-                              }
-                              className="bg-blue-700 text-white px-4 py-2 rounded-lg whitespace-nowrap hover:bg-blue-800"
-                            >
-                              <span className="inline-flex items-center gap-2">
-                                <CheckCircle2 size={16} />
-                                Concluir
-                              </span>
-                            </button>
+                            <>
+                              <button
+                                onClick={() =>
+                                  alterarStatus(servico.id, "CONCLUIDO")
+                                }
+                                className="bg-blue-700 text-white px-4 py-2 rounded-lg whitespace-nowrap hover:bg-blue-800"
+                              >
+                                <span className="inline-flex items-center gap-2">
+                                  <CheckCircle2 size={16} />
+                                  Concluir
+                                </span>
+                              </button>
+
+                              <button
+                                onClick={() =>
+                                  alterarStatus(
+                                    servico.id,
+                                    "ABERTO",
+                                    "Deseja voltar este serviço para aguardando?"
+                                  )
+                                }
+                                className="bg-gray-600 text-white px-4 py-2 rounded-lg whitespace-nowrap hover:bg-gray-700"
+                              >
+                                <span className="inline-flex items-center gap-2">
+                                  <RotateCcw size={16} />
+                                  Voltar
+                                </span>
+                              </button>
+                            </>
                           )}
 
                           {servico.status === "CONCLUIDO" && (
-                            <span className="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 text-sm">
-                              Concluído
-                            </span>
+                            <button
+                              onClick={() =>
+                                alterarStatus(
+                                  servico.id,
+                                  "INICIADO",
+                                  "Deseja reabrir este serviço concluído?"
+                                )
+                              }
+                              className="bg-yellow-500 text-white px-4 py-2 rounded-lg whitespace-nowrap hover:bg-yellow-600"
+                            >
+                              <span className="inline-flex items-center gap-2">
+                                <RotateCcw size={16} />
+                                Reabrir
+                              </span>
+                            </button>
                           )}
                         </div>
                       </div>

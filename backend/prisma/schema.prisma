@@ -16,6 +16,7 @@ model ConfiguracaoEmpresa {
   cidade    String?
   estado    String?
   cnpj      String?
+  logoUrl   String?  @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

@@ -192,8 +192,10 @@ export function DashboardProducao() {
       </SecaoDashboard>
 
       <SecaoDashboard titulo="Ranking dos Operadores">
-        <div className="bg-white rounded-2xl shadow-md overflow-hidden">
-          <Table>
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm">
+        <div className="p-5">
+          <div className="overflow-x-auto border border-gray-200 rounded-xl">
+            <Table>
             <thead>
               <tr>
                 <Th>Posição</Th>
@@ -229,7 +231,9 @@ export function DashboardProducao() {
               )}
             </tbody>
           </Table>
+          </div>
         </div>
+      </div>
       </SecaoDashboard>
     </div>
   )

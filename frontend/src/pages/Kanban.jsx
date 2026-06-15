@@ -2,7 +2,6 @@ import { useEffect, useState } from "react"
 import { api } from "../services/api"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
 
-
 import {
   ClipboardList,
   Factory,
@@ -11,7 +10,8 @@ import {
   PlayCircle,
   Package,
   Layers,
-  User
+  User,
+  RotateCcw
 } from "lucide-react"
 
 export function Kanban() {
@@ -63,7 +63,13 @@ export function Kanban() {
     },
   ]
 
-  async function alterarStatus(id, status) {
+  async function alterarStatus(id, status, mensagemConfirmacao = null) {
+    if (mensagemConfirmacao) {
+      const confirmar = confirm(mensagemConfirmacao)
+
+      if (!confirmar) return
+    }
+
     try {
       await api.put(`/servicos-plano/status/${id}`, {
         status
@@ -273,11 +279,11 @@ export function Kanban() {
                     }
                   </p>
 
-                  <div className="mt-3 flex gap-2">
+                  <div className="mt-3 flex flex-wrap gap-2">
                     {servico.status === "ABERTO" && (
                       <button
                         onClick={() => alterarStatus(servico.id, "INICIADO")}
-                        className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm inline-flex items-center gap-2"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm inline-flex items-center gap-2"
                       >
                         <PlayCircle size={15} />
                         Iniciar
@@ -285,12 +291,44 @@ export function Kanban() {
                     )}
 
                     {servico.status === "INICIADO" && (
+                      <>
+                        <button
+                          onClick={() => alterarStatus(servico.id, "CONCLUIDO")}
+                          className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm inline-flex items-center gap-2"
+                        >
+                          <CheckCircle2 size={15} />
+                          Concluir
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            alterarStatus(
+                              servico.id,
+                              "ABERTO",
+                              "Deseja voltar este serviço para aguardando?"
+                            )
+                          }
+                          className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-lg text-sm inline-flex items-center gap-2"
+                        >
+                          <RotateCcw size={15} />
+                          Voltar início
+                        </button>
+                      </>
+                    )}
+
+                    {servico.status === "CONCLUIDO" && (
                       <button
-                        onClick={() => alterarStatus(servico.id, "CONCLUIDO")}
-                        className="bg-green-600 text-white px-3 py-1 rounded-lg text-sm inline-flex items-center gap-2"
+                        onClick={() =>
+                          alterarStatus(
+                            servico.id,
+                            "INICIADO",
+                            "Deseja reabrir este serviço concluído?"
+                          )
+                        }
+                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-lg text-sm inline-flex items-center gap-2"
                       >
-                        <CheckCircle2 size={15} />
-                        Concluir
+                        <RotateCcw size={15} />
+                        Reabrir
                       </button>
                     )}
                   </div>

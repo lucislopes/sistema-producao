@@ -13,7 +13,6 @@ export async function obterConfiguracaoEmpresa(req, res) {
     }
 
     return res.json(configuracao)
-
   } catch (error) {
     console.log(error)
 
@@ -32,7 +31,8 @@ export async function salvarConfiguracaoEmpresa(req, res) {
       endereco,
       cidade,
       estado,
-      cnpj
+      cnpj,
+      logoUrl
     } = req.body
 
     let configuracao = await prisma.configuracaoEmpresa.findFirst()
@@ -46,7 +46,8 @@ export async function salvarConfiguracaoEmpresa(req, res) {
           endereco,
           cidade,
           estado,
-          cnpj
+          cnpj,
+          logoUrl
         }
       })
 
@@ -64,12 +65,12 @@ export async function salvarConfiguracaoEmpresa(req, res) {
         endereco,
         cidade,
         estado,
-        cnpj
+        cnpj,
+        logoUrl
       }
     })
 
     return res.json(configuracao)
-
   } catch (error) {
     console.log(error)
 
