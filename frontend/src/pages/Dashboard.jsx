@@ -9,7 +9,8 @@ import {
   Hammer,
   Truck,
   ChartColumn,
-  Columns3
+  Columns3,
+  Boxes
 } from "lucide-react"
 
 import { api } from "../services/api"
@@ -170,6 +171,14 @@ export function Dashboard() {
           />
 
           <CardIndicador
+            titulo="Em Separação p/ Prod."
+            valor={dados.pedidos.emSeparacao}
+            tipo={dados.pedidos.emSeparacao > 0 ? "info" : "normal"}
+            icon={Boxes}
+            link="/expedicao"
+          />
+
+          <CardIndicador
             titulo="Em Produção"
             valor={dados.pedidos.emProducao}
             icon={Factory}
@@ -191,16 +200,6 @@ export function Dashboard() {
             icon={TriangleAlert}
             link="/alertas"
           />
-
-          {!isOperador && (
-            <CardIndicador
-              titulo="Faturamento"
-              valor={formatarMoeda(dados.financeiro.total)}
-              tipo="info"
-              icon={DollarSign}
-              link="/relatorio-pedidos"
-            />
-          )}
 
           <CardIndicador
             titulo="SLA"
