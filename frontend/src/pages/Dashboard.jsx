@@ -185,7 +185,7 @@ export function Dashboard() {
           />
 
           <CardIndicador
-            titulo="Atrasados-"
+            titulo="Atrasados"
             valor={dados.pedidos.atrasados}
             tipo={dados.pedidos.atrasados > 0 ? "perigo" : "normal"}
             icon={TriangleAlert}
