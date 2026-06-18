@@ -29,6 +29,7 @@ export function RelatorioExpedicao() {
   const [rotaId, setRotaId] = useState("")
   const [status, setStatus] = useState("")
   const [busca, setBusca] = useState("")
+  const [incluirEntregues, setIncluirEntregues] = useState(false)
 
   async function carregarRotas() {
     try {
@@ -47,6 +48,7 @@ export function RelatorioExpedicao() {
         rotaId,
         status,
         busca,
+        incluirEntregues,
         ...filtros
       }
 
@@ -76,7 +78,7 @@ export function RelatorioExpedicao() {
 
   useEffect(() => {
     carregarRelatorio()
-  }, [dataInicio, dataFim, rotaId, status])
+  }, [dataInicio, dataFim, rotaId, status, incluirEntregues])
 
   function imprimir() {
     window.print()
@@ -490,8 +492,15 @@ export function RelatorioExpedicao() {
             onChange={(e) => setStatus(e.target.value)}
           >
             <option value="">Todos os status</option>
+            <option value="ABERTO">Aberto</option>
+            <option value="EM_SEPARACAO">Em Separação</option>
+            <option value="EM_PRODUCAO">Em Produção</option>
+            <option value="CONCLUIDO">Concluído</option>
             <option value="PRONTO_ENTREGA">Pronto Entrega</option>
             <option value="SAIU_ENTREGA">Saiu Entrega</option>
+            {incluirEntregues && (
+              <option value="ENTREGUE">Entregue</option>
+            )}
           </Select>
 
           <Input

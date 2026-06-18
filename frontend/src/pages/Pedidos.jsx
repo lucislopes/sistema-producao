@@ -254,10 +254,12 @@ export function Pedidos() {
 
       valorTotal,
 
-      quantidadeChapasDiretoEntrega:
-        tipoPedido === "DIRETO_ENTREGA"
-          ? quantidadeChapasDiretoEntrega
-          : null,
+      ...(tipoPedido === "DIRETO_ENTREGA"
+      ? {
+          quantidadeChapasDiretoEntrega:
+                Number(quantidadeChapasDiretoEntrega)
+            }
+          : {}),
 
       nomeRecebedor:
         tipoEntrega === "CLIENTE_RETIRA" ? null : nomeRecebedor,
@@ -425,7 +427,10 @@ export function Pedidos() {
   function formatarData(data) {
     if (!data) return "-"
 
-    return new Date(data).toLocaleDateString("pt-BR")
+    const dataTexto = String(data).substring(0, 10)
+    const [ano, mes, dia] = dataTexto.split("-")
+
+    return `${dia}/${mes}/${ano}`
   }
 
   function pedidoAtrasado(pedido) {

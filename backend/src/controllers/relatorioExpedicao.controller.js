@@ -25,19 +25,12 @@ export async function relatorioExpedicao(req, res) {
       dataFim,
       rotaId,
       status,
-      busca
+      busca,
+      incluirEntregues
     } = req.query
 
     const where = {
-      status: status
-        ? status
-        : {
-            in: [
-              "CONCLUIDO",
-              "PRONTO_ENTREGA",
-              "SAIU_ENTREGA"
-            ]
-          },
+      tipoEntrega: "ENTREGA_EMPRESA",
 
       ...(rotaId
         ? {
@@ -72,6 +65,18 @@ export async function relatorioExpedicao(req, res) {
             ]
           }
         : {})
+    }
+
+    if (status) {
+      where.status = status
+    } else if (incluirEntregues === "true") {
+      where.status = {
+        not: "CANCELADO"
+      }
+    } else {
+      where.status = {
+        notIn: ["ENTREGUE", "CANCELADO"]
+      }
     }
 
     if (dataInicio || dataFim) {
