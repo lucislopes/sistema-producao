@@ -186,6 +186,7 @@ export async function atualizarServicoPlano(req, res) {
     }
 
     const servicoAtual = await prisma.servicoPlano.findUnique({
+      
       where: { id },
       include: {
         plano: {
@@ -195,6 +196,30 @@ export async function atualizarServicoPlano(req, res) {
         }
       }
     })
+
+    const usuario = await prisma.usuario.findUnique({
+      where: { id: req.user.id },
+      include: {
+        funcionario: true
+      }
+    })
+
+    const ehAdmin =
+      usuario?.funcionario?.funcao === "ADMIN"
+
+    if (
+      servicoAtual.operadorId &&
+      operadorId &&
+      servicoAtual.operadorId !== operadorId &&
+      !ehAdmin
+    ) {
+      return res.status(403).json({
+        error:
+          "Este serviço já possui operador. Somente administrador pode alterar."
+      })
+    }
+
+    
 
     if (!servicoAtual) {
       return res.status(404).json({
@@ -378,6 +403,7 @@ export async function listarServicosDisponiveis(req, res) {
       },
       include: {
         tipoServico: true,
+        operador: true,
         plano: {
           include: {
             pedido: {
@@ -486,18 +512,15 @@ export async function listarMeusServicos(req, res) {
 export async function assumirServico(req, res) {
   try {
     const { id } = req.params
-    const usuarioId = req.user.id
 
     const usuario = await prisma.usuario.findUnique({
-      where: { id: usuarioId },
-      include: {
-        funcionario: true
-      }
+      where: { id: req.user.id },
+      include: { funcionario: true }
     })
 
     if (!usuario || !usuario.funcionario) {
       return res.status(404).json({
-        error: "Usuário não encontrado"
+        error: "Usuário não possui funcionário vinculado"
       })
     }
 
@@ -510,6 +533,8 @@ export async function assumirServico(req, res) {
     const servicoAtual = await prisma.servicoPlano.findUnique({
       where: { id },
       include: {
+        operador: true,
+        tipoServico: true,
         plano: {
           include: {
             pedido: true
@@ -524,13 +549,10 @@ export async function assumirServico(req, res) {
       })
     }
 
-    if (servicoAtual.operadorId) {
-      return res.status(400).json({
-        error: "Serviço já possui operador"
-      })
-    }
-
-    if (["PRONTO_ENTREGA", "SAIU_ENTREGA", "ENTREGUE", "CANCELADO"].includes(servicoAtual.plano.pedido.status)) {
+    if (
+      ["PRONTO_ENTREGA", "SAIU_ENTREGA", "ENTREGUE", "CANCELADO"]
+        .includes(servicoAtual.plano.pedido.status)
+    ) {
       return res.status(400).json({
         error: "Pedido já está encerrado ou em expedição"
       })
@@ -542,12 +564,33 @@ export async function assumirServico(req, res) {
       })
     }
 
+    const ehAdmin = usuario.funcionario.funcao === "ADMIN"
+
+    if (
+      servicoAtual.operadorId &&
+      servicoAtual.operadorId !== usuario.funcionario.id &&
+      !ehAdmin
+    ) {
+      return res.status(403).json({
+        error: `Serviço já está assumido por ${servicoAtual.operador?.nome}. Solicite liberação ao administrador.`
+      })
+    }
+
+    if (
+      servicoAtual.operadorId &&
+      servicoAtual.operadorId === usuario.funcionario.id
+    ) {
+      return res.json(servicoAtual)
+    }
+
     const servico = await prisma.servicoPlano.update({
       where: { id },
       data: {
-        operadorId: usuario.funcionario.id,
+        operadorId: usuario.funcionario.id
       },
       include: {
+        tipoServico: true,
+        operador: true,
         plano: true
       }
     })
@@ -558,7 +601,7 @@ export async function assumirServico(req, res) {
       pedidoId: servico.plano.pedidoId,
       usuarioId: req.user.id,
       tipo: "SERVICO_ASSUMIDO",
-      descricao: "Serviço assumido pelo operador"
+      descricao: `Serviço ${servico.tipoServico.nome} assumido por ${usuario.funcionario.nome}`
     })
 
     return res.json(servico)
@@ -582,9 +625,21 @@ export async function alterarStatusServico(req, res) {
       })
     }
 
+    const usuario = await prisma.usuario.findUnique({
+      where: { id: req.user.id },
+      include: { funcionario: true }
+    })
+
+    if (!usuario || !usuario.funcionario) {
+      return res.status(404).json({
+        error: "Usuário não possui funcionário vinculado"
+      })
+    }
+
     const servicoAtual = await prisma.servicoPlano.findUnique({
       where: { id },
       include: {
+        operador: true,
         tipoServico: true,
         plano: {
           include: {
@@ -600,45 +655,52 @@ export async function alterarStatusServico(req, res) {
       })
     }
 
-    if (["PRONTO_ENTREGA", "SAIU_ENTREGA", "ENTREGUE", "CANCELADO"].includes(servicoAtual.plano.pedido.status)) {
+    if (
+      ["PRONTO_ENTREGA", "SAIU_ENTREGA", "ENTREGUE", "CANCELADO"]
+        .includes(servicoAtual.plano.pedido.status)
+    ) {
       return res.status(400).json({
         error: "Pedido já está encerrado ou em expedição"
       })
     }
 
-    const dados = {
-      status
+    const ehAdmin = usuario.funcionario.funcao === "ADMIN"
+
+    if (
+      servicoAtual.operadorId &&
+      servicoAtual.operadorId !== usuario.funcionario.id &&
+      !ehAdmin
+    ) {
+      return res.status(403).json({
+        error: `Este serviço já está sob responsabilidade de ${servicoAtual.operador?.nome}. Somente administrador pode liberar ou alterar.`
+      })
     }
+
+    const dados = { status }
 
     if (status === "INICIADO") {
-    dados.dataInicio = servicoAtual.dataInicio || new Date()
+      dados.dataInicio = servicoAtual.dataInicio || new Date()
+      dados.dataFim = null
 
-    if (!servicoAtual.operadorId) {
-      const usuario = await prisma.usuario.findUnique({
-        where: { id: req.user.id },
-        include: {
-          funcionario: true
-        }
-      })
-
-      if (!usuario || !usuario.funcionario) {
-        return res.status(404).json({
-          error: "Usuário não possui funcionário vinculado"
-        })
+      if (!servicoAtual.operadorId) {
+        dados.operadorId = usuario.funcionario.id
       }
-
-      if (!usuario.funcionario.ativo) {
-        return res.status(400).json({
-          error: "Funcionário inativo"
-        })
-      }
-
-      dados.operadorId = usuario.funcionario.id
     }
-  }
 
-    if (status === "CONCLUIDO" && !servicoAtual.dataFim) {
+    if (status === "CONCLUIDO") {
       dados.dataFim = new Date()
+    }
+
+    if (status === "ABERTO") {
+      if (!ehAdmin) {
+        return res.status(403).json({
+          error: "Somente administrador pode voltar o serviço para aberto."
+        })
+      }
+
+      dados.operadorId = null
+      dados.dataInicio = null
+      dados.dataFim = null
     }
 
     const servico = await prisma.servicoPlano.update({
@@ -646,6 +708,7 @@ export async function alterarStatusServico(req, res) {
       data: dados,
       include: {
         tipoServico: true,
+        operador: true,
         plano: true
       }
     })
@@ -665,6 +728,150 @@ export async function alterarStatusServico(req, res) {
 
     return res.status(500).json({
       error: "Erro ao alterar status"
+    })
+  }
+}
+
+export async function liberarOperadorServico(req, res) {
+  try {
+    const { id } = req.params
+
+    const servicoAtual = await prisma.servicoPlano.findUnique({
+      where: { id },
+      include: {
+        operador: true,
+        tipoServico: true,
+        plano: true
+      }
+    })
+
+    if (!servicoAtual) {
+      return res.status(404).json({
+        error: "Serviço não encontrado"
+      })
+    }
+
+    const servico = await prisma.servicoPlano.update({
+      where: { id },
+      data: {
+        operadorId: null,
+        status: "ABERTO",
+        dataInicio: null,
+        dataFim: null
+      },
+      include: {
+        tipoServico: true,
+        operador: true,
+        plano: true
+      }
+    })
+
+    await recalcularStatusPedido(servico.plano.pedidoId)
+
+    await registrarHistoricoPedido({
+      pedidoId: servico.plano.pedidoId,
+      usuarioId: req.user.id,
+      tipo: "OPERADOR_LIBERADO",
+      descricao: `Operador ${servicoAtual.operador?.nome || "não informado"} liberado do serviço ${servicoAtual.tipoServico.nome}`
+    })
+
+    return res.json(servico)
+  } catch (error) {
+    console.log(error)
+
+    return res.status(500).json({
+      error: "Erro ao liberar operador"
+    })
+  }
+}
+
+export async function transferirOperadorServico(req, res) {
+  try {
+    const { id } = req.params
+    const { novoOperadorId, motivo } = req.body
+
+    if (!novoOperadorId) {
+      return res.status(400).json({
+        error: "Novo operador é obrigatório"
+      })
+    }
+
+    if (!motivo || !motivo.trim()) {
+      return res.status(400).json({
+        error: "Motivo da transferência é obrigatório"
+      })
+    }
+
+    const servicoAtual = await prisma.servicoPlano.findUnique({
+      where: { id },
+      include: {
+        operador: true,
+        tipoServico: true,
+        plano: true
+      }
+    })
+
+    if (!servicoAtual) {
+      return res.status(404).json({
+        error: "Serviço não encontrado"
+      })
+    }
+
+    const novoOperador = await prisma.funcionario.findUnique({
+      where: { id: novoOperadorId }
+    })
+
+    if (!novoOperador) {
+      return res.status(404).json({
+        error: "Novo operador não encontrado"
+      })
+    }
+
+    if (!novoOperador.ativo) {
+      return res.status(400).json({
+        error: "Novo operador está inativo"
+      })
+    }
+
+    if (servicoAtual.operadorId === novoOperadorId) {
+      return res.status(400).json({
+        error: "O novo operador já é o operador atual"
+      })
+    }
+
+    const operadorAnteriorNome =
+      servicoAtual.operador?.nome || "Sem operador"
+
+    const servico = await prisma.servicoPlano.update({
+      where: { id },
+      data: {
+        operadorId: novoOperadorId,
+        status: "INICIADO",
+        dataInicio: servicoAtual.dataInicio || new Date(),
+        dataFim: null
+      },
+      include: {
+        tipoServico: true,
+        operador: true,
+        plano: true
+      }
+    })
+
+    await recalcularStatusPedido(servico.plano.pedidoId)
+
+    await registrarHistoricoPedido({
+      pedidoId: servico.plano.pedidoId,
+      usuarioId: req.user.id,
+      tipo: "SERVICO_ATUALIZADO",
+      descricao: `Serviço ${servico.tipoServico.nome}: operador transferido de ${operadorAnteriorNome} para ${novoOperador.nome}. Motivo: ${motivo.trim()}`
+    })
+
+    return res.json(servico)
+  } catch (error) {
+    console.log(error)
+
+    return res.status(500).json({
+      error: "Erro ao transferir operador"
     })
   }
 }

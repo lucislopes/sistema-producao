@@ -16,6 +16,12 @@ import {
 
 export function Kanban() {
 
+  const [operadores, setOperadores] = useState([])
+  const [modalTransferir, setModalTransferir] = useState(false)
+  const [servicoSelecionado, setServicoSelecionado] = useState(null)
+  const [novoOperadorId, setNovoOperadorId] = useState("")
+  const [motivoTransferencia, setMotivoTransferencia] = useState("")
+
   const [kanban, setKanban] = useState({
     ABERTO: [],
     INICIADO: [],
@@ -25,15 +31,15 @@ export function Kanban() {
 
   async function carregarKanban() {
     try {
+      const [kanbanRes, operadoresRes] = await Promise.all([
+        api.get("/kanban"),
+        api.get("/funcionarios/operadores")
+      ])
 
-      const response = await api.get("/kanban")
-
-      setKanban(response.data)
-
+      setKanban(kanbanRes.data)
+      setOperadores(operadoresRes.data)
     } catch (error) {
-
       console.log(error)
-
       alert("Erro ao carregar kanban")
     }
   }
@@ -100,6 +106,13 @@ export function Kanban() {
     }
 
     return statusMap[status] || status
+  }
+
+  function abrirTransferencia(servico) {
+    setServicoSelecionado(servico)
+    setNovoOperadorId("")
+    setMotivoTransferencia("")
+    setModalTransferir(true)
   }
 
   function pedidoAtrasado(pedido) {
@@ -172,6 +185,65 @@ export function Kanban() {
     }
 
     return `#${pedido?.numeroPedido}`
+  }
+
+  async function transferirOperador() {
+    if (!novoOperadorId) {
+      alert("Selecione o novo operador")
+      return
+    }
+
+    if (!motivoTransferencia.trim()) {
+      alert("Informe o motivo da transferência")
+      return
+    }
+
+    try {
+      await api.patch(
+        `/servicos-plano/${servicoSelecionado.id}/transferir-operador`,
+        {
+          novoOperadorId,
+          motivo: motivoTransferencia
+        }
+      )
+
+      setModalTransferir(false)
+      setServicoSelecionado(null)
+      setNovoOperadorId("")
+      setMotivoTransferencia("")
+
+      carregarKanban()
+    } catch (error) {
+      console.log(error)
+
+      alert(
+        error.response?.data?.error ||
+        "Erro ao transferir operador"
+      )
+    }
+  }
+
+  async function liberarOperador(id) {
+    const confirmar = confirm(
+      "Deseja liberar este operador e devolver o serviço para aberto?"
+    )
+
+    if (!confirmar) return
+
+    try {
+      await api.patch(
+        `/servicos-plano/${id}/liberar-operador`
+      )
+
+      carregarKanban()
+    } catch (error) {
+      console.log(error)
+
+      alert(
+        error.response?.data?.error ||
+        "Erro ao liberar operador"
+      )
+    }
   }
 
   return (
@@ -290,6 +362,15 @@ export function Kanban() {
                     }
                   </p>
 
+                  {servico.operador && (
+                    <button
+                      onClick={() => abrirTransferencia(servico)}
+                      className="mt-2 bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-lg text-sm"
+                    >
+                      Transferir operador
+                    </button>
+                  )}
+
                   <div className="mt-3 flex flex-wrap gap-2">
                     {servico.status === "ABERTO" && (
                       <button
@@ -361,6 +442,65 @@ export function Kanban() {
         ))}
 
       </div>
+
+      {modalTransferir && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg">
+            <h2 className="text-xl font-bold mb-4">
+              Transferir Operador
+            </h2>
+
+            <p className="text-sm text-gray-600 mb-4">
+              Serviço: <strong>{servicoSelecionado?.tipoServico?.nome}</strong>
+              <br />
+              Operador atual:{" "}
+              <strong>
+                {servicoSelecionado?.operador?.nome || "Sem operador"}
+              </strong>
+            </p>
+
+            <div className="grid grid-cols-1 gap-4">
+              <select
+                value={novoOperadorId}
+                onChange={(e) => setNovoOperadorId(e.target.value)}
+                className="border border-gray-300 rounded-lg p-3"
+              >
+                <option value="">Selecione o novo operador</option>
+                {operadores.map((operador) => (
+                  <option key={operador.id} value={operador.id}>
+                    {operador.nome}
+                  </option>
+                ))}
+              </select>
+
+              <textarea
+                placeholder="Motivo da transferência"
+                value={motivoTransferencia}
+                onChange={(e) => setMotivoTransferencia(e.target.value)}
+                className="border border-gray-300 rounded-lg p-3 min-h-[100px]"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                type="button"
+                onClick={() => setModalTransferir(false)}
+                className="px-4 py-2 rounded-lg border"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={transferirOperador}
+                className="px-4 py-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600"
+              >
+                Transferir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )

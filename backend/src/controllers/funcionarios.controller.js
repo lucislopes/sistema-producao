@@ -188,6 +188,49 @@ export async function criarFuncionario(req, res) {
   }
 }
 
+// LISTAR VENDEDORES
+// LISTAR VENDEDORES
+export async function listarVendedores(req, res) {
+  try {
+    const vendedores = await prisma.funcionario.findMany({
+      where: {
+        ativo: true,
+
+        usuario: {
+          email: {
+            not: ADMIN_SISTEMA_EMAIL
+          }
+        },
+
+        funcao: {
+          in: [
+            "VENDEDOR",
+            "VENDEDOR_OPERADOR"
+          ]
+        }
+      },
+
+      select: {
+        id: true,
+        nome: true,
+        funcao: true
+      },
+
+      orderBy: {
+        nome: "asc"
+      }
+    })
+
+    return res.json(vendedores)
+  } catch (error) {
+    console.log(error)
+
+    return res.status(500).json({
+      error: "Erro ao listar vendedores"
+    })
+  }
+}
+
 // LISTAR OPERADORES
 export async function listarOperadores(req, res) {
   try {

@@ -27,6 +27,125 @@ import {
   X
 } from "lucide-react"
 
+
+function ResumoCard({ titulo, valor, tipo, icon: Icon }) {
+  const classes = {
+    normal: "bg-white border-gray-200",
+    perigo: "bg-red-50 border-red-500",
+    sucesso: "bg-green-50 border-green-500",
+    info: "bg-blue-50 border-blue-500"
+  }
+
+  return (
+    <div
+      className={`
+        rounded-xl shadow-sm border p-4
+        ${classes[tipo || "normal"]}
+      `}
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-gray-600">
+            {titulo}
+          </p>
+
+          <strong className="text-2xl font-bold">
+            {valor}
+          </strong>
+        </div>
+
+        {Icon && (
+          <div className="bg-white/70 p-3 rounded-xl">
+            <Icon size={24} />
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function OpcaoCard({
+  name,
+  checked,
+  onChange,
+  titulo,
+  descricao,
+  icon: Icon
+}) {
+  return (
+    <label
+      className={`
+        flex items-start gap-3 rounded-xl border p-4 cursor-pointer
+        transition hover:bg-gray-50
+        ${checked ? "border-blue-600 bg-blue-50 ring-1 ring-blue-600" : "border-gray-200 bg-white"}
+      `}
+    >
+      <input
+        type="radio"
+        name={name}
+        checked={checked}
+        onChange={onChange}
+        className="mt-1"
+      />
+
+      {Icon && (
+        <div
+          className={`
+            rounded-lg p-2
+            ${checked ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"}
+          `}
+        >
+          <Icon size={18} />
+        </div>
+      )}
+
+      <div>
+        <strong className="block text-sm text-gray-900">
+          {titulo}
+        </strong>
+
+        <p className="text-sm text-gray-500 mt-1">
+          {descricao}
+        </p>
+      </div>
+    </label>
+  )
+}
+
+function SecaoFormulario({ numero, titulo, descricao, children }) {
+  return (
+    <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+      <div className="mb-4">
+        <h3 className="font-bold text-gray-900">
+          {numero}. {titulo}
+        </h3>
+
+        {descricao && (
+          <p className="text-sm text-gray-500 mt-1">
+            {descricao}
+          </p>
+        )}
+      </div>
+
+      {children}
+    </section>
+  )
+}
+
+function Campo({ label, obrigatorio, children }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        {label}
+        {obrigatorio && <span className="text-red-500"> *</span>}
+      </label>
+
+      {children}
+    </div>
+  )
+}
+
+
 export function Pedidos() {
   const [pedidos, setPedidos] = useState([])
   const [clientes, setClientes] = useState([])
@@ -34,7 +153,7 @@ export function Pedidos() {
   const [rotas, setRotas] = useState([])
 
   const [editandoId, setEditandoId] = useState(null)
-  const [origemPedido, setOrigemPedido] = useState("INTERNO")
+  const [origemPedido, setOrigemPedido] = useState("EXTERNO")
   const [numeroPedidoManual, setNumeroPedidoManual] = useState("")  
   const [updatedAtOriginal, setUpdatedAtOriginal] = useState("")
 
@@ -89,21 +208,14 @@ export function Pedidos() {
         await Promise.all([
           api.get("/pedidos", {params: {page, limit}}),
           api.get("/clientes"),
-          api.get("/funcionarios"),
+          api.get("/funcionarios/vendedores"),
           api.get("/rotas-entrega")
         ])
 
         setPedidos(pedidosRes.data.dados)
         setPaginacao(pedidosRes.data.paginacao)
         setClientes(clientesRes.data)
-        setVendedores(
-        funcionariosRes.data.filter(
-          (f) =>
-            (f.funcao === "VENDEDOR" ||
-            f.funcao === "VENDEDOR_OPERADOR") &&
-            f.ativo
-        )
-      )
+        setVendedores(funcionariosRes.data)
       setRotas(rotasRes.data)
     } catch (error) {
       console.log(error)
@@ -275,7 +387,7 @@ export function Pedidos() {
   }
 
   function limparFormulario() {
-    setOrigemPedido("INTERNO")
+    setOrigemPedido("EXTERNO")
     setNumeroPedidoManual("")
     setTipoPedido("COM_PRODUCAO")
     setEditandoId(null)
@@ -386,41 +498,6 @@ export function Pedidos() {
     ).length
   }
 
-  function ResumoCard({ titulo, valor, tipo, icon: Icon }) {
-    const classes = {
-      normal: "bg-white border-gray-200",
-      perigo: "bg-red-50 border-red-500",
-      sucesso: "bg-green-50 border-green-500",
-      info: "bg-blue-50 border-blue-500"
-    }
-
-    return (
-      <div
-        className={`
-          rounded-xl shadow-sm border p-4
-          ${classes[tipo || "normal"]}
-        `}
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-600">
-              {titulo}
-            </p>
-
-            <strong className="text-2xl font-bold">
-              {valor}
-            </strong>
-          </div>
-
-          {Icon && (
-            <div className="bg-white/70 p-3 rounded-xl">
-              <Icon size={24} />
-            </div>
-          )}
-        </div>
-      </div>
-    )
-  }    
 
   return (
     <div>
@@ -462,244 +539,331 @@ export function Pedidos() {
         onSubmit={handleSubmit}
         className="bg-white p-6 rounded-2xl shadow-md mb-8"
       >
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <FileText size={22} />
-          {editandoId ? "Editar Pedido" : "Novo Pedido"}
-        </h2>
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <FileText size={22} />
+            {editandoId ? "Editar Pedido" : "Novo Pedido"}
+          </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Select
-          value={origemPedido}
-          onChange={(e) => {
-            setOrigemPedido(e.target.value)
-
-            if (e.target.value === "INTERNO") {
-              setNumeroPedidoManual("")
-            }
-          }}
-        >
-          <option value="INTERNO">Pedido gerado pelo sistema</option>
-          <option value="EXTERNO">Pedido de outro sistema</option>
-        </Select>
-
-        {origemPedido === "EXTERNO" ? (
-          <Input
-            type="text"
-            placeholder="Número do pedido externo"
-            value={numeroPedidoManual}
-            onChange={(e) => setNumeroPedidoManual(e.target.value)}
-          />
-        ) : (
-          <div />
-        )}
-
-        <Select
-          value={tipoPedido}
-          onChange={(e) => setTipoPedido(e.target.value)}
-        >
-          <option value="COM_PRODUCAO">Pedido com produção</option>
-          <option value="DIRETO_ENTREGA">Pedido direto para entrega</option>
-        </Select>
-
-        {tipoPedido === "DIRETO_ENTREGA" && (
-          <Input
-            type="number"
-            placeholder="Quantidade de chapas"
-            value={quantidadeChapasDiretoEntrega}
-            onChange={(e) => setQuantidadeChapasDiretoEntrega(e.target.value)}
-            required
-          />
-        )}
-
-          <div className="flex gap-2">
-          <div className="flex-1">
-            <AutocompleteCliente
-              clienteId={clienteId}
-              onSelecionar={(cliente) => {
-                setClienteId(cliente ? cliente.id : "")
-
-                if (cliente) {
-                  if (!nomeRecebedor) {
-                    setNomeRecebedor(cliente.nome || "")
-                  }
-
-                  if (!contatoRecebedor) {
-                    setContatoRecebedor(cliente.telefone || "")
-                  }
-
-                  if (!enderecoEntrega) {
-                    setEnderecoEntrega(cliente.endereco || "")
-                  }
-                }
-              }}
-            />
-          </div>
-
-  <Button
-    type="button"
-    variant="secondary"
-    onClick={() => setModalClienteAberto(true)}
-  >
-    <UserPlus size={18} />
-  </Button>
-</div>
-
-          <Select
-            value={vendedorId}
-            onChange={(e) => setVendedorId(e.target.value)}
-            required
-          >
-            <option value="">Selecione o vendedor</option>
-            {vendedores.map((vendedor) => (
-              <option key={vendedor.id} value={vendedor.id}>
-                {vendedor.nome}
-              </option>
-            ))}
-          </Select>
-
-          <div className="flex items-center gap-2">
-            <Input
-              type="date"
-              value={dataEntrega}
-              onChange={(e) => setDataEntrega(e.target.value)}
-            />
-
-            <span className="text-sm text-gray-500 whitespace-nowrap">
-              Data Prevista p/ entrega
-            </span>
-          </div>
-
-          <Select
-            value={tipoEntrega}
-            onChange={(e) => {
-              setTipoEntrega(e.target.value)
-
-              if (e.target.value === "CLIENTE_RETIRA") {
-                setResponsavelFrete("")
-                setRotaId("")
-                setValorFrete("")
-                setNomeRecebedor("")
-                setContatoRecebedor("")
-                setEnderecoEntrega("")
-              } else {
-                setResponsavelFrete("CLIENTE")
-              }
-            }}
-          >
-            <option value="ENTREGA_EMPRESA">
-              Empresa Entrega
-            </option>
-            <option value="CLIENTE_RETIRA">
-              Cliente Retira
-            </option>
-          </Select>
-
-          {tipoEntrega === "ENTREGA_EMPRESA" && (
-            <>
-              <Select
-                value={responsavelFrete}
-                onChange={(e) => setResponsavelFrete(e.target.value)}
-              >
-                <option value="CLIENTE">
-                  Frete Cliente
-                </option>
-                <option value="EMPRESA">
-                  Frete Empresa
-                </option>
-              </Select>
-
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <Select
-                    value={rotaId}
-                    onChange={(e) => aplicarRotaSelecionada(e.target.value)}
-                  >
-                    <option value="">Selecione a rota</option>
-                    {rotas.map((rota) => (
-                      <option key={rota.id} value={rota.id}>
-                        {rota.nome}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => setModalRotaAberto(true)}
-                >
-                  <Route size={18} />
-                </Button>
-              </div>
-
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="Valor frete"
-                value={valorFrete}
-                onChange={(e) => setValorFrete(e.target.value)}
-              />
-            </>
-          )}
-
-          <Input
-            type="number"
-            step="0.01"
-            placeholder="Valor total"
-            value={valorTotal}
-            onChange={(e) => setValorTotal(e.target.value)}
-          />
-
-          {tipoEntrega === "ENTREGA_EMPRESA" && (
-            <>
-              <Input
-                type="text"
-                placeholder="Nome recebedor"
-                value={nomeRecebedor}
-                onChange={(e) => setNomeRecebedor(e.target.value)}
-              />
-
-              <Input
-                type="text"
-                placeholder="Contato recebedor"
-                value={contatoRecebedor}
-                onChange={(e) => setContatoRecebedor(e.target.value)}
-              />
-
-              <Input 
-                type="text" 
-                placeholder="Endereço entrega" 
-                value={enderecoEntrega} 
-                onChange={(e) => setEnderecoEntrega(e.target.value)} 
-                />
-              </>
-            )}
-
-          {editandoId && (
-            <Select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-            >
-              <option value="ABERTO">Aberto</option>
-              <option value="EM_SEPARACAO">Em Separação</option>
-              <option value="EM_PRODUCAO">Em Produção</option>
-              <option value="CONCLUIDO">Concluído</option>
-              <option value="PRONTO_ENTREGA">Pronto Entrega</option>
-              <option value="SAIU_ENTREGA">Saiu Entrega</option>
-              <option value="ENTREGUE">Entregue</option>
-              <option value="CANCELADO">Cancelado</option>
-            </Select>
-          )}
-
-          <textarea
-            placeholder="Observações"
-            className="border border-gray-300 p-3 rounded-lg md:col-span-2"
-            value={observacoes}
-            onChange={(e) => setObservacoes(e.target.value)}
-          />
+          <span className="text-sm text-gray-500">
+            Campos com * são obrigatórios
+          </span>
         </div>
 
-        <div className="mt-6 pt-4 flex justify-end gap-2">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+          <SecaoFormulario
+            numero="1"
+            titulo="Origem do pedido"
+            descricao="Informe se o pedido veio de outro sistema ou foi gerado diretamente no sistema."
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <OpcaoCard
+                name="origemPedido"
+                checked={origemPedido === "EXTERNO"}
+                onChange={() => setOrigemPedido("EXTERNO")}
+                titulo="Pedido de outro sistema"
+                descricao="Usa um número externo informado manualmente."
+                icon={FileText}
+              />
+
+              <OpcaoCard
+                name="origemPedido"
+                checked={origemPedido === "INTERNO"}
+                onChange={() => {
+                  setOrigemPedido("INTERNO")
+                  setNumeroPedidoManual("")
+                }}
+                titulo="Pedido gerado pelo sistema"
+                descricao="Usa a numeração automática do sistema."
+                icon={ClipboardList}
+              />
+            </div>
+
+            {origemPedido === "EXTERNO" && (
+              <div className="mt-4">
+                <Campo label="Número do pedido externo" obrigatorio>
+                  <Input
+                    type="text"
+                    placeholder="Ex.: 12345/2026"
+                    value={numeroPedidoManual}
+                    onChange={(e) => setNumeroPedidoManual(e.target.value)}
+                    required
+                  />
+                </Campo>
+              </div>
+            )}
+          </SecaoFormulario>
+
+          <SecaoFormulario
+            numero="2"
+            titulo="Fluxo do pedido"
+            descricao="Define se o pedido passará pela produção ou irá direto para expedição."
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <OpcaoCard
+                name="tipoPedido"
+                checked={tipoPedido === "COM_PRODUCAO"}
+                onChange={() => {
+                  setTipoPedido("COM_PRODUCAO")
+                  setQuantidadeChapasDiretoEntrega("")
+                }}
+                titulo="Pedido com produção"
+                descricao="Vai para plano de corte, serviços e painel do operador."
+                icon={Factory}
+              />
+
+              <OpcaoCard
+                name="tipoPedido"
+                checked={tipoPedido === "DIRETO_ENTREGA"}
+                onChange={() => setTipoPedido("DIRETO_ENTREGA")}
+                titulo="Direto para entrega"
+                descricao="Não passa pela produção. Entra direto na expedição."
+                icon={Package}
+              />
+            </div>
+
+            {tipoPedido === "DIRETO_ENTREGA" && (
+              <div className="mt-4">
+                <Campo label="Quantidade de chapas" obrigatorio>
+                  <Input
+                    type="number"
+                    placeholder="Informe a quantidade de chapas"
+                    value={quantidadeChapasDiretoEntrega}
+                    onChange={(e) => setQuantidadeChapasDiretoEntrega(e.target.value)}
+                    required
+                  />
+                </Campo>
+              </div>
+            )}
+          </SecaoFormulario>
+
+          <SecaoFormulario
+            numero="3"
+            titulo="Dados principais"
+            descricao="Dados comerciais básicos do pedido."
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Campo label="Cliente" obrigatorio>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <AutocompleteCliente
+                      clienteId={clienteId}
+                      onSelecionar={(cliente) => {
+                        setClienteId(cliente ? cliente.id : "")
+
+                        if (cliente) {
+                          if (!nomeRecebedor) {
+                            setNomeRecebedor(cliente.nome || "")
+                          }
+
+                          if (!contatoRecebedor) {
+                            setContatoRecebedor(cliente.telefone || "")
+                          }
+
+                          if (!enderecoEntrega) {
+                            setEnderecoEntrega(cliente.endereco || "")
+                          }
+                        }
+                      }}
+                    />
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setModalClienteAberto(true)}
+                    title="Cadastrar cliente"
+                  >
+                    <UserPlus size={18} />
+                  </Button>
+                </div>
+              </Campo>
+
+              <Campo label="Vendedor" obrigatorio>
+                <Select
+                  value={vendedorId}
+                  onChange={(e) => setVendedorId(e.target.value)}
+                  required
+                >
+                  <option value="">Selecione o vendedor</option>
+                  {vendedores.map((vendedor) => (
+                    <option key={vendedor.id} value={vendedor.id}>
+                      {vendedor.nome}
+                    </option>
+                  ))}
+                </Select>
+              </Campo>
+
+              <Campo label="Data prevista para entrega">
+                <Input
+                  type="date"
+                  value={dataEntrega}
+                  onChange={(e) => setDataEntrega(e.target.value)}
+                />
+              </Campo>
+
+              <Campo label="Valor total do pedido">
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0,00"
+                  value={valorTotal}
+                  onChange={(e) => setValorTotal(e.target.value)}
+                />
+              </Campo>
+
+              {editandoId && (
+                <Campo label="Status">
+                  <Select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                  >
+                    <option value="ABERTO">Aberto</option>
+                    <option value="EM_SEPARACAO">Em Separação</option>
+                    <option value="EM_PRODUCAO">Em Produção</option>
+                    <option value="CONCLUIDO">Concluído</option>
+                    <option value="PRONTO_ENTREGA">Pronto Entrega</option>
+                    <option value="SAIU_ENTREGA">Saiu Entrega</option>
+                    <option value="ENTREGUE">Entregue</option>
+                    <option value="CANCELADO">Cancelado</option>
+                  </Select>
+                </Campo>
+              )}
+            </div>
+          </SecaoFormulario>
+
+          <SecaoFormulario
+            numero="4"
+            titulo="Entrega"
+            descricao="Informe se a empresa entregará ou se o cliente fará a retirada."
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+              <OpcaoCard
+                name="tipoEntrega"
+                checked={tipoEntrega === "ENTREGA_EMPRESA"}
+                onChange={() => {
+                  setTipoEntrega("ENTREGA_EMPRESA")
+                  setResponsavelFrete("CLIENTE")
+                }}
+                titulo="Empresa entrega"
+                descricao="Habilita rota, frete e dados do recebedor."
+                icon={Route}
+              />
+
+              <OpcaoCard
+                name="tipoEntrega"
+                checked={tipoEntrega === "CLIENTE_RETIRA"}
+                onChange={() => {
+                  setTipoEntrega("CLIENTE_RETIRA")
+                  setResponsavelFrete("")
+                  setRotaId("")
+                  setValorFrete("")
+                  setNomeRecebedor("")
+                  setContatoRecebedor("")
+                  setEnderecoEntrega("")
+                }}
+                titulo="Cliente retira"
+                descricao="Remove rota, frete e endereço de entrega."
+                icon={Package}
+              />
+            </div>
+
+            {tipoEntrega === "ENTREGA_EMPRESA" ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Campo label="Responsável pelo frete">
+                  <Select
+                    value={responsavelFrete}
+                    onChange={(e) => setResponsavelFrete(e.target.value)}
+                  >
+                    <option value="CLIENTE">Frete Cliente</option>
+                    <option value="EMPRESA">Frete Empresa</option>
+                  </Select>
+                </Campo>
+
+                <Campo label="Rota">
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Select
+                        value={rotaId}
+                        onChange={(e) => aplicarRotaSelecionada(e.target.value)}
+                      >
+                        <option value="">Selecione a rota</option>
+                        {rotas.map((rota) => (
+                          <option key={rota.id} value={rota.id}>
+                            {rota.nome}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => setModalRotaAberto(true)}
+                      title="Cadastrar rota"
+                    >
+                      <Route size={18} />
+                    </Button>
+                  </div>
+                </Campo>
+
+                <Campo label="Valor do frete">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={valorFrete}
+                    onChange={(e) => setValorFrete(e.target.value)}
+                  />
+                </Campo>
+
+                <Campo label="Nome do recebedor">
+                  <Input
+                    type="text"
+                    placeholder="Nome completo"
+                    value={nomeRecebedor}
+                    onChange={(e) => setNomeRecebedor(e.target.value)}
+                  />
+                </Campo>
+
+                <Campo label="Contato do recebedor">
+                  <Input
+                    type="text"
+                    placeholder="Telefone ou WhatsApp"
+                    value={contatoRecebedor}
+                    onChange={(e) => setContatoRecebedor(e.target.value)}
+                  />
+                </Campo>
+
+                <Campo label="Endereço de entrega">
+                  <Input
+                    type="text"
+                    placeholder="Endereço completo"
+                    value={enderecoEntrega}
+                    onChange={(e) => setEnderecoEntrega(e.target.value)}
+                  />
+                </Campo>
+              </div>
+            ) : (
+              <div className="rounded-xl bg-gray-50 border border-gray-200 p-4 text-sm text-gray-600">
+                Cliente retira: rota, frete, recebedor, contato e endereço serão ignorados no salvamento.
+              </div>
+            )}
+          </SecaoFormulario>
+
+          <div className="xl:col-span-2">
+            <Campo label="Observações">
+              <textarea
+                placeholder="Informações adicionais sobre o pedido..."
+                className="w-full border border-gray-300 p-3 rounded-lg min-h-[90px]"
+                value={observacoes}
+                onChange={(e) => setObservacoes(e.target.value)}
+              />
+            </Campo>
+          </div>
+        </div>
+
+        <div className="mt-6 pt-4 border-t flex justify-end gap-2">
           {editandoId && (
             <Button
               size="sm"

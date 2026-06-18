@@ -8,7 +8,9 @@ import {
   listarServicosDisponiveis,
   listarMeusServicos,
   assumirServico,
-  alterarStatusServico
+  alterarStatusServico,
+  liberarOperadorServico,
+  transferirOperadorServico
 } from "../controllers/servicosPlano.controller.js"
 
 import { authMiddleware } from "../middlewares/auth.middleware.js"
@@ -52,6 +54,18 @@ router.post(
   "/",
   roleMiddleware("ADMIN", "VENDEDOR", "OPERADOR", "VENDEDOR_OPERADOR"),
   criarServicoPlano
+)
+
+router.patch(
+  "/:id/liberar-operador",
+  roleMiddleware("ADMIN"),
+  liberarOperadorServico
+)
+
+router.patch(
+  "/:id/transferir-operador",
+  roleMiddleware("ADMIN"),
+  transferirOperadorServico
 )
 
 router.put(

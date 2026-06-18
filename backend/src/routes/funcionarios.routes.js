@@ -5,6 +5,7 @@ import {
   criarFuncionario,
   atualizarFuncionario,
   listarOperadores,
+  listarVendedores,
   alterarSenhaFuncionario,
   deletarFuncionario
 } from "../controllers/funcionarios.controller.js"
@@ -25,6 +26,13 @@ router.get(
     "OPERADOR"
   ),
   listarOperadores
+)
+
+router.get(
+  "/vendedores",
+  authMiddleware,
+  roleMiddleware("ADMIN", "VENDEDOR", "VENDEDOR_OPERADOR"),
+  listarVendedores
 )
 
 router.get(

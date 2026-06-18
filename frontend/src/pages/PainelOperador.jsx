@@ -105,7 +105,10 @@ export function PainelOperador() {
       await carregarDados()
     } catch (error) {
       console.log(error)
-      alert("Erro ao assumir serviço")
+      alert(
+        error.response?.data?.error ||
+        "Erro ao assumir serviço"
+      )
     }
   }
 
@@ -295,23 +298,31 @@ export function PainelOperador() {
                           </p>
 
                           {servico.observacoes && (
-  <p className="text-sm text-gray-600">
-    Obs. serviço: {servico.observacoes}
-  </p>
-)}
+                            <p className="text-sm text-gray-600">
+                              Obs. serviço: {servico.observacoes}
+                            </p>
+                          )}
 
                           
                         </div>
 
-                        <button
-                          onClick={() => assumirServico(servico.id, "INICIADO")}
-                          className="bg-blue-600 text-white px-4 py-2 rounded-lg whitespace-nowrap hover:bg-blue-700"
-                        >
-                          <span className="inline-flex items-center gap-2">
-                            <Hand size={16} />
-                            Assumir
-                          </span>
-                        </button>
+                        {!servico.operador ? (
+                          <button
+                            onClick={() => assumirServico(servico.id)}
+                            className="bg-blue-600 text-white px-4 py-2 rounded-lg whitespace-nowrap hover:bg-blue-700"
+                          >
+                            <span className="inline-flex items-center gap-2">
+                              <Hand size={16} />
+                              Assumir
+                            </span>
+                          </button>
+                        ) : (
+                          <div className="text-sm">
+                            <span className="font-medium text-red-600">
+                              Já assumido por {servico.operador.nome}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
