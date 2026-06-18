@@ -22,6 +22,8 @@ export async function romaneioEntrega(req, res) {
         ]  
     
     const where = {
+      tipoEntrega: "ENTREGA_EMPRESA",
+
       status: {
         in: statusSelecionados
       }

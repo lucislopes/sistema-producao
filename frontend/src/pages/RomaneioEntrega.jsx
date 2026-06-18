@@ -25,14 +25,22 @@ export function RomaneioEntrega() {
   const [busca, setBusca] = useState("")
 
   const [statusSelecionados, setStatusSelecionados] = useState([
+    "ABERTO",
+    "EM_SEPARACAO",
+    "EM_PRODUCAO",
     "CONCLUIDO",
-    "PRONTO_ENTREGA"
+    "PRONTO_ENTREGA",
+    "SAIU_ENTREGA"
   ])
 
   const statusDisponiveis = [
     {
       valor: "ABERTO",
       nome: "Aberto"
+    },
+    {
+      valor: "EM_SEPARACAO",
+      nome: "Em Separação"
     },
     {
       valor: "EM_PRODUCAO",
@@ -148,8 +156,12 @@ export function RomaneioEntrega() {
     setBusca("")
     setRotasSelecionadas([])
     setStatusSelecionados([
+      "ABERTO",
+      "EM_SEPARACAO",
+      "EM_PRODUCAO",
       "CONCLUIDO",
-      "PRONTO_ENTREGA"
+      "PRONTO_ENTREGA",
+      "SAIU_ENTREGA"
     ])
 
     setTimeout(() => {
@@ -342,10 +354,14 @@ export function RomaneioEntrega() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
   <div className="border rounded-xl p-4">
-    <h2 className="font-bold mb-3">
+    <h2 className="font-bold flex items-center gap-2 mb-3">
+      <PackageCheck size={18} />
       Status dos Pedidos
+      <span className="text-sm text-gray-500 font-normal">
+        ({statusSelecionados.length} selecionado(s))
+      </span>
     </h2>
 
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -369,11 +385,14 @@ export function RomaneioEntrega() {
     </div>
   </div>
 
-  <div className="border rounded-xl p-4">
+  <div className="border rounded-xl p-4 lg:col-span-2">
     <div className="flex justify-between items-center mb-3">
       <h2 className="font-bold flex items-center gap-2">
         <Route size={18} />
         Rotas de Entrega
+        <span className="text-sm text-gray-500 font-normal">
+          ({rotasSelecionadas.length} selecionada(s))
+        </span>
       </h2>
 
       <div className="flex gap-2">
@@ -395,7 +414,7 @@ export function RomaneioEntrega() {
       </div>
     </div>
 
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+    <div className="max-h-72 overflow-y-auto pr-2 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
       {rotas.map((rota) => (
         <label
           key={rota.id}
@@ -411,7 +430,9 @@ export function RomaneioEntrega() {
             onChange={() => alternarRota(rota.id)}
           />
 
-          {rota.nome}
+          <span className="truncate" title={rota.nome}>
+            {rota.nome}
+          </span>
         </label>
       ))}
     </div>
