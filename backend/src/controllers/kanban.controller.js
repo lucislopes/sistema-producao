@@ -33,9 +33,23 @@ export async function obterKanban(req, res) {
 
       },
 
-      orderBy: {
-        createdAt: "asc"
-      }
+      orderBy: [
+        {
+          plano: {
+            pedido: {
+              numeroPedido: "asc"
+            }
+          }
+        },
+        {
+          plano: {
+            numeroPlano: "asc"
+          }
+        },
+        {
+          createdAt: "asc"
+        }
+      ]
 
     })
 

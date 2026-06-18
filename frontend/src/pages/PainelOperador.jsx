@@ -59,6 +59,17 @@ export function PainelOperador() {
     [meusServicos]
   )
 
+  function obterNumeroPedido(pedido) {
+    if (
+      pedido?.origemPedido === "EXTERNO" &&
+      pedido?.numeroPedidoManual
+    ) {
+      return pedido.numeroPedidoManual
+    }
+
+    return `#${pedido?.numeroPedido}`
+  }
+
   async function carregarDados() {
     try {
       setCarregando(true)
@@ -137,6 +148,8 @@ export function PainelOperador() {
     }
 
     const estilo = classes[tipo] || classes.normal
+
+
 
     return (
       <div className={`rounded-xl border p-4 shadow-sm ${estilo.card}`}>
@@ -226,7 +239,7 @@ export function PainelOperador() {
               <h3 className="text-lg font-bold mb-2">
                 <span className="inline-flex items-center gap-2">
                   <Package size={18} />
-                  Pedido #{grupo.pedido.numeroPedido} -{" "}
+                  Pedido {obterNumeroPedido(grupo.pedido)} -{" "}
                   {grupo.pedido.cliente?.nome || "Cliente não informado"}
                 </span>
               </h3>

@@ -163,6 +163,17 @@ export function Kanban() {
     )
   }
 
+  function obterNumeroPedido(pedido) {
+    if (
+      pedido?.origemPedido === "EXTERNO" &&
+      pedido?.numeroPedidoManual
+    ) {
+      return pedido.numeroPedidoManual
+    }
+
+    return `#${pedido?.numeroPedido}`
+  }
+
   return (
     <div>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -251,7 +262,7 @@ export function Kanban() {
                   <p className="text-gray-600">
                     <span className="inline-flex items-center gap-2">
                       <Package size={16} />
-                      Pedido #{servico.plano?.pedido?.numeroPedido}
+                      Pedido {obterNumeroPedido(servico.plano?.pedido)}
                     </span>
                   </p>
 

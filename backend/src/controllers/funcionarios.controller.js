@@ -2,40 +2,75 @@ import bcrypt from "bcrypt"
 
 import { prisma } from "../lib/prisma.js"
 
-//
-// LISTAR
-//
+const ADMIN_SISTEMA_EMAIL = "admin@sistema.com"
 
+
+//VALIDAR
+async function validarFuncionarioProtegido(id) {
+  const funcionario = await prisma.funcionario.findUnique({
+    where: { id },
+    include: { usuario: true }
+  })
+
+  if (!funcionario) {
+    return {
+      erro: true,
+      status: 404,
+      mensagem: "Funcionário não encontrado"
+    }
+  }
+
+  if (funcionario.usuario?.email === ADMIN_SISTEMA_EMAIL) {
+    return {
+      erro: true,
+      status: 403,
+      mensagem: "Este usuário é protegido e não pode ser alterado."
+    }
+  }
+
+  return { erro: false, funcionario }
+}
+
+// LISTAR
 export async function listarFuncionarios(req, res) {
   try {
     const { busca } = req.query
 
     const funcionarios = await prisma.funcionario.findMany({
-      where: busca
-        ? {
-            OR: [
-              {
-                nome: {
-                  contains: busca,
-                  mode: "insensitive"
-                }
-              },
-              {
-                usuario: {
-                  email: {
-                    contains: busca,
-                    mode: "insensitive"
-                  }
-                }
+      where: {
+        AND: [
+          {
+            usuario: {
+              email: {
+                not: ADMIN_SISTEMA_EMAIL
               }
-            ]
-          }
-        : {},
-
+            }
+          },
+          busca
+            ? {
+                OR: [
+                  {
+                    nome: {
+                      contains: busca,
+                      mode: "insensitive"
+                    }
+                  },
+                  {
+                    usuario: {
+                      email: {
+                        contains: busca,
+                        mode: "insensitive"
+                      }
+                    }
+                  }
+                ]
+              }
+            : {}
+        ]
+      },
       include: {
         usuario: true
       },
-
       orderBy: {
         nome: "asc"
       }
@@ -51,10 +86,7 @@ export async function listarFuncionarios(req, res) {
   }
 }
 
-//
 // CRIAR
-//
-
 export async function criarFuncionario(req, res) {
   try {
     const {
@@ -91,6 +123,12 @@ export async function criarFuncionario(req, res) {
 
     const nomeTratado = nome.trim()
     const emailTratado = email.trim().toLowerCase()
+
+    if (emailTratado === ADMIN_SISTEMA_EMAIL) {
+      return res.status(400).json({
+        error: "Este e-mail é reservado para o administrador do sistema."
+      })
+    }
 
     const usuarioExistente = await prisma.usuario.findUnique({
       where: {
@@ -150,15 +188,18 @@ export async function criarFuncionario(req, res) {
   }
 }
 
-//
 // LISTAR OPERADORES
-//
-
 export async function listarOperadores(req, res) {
   try {
     const operadores = await prisma.funcionario.findMany({
       where: {
         ativo: true,
+
+        usuario: {
+          email: {
+            not: ADMIN_SISTEMA_EMAIL
+          }
+        },
 
         funcao: {
           in: [
@@ -183,13 +224,19 @@ export async function listarOperadores(req, res) {
   }
 }
 
-//
-// ATUALIZAR
-//
 
+// ATUALIZAR
 export async function atualizarFuncionario(req, res) {
   try {
     const { id } = req.params
+
+    const validacao = await validarFuncionarioProtegido(id)
+
+      if (validacao.erro) {
+        return res.status(validacao.status).json({
+          error: validacao.mensagem
+        })
+      }
 
     const {
       nome,
@@ -253,13 +300,17 @@ export async function atualizarFuncionario(req, res) {
   }
 }
 
-//
-// DESATIVAR / EXCLUIR FUNCIONÁRIO
-//
 
+// DESATIVAR / EXCLUIR FUNCIONÁRIO
 export async function deletarFuncionario(req, res) {
   try {
     const { id } = req.params
+    const validacao = await validarFuncionarioProtegido(id)
+      if (validacao.erro) {
+        return res.status(validacao.status).json({
+          error: validacao.mensagem
+        })
+      }
 
     const pedidosComoVendedor = await prisma.pedido.count({
       where: {
@@ -312,10 +363,8 @@ export async function deletarFuncionario(req, res) {
   }
 }
 
-//
-// ADMIN ALTERAR SENHA DE FUNCIONÁRIO
-//
 
+// ADMIN ALTERAR SENHA DE FUNCIONÁRIo
 export async function alterarSenhaFuncionario(req, res) {
   try {
     const { id } = req.params
@@ -327,12 +376,17 @@ export async function alterarSenhaFuncionario(req, res) {
       })
     }
 
-    const funcionario = await prisma.funcionario.findUnique({
-      where: { id },
-      include: { usuario: true }
-    })
+    const validacao = await validarFuncionarioProtegido(id)
 
-    if (!funcionario || !funcionario.usuario) {
+    if (validacao.erro) {
+      return res.status(validacao.status).json({
+        error: validacao.mensagem
+      })
+    }
+
+    const funcionario = validacao.funcionario
+
+    if (!funcionario.usuario) {
       return res.status(404).json({
         error: "Usuário do funcionário não encontrado"
       })
