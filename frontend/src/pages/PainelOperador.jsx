@@ -343,7 +343,7 @@ export function PainelOperador() {
               <h3 className="text-lg font-bold mb-2">
                 <span className="inline-flex items-center gap-2">
                   <Package size={18} />
-                  Pedido #{grupo.pedido.numeroPedido} -{" "}
+                  Pedido {obterNumeroPedido(grupo.pedido)} -{" "}
                   {grupo.pedido.cliente?.nome || "Cliente não informado"}
                 </span>
               </h3>
