@@ -164,6 +164,7 @@ export function MainLayout() {
       "/kanban": "Kanban",
       "/expedicao": "Expedição",
       "/relatorio-expedicao": "Relatório de Expedição",
+      "/romaneio-entrega": "Romaneio de Entrega",
       "/relatorio-pedidos": "Relatório de Pedidos",
       "/relatorio-producao": "Relatório de Produção",
       "/alertas": "Alertas",
@@ -254,6 +255,10 @@ export function MainLayout() {
                 <>
                   <MenuLink to="/relatorio-expedicao" icon={FileText}>
                     Expedição
+                  </MenuLink>
+
+                  <MenuLink to="/romaneio-entrega" icon={Truck}>
+                    Romaneio de Entrega
                   </MenuLink>
 
                   <MenuLink to="/relatorio-pedidos" icon={ClipboardList}>
@@ -393,6 +398,15 @@ export function MainLayout() {
                 >
                   <Truck size={16} />
                   Expedição
+                </Link>
+
+                <Link
+                  to="/romaneio-entrega"
+                  className="flex items-center gap-2 px-4 py-3 hover:bg-gray-100 text-sm"
+                  onClick={() => setMenuAberto(false)}
+                >
+                  <Truck size={16} />
+                  Romaneio de Entrega
                 </Link>
 
                 <Link

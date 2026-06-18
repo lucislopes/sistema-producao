@@ -31,6 +31,8 @@ import { DashboardExpedicao } from "./pages/dashboard/DashboardExpedicao"
 import { DashboardComercial } from "./pages/dashboard/DashboardComercial"
 import { RelatorioServicos } from "./pages/RelatorioServicos"
 import { RelatorioPendencias } from "./pages/RelatorioPendencias"
+import { RomaneioEntrega } from "./pages/RomaneioEntrega"
+
 
 export default function App() {
 
@@ -153,6 +155,12 @@ export default function App() {
           <Route path="/dashboard/comercial" element={<DashboardComercial />} />
           <Route path="/relatorio-servicos" element={<RelatorioServicos />} />
           <Route path="/relatorio-pendencias" element={<RelatorioPendencias />} />
+
+          <Route
+            path="/romaneio-entrega"
+            element={<RomaneioEntrega />}
+          />
+          
 
         </Route>
 
