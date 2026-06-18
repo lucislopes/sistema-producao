@@ -1,19 +1,19 @@
 import { prisma } from "../lib/prisma.js"
 
 function criarDataLocal(dataTexto, fimDoDia = false) {
-  const [ano, mes, dia] = dataTexto.split("-")
+  if (!dataTexto) return null
+
+  const [ano, mes, dia] = dataTexto.split("-").map(Number)
 
   const data = new Date(
-    Number(ano),
-    Number(mes) - 1,
-    Number(dia)
+    ano,
+    mes - 1,
+    dia,
+    fimDoDia ? 23 : 0,
+    fimDoDia ? 59 : 0,
+    fimDoDia ? 59 : 0,
+    fimDoDia ? 999 : 0
   )
-
-  if (fimDoDia) {
-    data.setHours(23, 59, 59, 999)
-  } else {
-    data.setHours(0, 0, 0, 0)
-  }
 
   return data
 }
@@ -62,7 +62,13 @@ export async function relatorioExpedicao(req, res) {
                       numeroPedido: Number(busca)
                     }
                   ]
-                : [])
+                : []),
+              {
+                numeroPedidoManual: {
+                  contains: busca,
+                  mode: "insensitive"
+                }
+              }
             ]
           }
         : {})
@@ -72,11 +78,11 @@ export async function relatorioExpedicao(req, res) {
       where.dataEntrega = {}
 
       if (dataInicio) {
-        where.dataEntrega.gte = new Date(`${dataInicio}T03:00:00.000Z`)
+        where.dataEntrega.gte = criarDataLocal(dataInicio, false)
       }
 
       if (dataFim) {
-        where.dataEntrega.lte = new Date(`${dataFim}T23:59:59.999-03:00`)
+        where.dataEntrega.lte = criarDataLocal(dataFim, true)
       }
     }
 
@@ -88,13 +94,13 @@ export async function relatorioExpedicao(req, res) {
         rota: true,
         vendedor: true,
 
-       planos: {
-        select: {
-          id: true,
-          quantidadeChapas: true
+        planos: {
+          select: {
+            id: true,
+            quantidadeChapas: true
+          }
         }
-      }
-    },
+      },
 
       orderBy: [
         {
@@ -111,7 +117,23 @@ export async function relatorioExpedicao(req, res) {
       ]
     })
 
-    return res.json(pedidos)
+    const pedidosFormatados = pedidos.map((pedido) => {
+      const totalChapasPlanos = pedido.planos.reduce(
+        (acc, plano) => acc + Number(plano.quantidadeChapas || 0),
+        0
+      )
+
+      const totalChapas =
+        Number(pedido.quantidadeChapasDiretoEntrega || 0) +
+        totalChapasPlanos
+
+      return {
+        ...pedido,
+        totalChapas
+      }
+    })
+
+    return res.json(pedidosFormatados)
   } catch (error) {
     console.log(error)
 

@@ -229,18 +229,18 @@ export function DashboardComercial() {
         <div className="bg-white rounded-2xl shadow-md border p-5">
           <div className="space-y-3 text-sm">
             <div className="flex justify-between border-b pb-2">
-              <span>Pedidos abertos</span>
-              <strong>{dados.pedidos.abertos}</strong>
+              <span>Pedidos abertos no período</span>
+              <strong>{dados.pedidosPeriodo?.abertos || 0}</strong>
             </div>
 
             <div className="flex justify-between border-b pb-2">
-              <span>Pedidos em produção</span>
-              <strong>{dados.pedidos.emProducao}</strong>
+              <span>Pedidos em produção no período</span>
+              <strong>{dados.pedidosPeriodo?.emProducao || 0}</strong>
             </div>
 
             <div className="flex justify-between border-b pb-2">
-              <span>Pedidos entregues</span>
-              <strong>{dados.pedidos.entregues}</strong>
+              <span>Pedidos entregues no período</span>
+              <strong>{dados.pedidosPeriodo?.entregues || 0}</strong>
             </div>
 
             <div className="flex justify-between border-b pb-2">

@@ -49,7 +49,10 @@ export function Alertas() {
   function formatarData(data) {
     if (!data) return "-"
 
-    return new Date(data).toLocaleDateString("pt-BR")
+    const dataTexto = String(data).substring(0, 10)
+    const [ano, mes, dia] = dataTexto.split("-")
+
+    return `${dia}/${mes}/${ano}`
   }
 
   if (!alertas) {
@@ -97,7 +100,7 @@ export function Alertas() {
           />
 
           <ResumoCard
-            titulo="Em Separação"
+            titulo="Separação p/ Prod."
             valor={alertas.pedidosEmSeparacao.length}
             tipo={alertas.pedidosEmSeparacao.length > 0 ? "alerta" : "normal"}
             icon={Package}
@@ -126,7 +129,7 @@ export function Alertas() {
         )}
         {alertas.pedidosEmSeparacao.length > 0 && (
           <SecaoPedidos
-            titulo="Pedidos Em Separação"
+            titulo="Pedidos em Separação para Produção"
             pedidos={alertas.pedidosEmSeparacao}
             formatarData={formatarData}
           />

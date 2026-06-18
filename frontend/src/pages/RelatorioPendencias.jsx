@@ -48,12 +48,25 @@ export function RelatorioPendencias() {
     setDataInicio("")
     setDataFim("")
     setBusca("")
+
+    api.get("/relatorios/pendencias", {
+      params: {
+        dataInicio: "",
+        dataFim: "",
+        busca: ""
+      }
+    }).then((response) => {
+      setItens(response.data)
+    })
   }
 
   function formatarData(data) {
     if (!data) return "-"
 
-    return new Date(data).toLocaleDateString("pt-BR")
+    const dataTexto = String(data).substring(0, 10)
+    const [ano, mes, dia] = dataTexto.split("-")
+
+    return `${dia}/${mes}/${ano}`
   }
 
   function obterNumeroPedido(pedido) {

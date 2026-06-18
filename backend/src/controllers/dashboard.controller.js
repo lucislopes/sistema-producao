@@ -137,6 +137,12 @@ export async function obterDashboard(req, res) {
       }
     }
 
+    const filtroPedidoAtivo = {
+      status: {
+        notIn: ["ENTREGUE", "CANCELADO"]
+      }
+    }
+
     const [
       pedidosAbertos,
       pedidosEmSeparacao,
@@ -162,6 +168,10 @@ export async function obterDashboard(req, res) {
       financeiroEntregue,
       financeiroTotal,
 
+      pedidosAbertosPeriodo,
+      pedidosEmProducaoPeriodo,
+      pedidosEntreguesPeriodo,
+
       totalPedidosPeriodo,
       clientesAtendidos,
       vendedoresAtivos,
@@ -169,45 +179,27 @@ export async function obterDashboard(req, res) {
       rankingClientes
     ] = await Promise.all([
       prisma.pedido.count({
-        where: {
-          status: "ABERTO",
-          ...filtroPeriodoPedido
-        }
+        where: { status: "ABERTO" }
       }),
 
       prisma.pedido.count({
-        where: {
-          status: "EM_SEPARACAO",
-          ...filtroPeriodoPedido
-        }
+        where: { status: "EM_SEPARACAO" }
       }),
 
       prisma.pedido.count({
-        where: {
-          status: "EM_PRODUCAO",
-          ...filtroPeriodoPedido
-        }
+        where: { status: "EM_PRODUCAO" }
       }),
 
       prisma.pedido.count({
-        where: {
-          status: "CONCLUIDO",
-          ...filtroPeriodoPedido
-        }
+        where: { status: "CONCLUIDO" }
       }),
 
       prisma.pedido.count({
-        where: {
-          status: "PRONTO_ENTREGA",
-          ...filtroPeriodoPedido
-        }
+        where: { status: "PRONTO_ENTREGA" }
       }),
 
       prisma.pedido.count({
-        where: {
-          status: "SAIU_ENTREGA",
-          ...filtroPeriodoPedido
-        }
+        where: { status: "SAIU_ENTREGA" }
       }),
 
       prisma.pedido.count({
@@ -218,27 +210,29 @@ export async function obterDashboard(req, res) {
       }),
 
       prisma.pedido.count({
-        where: filtroAtrasados()
-      }),
-
-      prisma.servicoPlano.count({
         where: {
-          status: "ABERTO",
-          ...filtroPeriodoServico
+          ...filtroPedidoAtivo,
+          dataEntrega: {
+            lt: hoje
+          }
         }
       }),
 
       prisma.servicoPlano.count({
         where: {
-          status: "INICIADO",
-          ...filtroPeriodoServico
+          status: "ABERTO"
         }
       }),
 
       prisma.servicoPlano.count({
         where: {
-          status: "CONCLUIDO",
-          ...filtroPeriodoServico
+          status: "INICIADO"
+        }
+      }),
+
+      prisma.servicoPlano.count({
+        where: {
+          status: "CONCLUIDO"
         }
       }),
 
@@ -318,6 +312,27 @@ export async function obterDashboard(req, res) {
         },
         _avg: {
           valorTotal: true
+        }
+      }),
+
+      prisma.pedido.count({
+        where: {
+          status: "ABERTO",
+          ...filtroPeriodoPedido
+        }
+      }),
+
+      prisma.pedido.count({
+        where: {
+          status: "EM_PRODUCAO",
+          ...filtroPeriodoPedido
+        }
+      }),
+
+      prisma.pedido.count({
+        where: {
+          status: "ENTREGUE",
+          ...filtroPeriodoPedido
         }
       }),
 
@@ -455,6 +470,12 @@ export async function obterDashboard(req, res) {
         entregues: pedidosEntregues,
         atrasados: pedidosAtrasados
       },
+
+      pedidosPeriodo: {
+        abertos: pedidosAbertosPeriodo,
+        emProducao: pedidosEmProducaoPeriodo,
+        entregues: pedidosEntreguesPeriodo
+      },                            
 
       servicos: {
         abertos: servicosAbertos,

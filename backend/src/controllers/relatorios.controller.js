@@ -1,5 +1,21 @@
 import { prisma } from "../lib/prisma.js"
 
+function criarDataLocal(dataTexto, fimDoDia = false) {
+  if (!dataTexto) return null
+
+  const [ano, mes, dia] = dataTexto.split("-").map(Number)
+
+  return new Date(
+    ano,
+    mes - 1,
+    dia,
+    fimDoDia ? 23 : 0,
+    fimDoDia ? 59 : 0,
+    fimDoDia ? 59 : 0,
+    fimDoDia ? 999 : 0
+  )
+}
+
 export async function relatorioServicos(req, res) {
   try {
     const {
@@ -40,11 +56,11 @@ export async function relatorioServicos(req, res) {
       }
 
       if (dataInicio) {
-        where.plano.pedido.dataEntrega.gte = new Date(`${dataInicio}T00:00:00`)
+        where.plano.pedido.dataEntrega.gte = criarDataLocal(dataInicio, false)
       }
 
       if (dataFim) {
-        where.plano.pedido.dataEntrega.lte = new Date(`${dataFim}T23:59:59`)
+        where.plano.pedido.dataEntrega.lte = criarDataLocal(dataFim, true)
       }
     }
 
@@ -69,7 +85,28 @@ export async function relatorioServicos(req, res) {
               mode: "insensitive"
             }
           }
-        }
+        },
+        {
+          plano: {
+            pedido: {
+              numeroPedidoManual: {
+                contains: busca,
+                mode: "insensitive"
+              }
+            }
+          }
+        },
+        ...(Number(busca)
+          ? [
+              {
+                plano: {
+                  pedido: {
+                    numeroPedido: Number(busca)
+                  }
+                }
+              }
+            ]
+          : [])
       ]
     }
 
@@ -112,7 +149,6 @@ export async function relatorioServicos(req, res) {
   }
 }
 
-
 export async function relatorioPendencias(req, res) {
   try {
     const { dataInicio, dataFim, busca } = req.query
@@ -127,11 +163,11 @@ export async function relatorioPendencias(req, res) {
       wherePedido.dataEntrega = {}
 
       if (dataInicio) {
-        wherePedido.dataEntrega.gte = new Date(`${dataInicio}T00:00:00`)
+        wherePedido.dataEntrega.gte = criarDataLocal(dataInicio, false)
       }
 
       if (dataFim) {
-        wherePedido.dataEntrega.lte = new Date(`${dataFim}T23:59:59`)
+        wherePedido.dataEntrega.lte = criarDataLocal(dataFim, true)
       }
     }
 
@@ -245,10 +281,10 @@ export async function relatorioPendencias(req, res) {
     }
 
     resultado.sort((a, b) => {
-      const dataA = a.pedido?.dataEntrega || ""
-      const dataB = b.pedido?.dataEntrega || ""
+      const dataA = String(a.pedido?.dataEntrega || "")
+      const dataB = String(b.pedido?.dataEntrega || "")
 
-      return String(dataA).localeCompare(String(dataB))
+      return dataA.localeCompare(dataB)
     })
 
     return res.json(resultado)

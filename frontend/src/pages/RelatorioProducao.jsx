@@ -120,11 +120,24 @@ export function RelatorioProducao() {
   function formatarDataHora(data) {
     if (!data) return "-"
 
-    return new Date(data).toLocaleString("pt-BR")
+    const dataTexto = String(data).substring(0, 10)
+    const horaTexto = String(data).substring(11, 16)
+
+    const [ano, mes, dia] = dataTexto.split("-")
+
+    if (!horaTexto) {
+      return `${dia}/${mes}/${ano}`
+    }
+
+    return `${dia}/${mes}/${ano} ${horaTexto}`
   }
 
   function formatarDataFiltro(data) {
-    return data.toISOString().split("T")[0]
+    const ano = data.getFullYear()
+    const mes = String(data.getMonth() + 1).padStart(2, "0")
+    const dia = String(data.getDate()).padStart(2, "0")
+
+    return `${ano}-${mes}-${dia}`
   }
 
   function obterNumeroPedido(pedido) {
@@ -725,6 +738,10 @@ export function RelatorioProducao() {
       </div>
 
       <div className="bg-white p-6 rounded-2xl shadow-md mb-8 no-print">
+
+        <p className="text-sm text-gray-500 mb-4">
+          A data filtrada muda conforme o status: Concluído usa Data Fim, Em Produção usa Data Início, e Aberto usa Data de Criação.
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           <Input
             type="date"

@@ -1,5 +1,21 @@
 import { prisma } from "../lib/prisma.js"
 
+function criarDataLocal(dataTexto, fimDoDia = false) {
+  if (!dataTexto) return null
+
+  const [ano, mes, dia] = dataTexto.split("-").map(Number)
+
+  return new Date(
+    ano,
+    mes - 1,
+    dia,
+    fimDoDia ? 23 : 0,
+    fimDoDia ? 59 : 0,
+    fimDoDia ? 59 : 0,
+    fimDoDia ? 999 : 0
+  )
+}
+
 export async function produtividadeOperadores(req, res) {
   try {
     const { dataInicio, dataFim } = req.query
@@ -14,13 +30,11 @@ export async function produtividadeOperadores(req, res) {
       where.dataFim = {}
 
       if (dataInicio) {
-        const inicio = new Date(`${dataInicio}T00:00:00`)
-        where.dataFim.gte = inicio
+        where.dataFim.gte = criarDataLocal(dataInicio, false)
       }
 
       if (dataFim) {
-        const fim = new Date(`${dataFim}T23:59:59`)
-        where.dataFim.lte = fim
+        where.dataFim.lte = criarDataLocal(dataFim, true)
       }
     }
 

@@ -134,6 +134,10 @@ export function DashboardProducao() {
         </Link>
       </div>
 
+      <div className="mb-4 text-sm text-gray-500">
+        Os filtros de data são aplicados apenas ao ranking dos operadores.
+      </div>
+
       <DashboardFiltro
         baseData={baseData}
         setBaseData={setBaseData}
@@ -144,8 +148,9 @@ export function DashboardProducao() {
         aplicarPeriodo={aplicarPeriodo}
         ultimaAtualizacao={ultimaAtualizacao}
       />
+    
 
-      <SecaoDashboard titulo="Indicadores da Produção">
+      <SecaoDashboard titulo="Situação Atual da Produção">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <CardIndicador
             titulo="Serviços Abertos"
@@ -163,7 +168,7 @@ export function DashboardProducao() {
           />
 
           <CardIndicador
-            titulo="Concluídos"
+            titulo="Concluídos no Período"
             valor={dados.servicos.concluidos}
             tipo="sucesso"
             icon={CheckCircle}
@@ -179,9 +184,9 @@ export function DashboardProducao() {
         </div>
       </SecaoDashboard>
 
-      <SecaoDashboard titulo="Distribuição dos Serviços">
+      <SecaoDashboard titulo="Distribuição Atual dos Serviços">
         <BarraResumo
-          titulo="Serviços por status"
+          titulo="Serviços por status no período"
           total={totalServicos}
           itens={[
             { nome: "Abertos", valor: dados.servicos.abertos },
@@ -191,7 +196,7 @@ export function DashboardProducao() {
         />
       </SecaoDashboard>
 
-      <SecaoDashboard titulo="Ranking dos Operadores">
+      <SecaoDashboard titulo="Ranking dos Operadores no Período">
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm">
         <div className="p-5">
           <div className="overflow-x-auto border border-gray-200 rounded-xl">

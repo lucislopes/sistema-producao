@@ -4,8 +4,6 @@ import {
   Factory,
   PackageCheck,
   TriangleAlert,
-  DollarSign,
-  Gauge,
   Hammer,
   Truck,
   ChartColumn,
@@ -150,39 +148,40 @@ export function Dashboard() {
 
   return (
     <div>
-      <DashboardFiltro
-        baseData={baseData}
-        setBaseData={setBaseData}
-        dataInicio={dataInicio}
-        setDataInicio={setDataInicio}
-        dataFim={dataFim}
-        setDataFim={setDataFim}
-        aplicarPeriodo={aplicarPeriodo}
-        ultimaAtualizacao={ultimaAtualizacao}
-      />
+     <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold">
+          Operação em Tempo Real
+        </h2>
 
-      <SecaoDashboard titulo="Indicadores Gerais">
+        <span className="text-sm text-gray-500">
+          🔄 Atualizado às {ultimaAtualizacao?.toLocaleTimeString("pt-BR")}
+        </span>
+      </div>
+
+      <SecaoDashboard titulo="Situação Atual">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <CardIndicador
             titulo="Pedidos Abertos"
             valor={dados.pedidos.abertos}
+            tipo={dados.pedidos.abertos > 0 ? "info" : "normal"}
             icon={ClipboardList}
             link="/pedidos"
           />
 
           <CardIndicador
-            titulo="Em Separação p/ Prod."
+            titulo="Separação p/ Prod."
             valor={dados.pedidos.emSeparacao}
             tipo={dados.pedidos.emSeparacao > 0 ? "info" : "normal"}
             icon={Boxes}
-            link="/expedicao"
+            link="/kanban"
           />
 
           <CardIndicador
             titulo="Em Produção"
             valor={dados.pedidos.emProducao}
+            tipo={dados.pedidos.emProducao > 0 ? "info" : "normal"}
             icon={Factory}
-            link="/pedidos"
+            link="/kanban"
           />
 
           <CardIndicador
@@ -194,19 +193,19 @@ export function Dashboard() {
           />
 
           <CardIndicador
-            titulo="Atrasados"
-            valor={dados.pedidos.atrasados}
-            tipo={dados.pedidos.atrasados > 0 ? "perigo" : "normal"}
-            icon={TriangleAlert}
-            link="/alertas"
+            titulo="Saiu Entrega"
+            valor={dados.pedidos.saiuEntrega}
+            tipo={dados.pedidos.saiuEntrega > 0 ? "info" : "normal"}
+            icon={Truck}
+            link="/expedicao"
           />
 
           <CardIndicador
-            titulo="SLA"
-            valor={`${dados.sla.percentual}%`}
-            tipo={dados.sla.percentual < 90 ? "perigo" : "sucesso"}
-            icon={Gauge}
-            link="/relatorio-expedicao"
+            titulo="Atrasados"
+            valor={dados.pedidos.atrasados}
+            tipo={dados.pedidos.atrasados > 0 ? "perigo" : "sucesso"}
+            icon={TriangleAlert}
+            link="/alertas"
           />
         </div>
       </SecaoDashboard>

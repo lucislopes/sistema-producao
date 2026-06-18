@@ -161,7 +161,7 @@ export function DashboardExpedicao() {
 
           <CardIndicador
             titulo="Entregues"
-            valor={dados.pedidos.entregues}
+            valor={dados.pedidosPeriodo?.entregues || 0}
             tipo="sucesso"
             icon={CheckCircle}
             link="/relatorio-expedicao"
@@ -227,7 +227,7 @@ export function DashboardExpedicao() {
 
             <div className="flex justify-between border-b pb-2">
               <span>Pedidos entregues no período</span>
-              <strong>{dados.pedidos.entregues}</strong>
+              <strong>{dados.pedidosPeriodo?.entregues || 0}</strong>
             </div>
 
             <div className="flex justify-between border-b pb-2">

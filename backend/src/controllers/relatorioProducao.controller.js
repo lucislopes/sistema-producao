@@ -1,5 +1,21 @@
 import { prisma } from "../lib/prisma.js"
 
+function criarDataLocal(dataTexto, fimDoDia = false) {
+  if (!dataTexto) return null
+
+  const [ano, mes, dia] = dataTexto.split("-").map(Number)
+
+  return new Date(
+    ano,
+    mes - 1,
+    dia,
+    fimDoDia ? 23 : 0,
+    fimDoDia ? 59 : 0,
+    fimDoDia ? 59 : 0,
+    fimDoDia ? 999 : 0
+  )
+}
+
 export async function relatorioProducao(req, res) {
   try {
     const {
@@ -31,19 +47,22 @@ export async function relatorioProducao(req, res) {
       where.tipoServicoId = tipoServicoId
     }
 
+    const campoData =
+      status === "CONCLUIDO"
+        ? "dataFim"
+        : status === "INICIADO"
+          ? "dataInicio"
+          : "createdAt"
+
     if (dataInicio || dataFim) {
-      where.createdAt = {}
+      where[campoData] = {}
 
       if (dataInicio) {
-        const inicio = new Date(dataInicio)
-        inicio.setHours(0, 0, 0, 0)
-        where.createdAt.gte = inicio
+        where[campoData].gte = criarDataLocal(dataInicio, false)
       }
 
       if (dataFim) {
-        const fim = new Date(dataFim)
-        fim.setHours(23, 59, 59, 999)
-        where.createdAt.lte = fim
+        where[campoData].lte = criarDataLocal(dataFim, true)
       }
     }
 
@@ -61,6 +80,16 @@ export async function relatorioProducao(req, res) {
             }
           }
         },
+        {
+          plano: {
+            pedido: {
+              numeroPedidoManual: {
+                contains: busca,
+                mode: "insensitive"
+              }
+            }
+          }
+        },
         ...(Number(busca)
           ? [
               {
@@ -74,6 +103,13 @@ export async function relatorioProducao(req, res) {
           : [])
       ]
     }
+
+    const orderBy =
+      campoData === "dataFim"
+        ? [{ dataFim: "desc" }]
+        : campoData === "dataInicio"
+          ? [{ dataInicio: "desc" }]
+          : [{ createdAt: "desc" }]
 
     const [servicos, total] = await Promise.all([
       prisma.servicoPlano.findMany({
@@ -93,9 +129,7 @@ export async function relatorioProducao(req, res) {
           }
         },
 
-        orderBy: [
-          { createdAt: "desc" }
-        ],
+        orderBy,
 
         skip,
         take: limite
@@ -107,6 +141,7 @@ export async function relatorioProducao(req, res) {
     ])
 
     return res.json({
+      campoData,
       dados: servicos,
       paginacao: {
         total,
@@ -115,7 +150,6 @@ export async function relatorioProducao(req, res) {
         totalPages: Math.ceil(total / limite)
       }
     })
-
   } catch (error) {
     console.log(error)
 

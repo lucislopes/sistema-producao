@@ -82,16 +82,21 @@ export function RelatorioExpedicao() {
     window.print()
   }
 
-  function formatarData(data) {
-    if (!data) return "-"
+  function obterClasseLinha(dataEntrega) {
+    if (!dataEntrega) return ""
 
-    const dataObj = new Date(data)
+    const hoje = formatarDataFiltro(new Date())
+    const entrega = String(dataEntrega).substring(0, 10)
 
-    const dia = String(dataObj.getDate()).padStart(2, "0")
-    const mes = String(dataObj.getMonth() + 1).padStart(2, "0")
-    const ano = dataObj.getFullYear()
+    if (entrega < hoje) {
+      return "bg-red-50"
+    }
 
-    return `${dia}/${mes}/${ano}`
+    if (entrega === hoje) {
+      return "bg-yellow-50"
+    }
+
+    return ""
   }
 
   function formatarDataFiltro(data) {
@@ -101,6 +106,15 @@ export function RelatorioExpedicao() {
 
     return `${ano}-${mes}-${dia}`
   }
+
+  function formatarData(data) {
+  if (!data) return "-"
+
+  const dataTexto = String(data).substring(0, 10)
+  const [ano, mes, dia] = dataTexto.split("-")
+
+  return `${dia}/${mes}/${ano}`
+}
 
   function obterNumeroPedido(pedido) {
     if (
@@ -133,26 +147,6 @@ export function RelatorioExpedicao() {
       (total, plano) => total + Number(plano.quantidadeChapas || 0),
       0
     ) || 0
-  }
-
-  function obterClasseLinha(dataEntrega) {
-    if (!dataEntrega) return ""
-
-    const hojeData = new Date()
-    hojeData.setHours(0, 0, 0, 0)
-
-    const entrega = new Date(dataEntrega)
-    entrega.setHours(0, 0, 0, 0)
-
-    if (entrega < hojeData) {
-      return "bg-red-50"
-    }
-
-    if (entrega.getTime() === hojeData.getTime()) {
-      return "bg-yellow-50"
-    }
-
-    return ""
   }
 
   function ResumoCard({ titulo, valor, tipo = "normal", icon: Icon }) {
@@ -300,6 +294,14 @@ export function RelatorioExpedicao() {
     setRotaId("")
     setStatus("")
     setBusca("")
+
+    carregarRelatorio({
+      dataInicio: "",
+      dataFim: "",
+      rotaId: "",
+      status: "",
+      busca: ""
+    })
   }
 
   function exportarCSV() {
@@ -352,11 +354,8 @@ export function RelatorioExpedicao() {
   const atrasados = pedidos.filter((pedido) => {
     if (!pedido.dataEntrega) return false
 
-    const hoje = new Date()
-    hoje.setHours(0, 0, 0, 0)
-
-    const entrega = new Date(pedido.dataEntrega)
-    entrega.setHours(0, 0, 0, 0)
+    const hoje = formatarDataFiltro(new Date())
+    const entrega = String(pedido.dataEntrega).substring(0, 10)
 
     return entrega < hoje
   }).length
@@ -364,9 +363,10 @@ export function RelatorioExpedicao() {
   const hojeQtd = pedidos.filter((pedido) => {
     if (!pedido.dataEntrega) return false
 
-    const hoje = new Date().toISOString().split("T")[0]
+    const hoje = formatarDataFiltro(new Date())
+    const entrega = String(pedido.dataEntrega).substring(0, 10)
 
-    return String(pedido.dataEntrega).substring(0, 10) === hoje
+    return entrega === hoje
   }).length
 
   const prontoEntrega = pedidos.filter(

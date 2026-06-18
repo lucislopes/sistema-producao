@@ -62,7 +62,7 @@ export function RelatorioServicos() {
     buscar()
   }, [])
 
-  function limparFiltros() {
+  async function limparFiltros() {
     setDataInicio("")
     setDataFim("")
     setBusca("")
@@ -70,12 +70,29 @@ export function RelatorioServicos() {
     setOperadorId("")
     setTipoServicoId("")
     setSomentePendentes(true)
+
+    const response = await api.get("/relatorios/servicos", {
+      params: {
+        dataInicio: "",
+        dataFim: "",
+        busca: "",
+        status: "",
+        operadorId: "",
+        tipoServicoId: "",
+        somentePendentes: true
+      }
+    })
+
+    setServicos(response.data)
   }
 
   function formatarData(data) {
     if (!data) return "-"
 
-    return new Date(data).toLocaleDateString("pt-BR")
+    const dataTexto = String(data).substring(0, 10)
+    const [ano, mes, dia] = dataTexto.split("-")
+
+    return `${dia}/${mes}/${ano}`
   }
 
   function obterNumeroPedido(pedido) {

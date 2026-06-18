@@ -18,7 +18,6 @@ import {
   Package,
   Factory,
   PackageCheck,
-  Truck,
   TriangleAlert,
   DollarSign,
   Filter
@@ -31,6 +30,7 @@ export function RelatorioPedidos() {
 
   const [dataInicio, setDataInicio] = useState("")
   const [dataFim, setDataFim] = useState("")
+  const [baseData, setBaseData] = useState("entrega")
   const [pedido, setPedido] = useState("")
   const [cliente, setCliente] = useState("")
   const [vendedorId, setVendedorId] = useState("")
@@ -47,14 +47,45 @@ export function RelatorioPedidos() {
   })
 
   function obterNumeroPedido(item) {
-    if (
-      item?.origemPedido === "EXTERNO" &&
-      item?.numeroPedidoManual
-    ) {
+    if (item?.origemPedido === "EXTERNO" && item?.numeroPedidoManual) {
       return item.numeroPedidoManual
     }
 
     return `#${item?.numeroPedido}`
+  }
+
+  function formatarData(data) {
+    if (!data) return "-"
+
+    const dataTexto = String(data).substring(0, 10)
+    const [ano, mes, dia] = dataTexto.split("-")
+
+    return `${dia}/${mes}/${ano}`
+  }
+
+  function formatarMoeda(valor) {
+    if (!valor) return "-"
+
+    return Number(valor).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL"
+    })
+  }
+
+  function formatarDataFiltro(data) {
+    return data.toISOString().split("T")[0]
+  }
+
+  function obterClassePrazo(prazo) {
+    if (prazo === "ATRASADO" || prazo === "Atrasado") {
+      return "bg-red-50"
+    }
+
+    if (prazo === "HOJE") {
+      return "bg-yellow-50"
+    }
+
+    return ""
   }
 
   function exportarCSV() {
@@ -62,6 +93,7 @@ export function RelatorioPedidos() {
       "Pedido",
       "Cliente",
       "Vendedor",
+      "Data Pedido",
       "Data Entrega",
       "Endereco",
       "Status",
@@ -73,6 +105,7 @@ export function RelatorioPedidos() {
       obterNumeroPedido(item),
       item.cliente?.nome || "",
       item.vendedor?.nome || "",
+      formatarData(item.dataPedido),
       formatarData(item.dataEntrega),
       item.enderecoEntrega || item.cliente?.endereco || "",
       item.status || "",
@@ -80,15 +113,10 @@ export function RelatorioPedidos() {
       item.valorTotal || ""
     ])
 
-    const csv = [
-      cabecalho,
-      ...linhas
-    ]
+    const csv = [cabecalho, ...linhas]
       .map((linha) =>
         linha
-          .map((campo) =>
-            `"${String(campo).replace(/"/g, '""')}"`
-          )
+          .map((campo) => `"${String(campo).replace(/"/g, '""')}"`)
           .join(";")
       )
       .join("\n")
@@ -98,25 +126,13 @@ export function RelatorioPedidos() {
     })
 
     const url = URL.createObjectURL(blob)
-
     const link = document.createElement("a")
+
     link.href = url
     link.download = "relatorio-pedidos.csv"
     link.click()
 
     URL.revokeObjectURL(url)
-  }
-
-  function obterClassePrazo(prazo) {
-    if (prazo === "ATRASADO") {
-      return "bg-red-50"
-    }
-
-    if (prazo === "HOJE") {
-      return "bg-yellow-50"
-    }
-
-    return ""
   }
 
   async function carregarVendedores() {
@@ -140,6 +156,7 @@ export function RelatorioPedidos() {
       const params = {
         dataInicio,
         dataFim,
+        baseData,
         pedido,
         cliente,
         vendedorId,
@@ -180,37 +197,26 @@ export function RelatorioPedidos() {
   function limparFiltros() {
     setDataInicio("")
     setDataFim("")
+    setBaseData("entrega")
     setPedido("")
     setCliente("")
     setVendedorId("")
     setStatus("")
     setPage(1)
+
+    carregarRelatorio(1, {
+      dataInicio: "",
+      dataFim: "",
+      baseData: "entrega",
+      pedido: "",
+      cliente: "",
+      vendedorId: "",
+      status: ""
+    })
   }
 
   function imprimir() {
     window.print()
-  }
-
-  function formatarData(data) {
-    if (!data) return "-"
-
-    const dataTexto = String(data).substring(0, 10)
-    const [ano, mes, dia] = dataTexto.split("-")
-
-    return `${dia}/${mes}/${ano}`
-  }
-
-  function formatarMoeda(valor) {
-    if (!valor) return "-"
-
-    return Number(valor).toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL"
-    })
-  }
-
-  function formatarDataFiltro(data) {
-    return data.toISOString().split("T")[0]
   }
 
   function filtroHoje() {
@@ -228,8 +234,8 @@ export function RelatorioPedidos() {
 
   function filtroProximos5Dias() {
     const hoje = new Date()
-
     const fim = new Date()
+
     fim.setDate(fim.getDate() + 5)
 
     const dataInicioFiltro = formatarDataFiltro(hoje)
@@ -242,15 +248,6 @@ export function RelatorioPedidos() {
     carregarRelatorio(1, {
       dataInicio: dataInicioFiltro,
       dataFim: dataFimFiltro
-    })
-  }
-
-  function filtroAtrasados() {
-    setStatus("")
-    setPage(1)
-
-    carregarRelatorio(1, {
-      situacaoPrazo: "ATRASADO"
     })
   }
 
@@ -304,6 +301,16 @@ export function RelatorioPedidos() {
     })
   }
 
+  function filtroAtrasados() {
+    setStatus("")
+    setPage(1)
+
+    carregarRelatorio(1, {
+      status: "",
+      situacaoPrazo: "ATRASADO"
+    })
+  }
+
   function filtroStatusRapido(novoStatus) {
     setStatus(novoStatus)
     setPage(1)
@@ -319,12 +326,12 @@ export function RelatorioPedidos() {
     (p) => p.status === "EM_SEPARACAO"
   ).length
 
-  const Entregue = pedidos.filter(
+  const entregue = pedidos.filter(
     (p) => p.status === "ENTREGUE"
   ).length
 
-  const Atrasado = pedidos.filter(
-    (p) => p.situacaoPrazo === "ATRASADO"
+  const atrasado = pedidos.filter(
+    (p) => p.situacaoPrazo === "ATRASADO" || p.situacaoPrazo === "Atrasado"
   ).length
 
   const valorTotalPedidos = pedidos.reduce(
@@ -357,89 +364,72 @@ export function RelatorioPedidos() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-6 no-print">
+        <div className="bg-white border border-gray-300 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Total Pedidos</p>
+              <strong className="text-3xl font-bold text-gray-800">
+                {totalPedidos}
+              </strong>
+            </div>
 
-  <div className="bg-white border border-gray-300 rounded-xl p-4 shadow-sm">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm text-gray-500">Total Pedidos</p>
-        <strong className="text-3xl font-bold text-gray-800">
-          {totalPedidos}
-        </strong>
+            <ClipboardList size={30} className="text-gray-400 shrink-0" />
+          </div>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-300 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-blue-700">Em Separação</p>
+              <strong className="text-3xl font-bold text-blue-800">
+                {emSeparacao}
+              </strong>
+            </div>
+
+            <Package size={30} className="text-blue-500 shrink-0" />
+          </div>
+        </div>
+
+        <div className="bg-red-50 border border-red-300 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-red-700">Atrasados</p>
+              <strong className="text-3xl font-bold text-red-800">
+                {atrasado}
+              </strong>
+            </div>
+
+            <Factory size={30} className="text-red-500 shrink-0" />
+          </div>
+        </div>
+
+        <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-sky-700">Entregue</p>
+              <strong className="text-3xl font-bold text-emerald-800">
+                {entregue}
+              </strong>
+            </div>
+
+            <PackageCheck size={30} className="text-emerald-500 shrink-0" />
+          </div>
+        </div>
+
+        <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-emerald-700">Valor Exibido</p>
+              <strong className="text-xl font-bold text-emerald-800">
+                {formatarMoeda(valorTotalPedidos)}
+              </strong>
+            </div>
+
+            <DollarSign size={30} className="text-emerald-500 shrink-0" />
+          </div>
+        </div>
       </div>
 
-      <ClipboardList
-        size={30}
-        className="text-gray-400 shrink-0"
-      />
-    </div>
-  </div>
-
-  <div className="bg-blue-50 border border-blue-300 rounded-xl p-4 shadow-sm">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm text-blue-700">Em Separação</p>
-        <strong className="text-3xl font-bold text-blue-800">
-          {emSeparacao}
-        </strong>
-      </div>
-
-      <Package
-        size={30}
-        className="text-blue-500 shrink-0"
-      />
-    </div>
-  </div>
-
-  <div className="bg-red-50 border border-red-300 rounded-xl p-4 shadow-sm">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm text-red-700">Atrasados</p>
-        <strong className="text-3xl font-bold text-red-800">
-          {Atrasado}
-        </strong>
-      </div>
-
-      <Factory
-        size={30}
-        className="text-red-500 shrink-0"
-      />
-    </div>
-  </div>
-
-  <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-4 shadow-sm">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm text-sky-700">Entregue</p>
-        <strong className="text-3xl font-bold text-emerald-800">
-          {Entregue}
-        </strong>
-      </div>
-
-      <PackageCheck
-        size={30}
-        className="text-emerald-500 shrink-0"
-      />
-    </div>
-  </div>
-
-  <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-4 shadow-sm">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm text-emerald-700">Valor Exibido</p>
-        <strong className="text-xl font-bold text-emerald-800">
-          {formatarMoeda(valorTotalPedidos)}
-        </strong>
-      </div>
-
-      <DollarSign
-        size={30}
-        className="text-emerald-500 shrink-0"
-      />
-    </div>
-  </div>
-
-</div>
-      
       <div className="flex flex-wrap gap-2 mb-4 no-print">
         <Button
           type="button"
@@ -478,7 +468,7 @@ export function RelatorioPedidos() {
         </Button>
 
         <div className="h-8 w-px bg-gray-300 mx-2" />
-     
+
         <Button
           type="button"
           onClick={filtroAtrasados}
@@ -509,6 +499,14 @@ export function RelatorioPedidos() {
 
       <div className="bg-white p-6 rounded-2xl shadow-md mb-8 no-print">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Select
+            value={baseData}
+            onChange={(e) => setBaseData(e.target.value)}
+          >
+            <option value="entrega">Filtrar por Data de Entrega</option>
+            <option value="pedido">Filtrar por Data do Pedido</option>
+          </Select>
+
           <Input
             type="date"
             value={dataInicio}
@@ -574,17 +572,27 @@ export function RelatorioPedidos() {
             <option value={50}>50 registros</option>
             <option value={100}>100 registros</option>
           </Select>
-          <div className="flex grid-cols-1 md:grid-cols-3 gap-4" >
-            <Button variant="Primary" onClick={buscar} className="bg-blue-600 text-white px-6 py-3 rounded-lg flex items-center gap-2">
-             <Search size={18} /> Buscar
-            </Button> 
 
-            <Button variant="" onClick={limparFiltros} className="bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 px-6 py-3 rounded-lg flex items-center gap-2">
-              <Eraser size={18} />Limpar
+          <div className="flex gap-4">
+            <Button
+              variant="Primary"
+              onClick={buscar}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg flex items-center gap-2"
+            >
+              <Search size={18} />
+              Buscar
+            </Button>
+
+            <Button
+              onClick={limparFiltros}
+              className="bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 px-6 py-3 rounded-lg flex items-center gap-2"
+            >
+              <Eraser size={18} />
+              Limpar
             </Button>
           </div>
         </div>
-        </div>
+      </div>
 
       <div className="bg-white rounded-2xl shadow-md p-6 print-area">
         <CabecalhoImpressao
@@ -595,9 +603,12 @@ export function RelatorioPedidos() {
           extra={
             status
               ? `Status filtrado: ${status}`
-              : ""
+              : baseData === "pedido"
+                ? "Base da data: Data do Pedido"
+                : "Base da data: Data de Entrega"
           }
         />
+
         <div className="mb-6">
           <h2 className="text-2xl font-bold">
             Listagem de Pedidos
@@ -611,11 +622,10 @@ export function RelatorioPedidos() {
         <Table>
           <thead>
             <tr>
-              <Th className="uppercase text-xs tracking-wide">
-                Pedido
-              </Th>
+              <Th className="uppercase text-xs tracking-wide">Pedido</Th>
               <Th>Cliente</Th>
               <Th>Vendedor</Th>
+              <Th>Data Pedido</Th>
               <Th>Data Entrega</Th>
               <Th>Endereço</Th>
               <Th>Status</Th>
@@ -637,6 +647,8 @@ export function RelatorioPedidos() {
                 <Td>{item.cliente?.nome}</Td>
 
                 <Td>{item.vendedor?.nome}</Td>
+
+                <Td>{formatarData(item.dataPedido)}</Td>
 
                 <Td>{formatarData(item.dataEntrega)}</Td>
 
@@ -663,7 +675,7 @@ export function RelatorioPedidos() {
 
             {pedidos.length === 0 && (
               <tr>
-                <Td className="p-4 border" colSpan="8">
+                <Td className="p-4 border" colSpan="9">
                   Nenhum pedido encontrado.
                 </Td>
               </tr>

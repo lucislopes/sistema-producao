@@ -5,6 +5,7 @@ export async function relatorioPedidos(req, res) {
     const {
       dataInicio,
       dataFim,
+      baseData = "entrega",
       pedido,
       cliente,
       vendedorId,
@@ -19,24 +20,51 @@ export async function relatorioPedidos(req, res) {
 
     const where = {}
 
+    function criarDataLocal(data, fimDoDia = false) {
+      if (!data) return null
+
+      const [ano, mes, dia] = data.split("-").map(Number)
+
+      return new Date(
+        ano,
+        mes - 1,
+        dia,
+        fimDoDia ? 23 : 0,
+        fimDoDia ? 59 : 0,
+        fimDoDia ? 59 : 0,
+        fimDoDia ? 999 : 0
+      )
+    }
+
+    const campoData =
+      baseData === "pedido"
+        ? "dataPedido"
+        : "dataEntrega"
+
     if (dataInicio || dataFim) {
-      where.dataEntrega = {}
+      where[campoData] = {}
 
       if (dataInicio) {
-        const inicio = new Date(dataInicio)
-        inicio.setHours(0, 0, 0, 0)
-        where.dataEntrega.gte = inicio
+        where[campoData].gte = criarDataLocal(dataInicio, false)
       }
 
       if (dataFim) {
-        const fim = new Date(dataFim)
-        fim.setHours(23, 59, 59, 999)
-        where.dataEntrega.lte = fim
+        where[campoData].lte = criarDataLocal(dataFim, true)
       }
     }
 
     if (pedido) {
-      where.numeroPedido = Number(pedido)
+      where.OR = [
+        {
+          numeroPedido: Number(pedido) || -1
+        },
+        {
+          numeroPedidoManual: {
+            contains: pedido,
+            mode: "insensitive"
+          }
+        }
+      ]
     }
 
     if (cliente) {
@@ -56,6 +84,17 @@ export async function relatorioPedidos(req, res) {
       where.status = status
     }
 
+    const orderBy =
+      campoData === "dataPedido"
+        ? [
+            { dataPedido: "asc" },
+            { numeroPedido: "asc" }
+          ]
+        : [
+            { dataEntrega: "asc" },
+            { numeroPedido: "asc" }
+          ]
+
     const [pedidos, total] = await Promise.all([
       prisma.pedido.findMany({
         where,
@@ -66,10 +105,7 @@ export async function relatorioPedidos(req, res) {
           rota: true
         },
 
-        orderBy: [
-          { dataEntrega: "asc" },
-          { numeroPedido: "asc" }
-        ],
+        orderBy,
 
         skip,
         take: limite
@@ -81,37 +117,42 @@ export async function relatorioPedidos(req, res) {
     ])
 
     const hoje = new Date()
-      hoje.setHours(0, 0, 0, 0)
+    hoje.setHours(0, 0, 0, 0)
 
-      const pedidosComPrazo = pedidos.map((pedido) => {
-        let situacaoPrazo = "No prazo"
+    const pedidosComPrazo = pedidos.map((pedido) => {
+      let situacaoPrazo = "No prazo"
 
-        if (!pedido.dataEntrega) {
-          situacaoPrazo = "Sem data"
+      if (!pedido.dataEntrega) {
+        situacaoPrazo = "Sem data"
+      } else {
+        const dataEntrega = new Date(
+          pedido.dataEntrega.getFullYear(),
+          pedido.dataEntrega.getMonth(),
+          pedido.dataEntrega.getDate()
+        )
+
+        if (pedido.status === "ENTREGUE") {
+          situacaoPrazo =
+            dataEntrega < hoje
+              ? "Entregue com atraso"
+              : "Entregue no prazo"
         } else {
-          const dataEntrega = new Date(pedido.dataEntrega)
-          dataEntrega.setHours(0, 0, 0, 0)
-
-          if (pedido.status === "ENTREGUE") {
-            situacaoPrazo =
-              dataEntrega < hoje
-                ? "Entregue com atraso"
-                : "Entregue no prazo"
-          } else {
-            situacaoPrazo =
-              dataEntrega < hoje
-                ? "Atrasado"
-                : "No prazo"
-          }
+          situacaoPrazo =
+            dataEntrega < hoje
+              ? "Atrasado"
+              : "No prazo"
         }
+      }
 
-        return {
-          ...pedido,
-          situacaoPrazo
-        }
-      })
+      return {
+        ...pedido,
+        situacaoPrazo
+      }
+    })
 
     return res.json({
+      baseData,
+      campoData,
       dados: pedidosComPrazo,
       paginacao: {
         total,
@@ -120,7 +161,6 @@ export async function relatorioPedidos(req, res) {
         totalPages: Math.ceil(total / limite)
       }
     })
-
   } catch (error) {
     console.log(error)
 

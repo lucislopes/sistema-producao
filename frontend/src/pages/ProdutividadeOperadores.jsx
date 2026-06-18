@@ -93,6 +93,11 @@ export function ProdutividadeOperadores() {
   function limparFiltros() {
     setDataInicio("")
     setDataFim("")
+
+    carregarProdutividade({
+      dataInicio: "",
+      dataFim: ""
+    })
   }
 
   function imprimir() {
@@ -100,7 +105,11 @@ export function ProdutividadeOperadores() {
   }
 
   function formatarDataFiltro(data) {
-    return data.toISOString().split("T")[0]
+    const ano = data.getFullYear()
+    const mes = String(data.getMonth() + 1).padStart(2, "0")
+    const dia = String(data.getDate()).padStart(2, "0")
+
+    return `${ano}-${mes}-${dia}`
   }
 
   function filtroHoje() {
@@ -354,37 +363,7 @@ export function ProdutividadeOperadores() {
         </div>
       </div>
 
-      <div className="hidden print:block mb-8 border-b pb-4">
-        <h1 className="text-2xl font-bold">
-          {empresa?.nome || "Empresa"}
-        </h1>
-
-        <p className="text-sm">
-          CNPJ: {empresa?.cnpj || "-"}
-        </p>
-
-        <p className="text-sm">
-          {empresa?.cidade || "-"} / {empresa?.estado || "-"}
-        </p>
-
-        <p className="text-sm">
-          Tel: {empresa?.telefone || "-"}
-        </p>
-
-        <h2 className="text-xl font-bold mt-4">
-          Relatório de Produtividade
-        </h2>
-
-        <p>
-          Período: {dataInicio || "Início"} até {dataFim || "Hoje"}
-        </p>
-
-        <p>
-          Emitido em: {new Date().toLocaleString("pt-BR")}
-        </p>
-      </div>
-
-      <CabecalhoImpressao
+           <CabecalhoImpressao
               empresa={empresa}
               titulo="Relatório de Produtividade"
               periodoInicio={dataInicio}
