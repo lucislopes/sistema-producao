@@ -24,6 +24,34 @@ export function RomaneioEntrega() {
   const [rotasSelecionadas, setRotasSelecionadas] = useState([])
   const [busca, setBusca] = useState("")
 
+  const [statusSelecionados, setStatusSelecionados] = useState([
+    "CONCLUIDO",
+    "PRONTO_ENTREGA"
+  ])
+
+  const statusDisponiveis = [
+    {
+      valor: "ABERTO",
+      nome: "Aberto"
+    },
+    {
+      valor: "EM_PRODUCAO",
+      nome: "Em Produção"
+    },
+    {
+      valor: "CONCLUIDO",
+      nome: "Concluído"
+    },
+    {
+      valor: "PRONTO_ENTREGA",
+      nome: "Pronto Entrega"
+    },
+    {
+      valor: "SAIU_ENTREGA",
+      nome: "Saiu Entrega"
+    }
+  ]
+
   async function carregarRotas() {
     const response = await api.get("/rotas-entrega")
     setRotas(response.data)
@@ -37,6 +65,7 @@ export function RomaneioEntrega() {
             dataInicio,
             dataFim,
             rotas: rotasSelecionadas.join(","),
+            status: statusSelecionados.join(","),
             busca
           }
         }),
@@ -118,6 +147,10 @@ export function RomaneioEntrega() {
     setDataFim("")
     setBusca("")
     setRotasSelecionadas([])
+    setStatusSelecionados([
+      "CONCLUIDO",
+      "PRONTO_ENTREGA"
+    ])
 
     setTimeout(() => {
       carregarRelatorio()
@@ -184,6 +217,16 @@ export function RomaneioEntrega() {
 
     return entrega < hoje
   }).length
+
+  function alternarStatus(status) {
+    setStatusSelecionados((atual) => {
+      if (atual.includes(status)) {
+        return atual.filter((item) => item !== status)
+      }
+
+      return [...atual, status]
+    })
+  }
 
   return (
     <div>
@@ -299,49 +342,85 @@ export function RomaneioEntrega() {
           </div>
         </div>
 
-        <div className="border rounded-xl p-4">
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="font-bold flex items-center gap-2">
-              <Route size={18} />
-              Selecionar Rotas
-            </h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  <div className="border rounded-xl p-4">
+    <h2 className="font-bold mb-3">
+      Status dos Pedidos
+    </h2>
 
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={selecionarTodasRotas}
-                className="text-sm text-blue-700 font-semibold"
-              >
-                Marcar todas
-              </button>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      {statusDisponiveis.map((status) => (
+        <label
+          key={status.valor}
+          className={
+            statusSelecionados.includes(status.valor)
+              ? "flex items-center gap-2 border border-blue-300 bg-blue-50 rounded-lg px-3 py-2 text-sm cursor-pointer font-semibold text-blue-700"
+              : "flex items-center gap-2 border rounded-lg px-3 py-2 text-sm cursor-pointer hover:bg-gray-50"
+          }
+        >
+          <input
+            type="checkbox"
+            checked={statusSelecionados.includes(status.valor)}
+            onChange={() => alternarStatus(status.valor)}
+          />
+          {status.nome}
+        </label>
+      ))}
+    </div>
+  </div>
 
-              <button
-                type="button"
-                onClick={limparRotas}
-                className="text-sm text-red-700 font-semibold"
-              >
-                Limpar rotas
-              </button>
-            </div>
-          </div>
+  <div className="border rounded-xl p-4">
+    <div className="flex justify-between items-center mb-3">
+      <h2 className="font-bold flex items-center gap-2">
+        <Route size={18} />
+        Rotas de Entrega
+      </h2>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-2">
-            {rotas.map((rota) => (
-              <label
-                key={rota.id}
-                className="flex items-center gap-2 border rounded-lg px-3 py-2 text-sm cursor-pointer hover:bg-gray-50"
-              >
-                <input
-                  type="checkbox"
-                  checked={rotasSelecionadas.includes(rota.id)}
-                  onChange={() => alternarRota(rota.id)}
-                />
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={selecionarTodasRotas}
+          className="text-sm text-blue-700 font-semibold"
+        >
+          Marcar todas
+        </button>
 
-                {rota.nome}
-              </label>
-            ))}
-          </div>
-        </div>
+        <button
+          type="button"
+          onClick={limparRotas}
+          className="text-sm text-red-700 font-semibold"
+        >
+          Limpar
+        </button>
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      {rotas.map((rota) => (
+        <label
+          key={rota.id}
+          className={
+            rotasSelecionadas.includes(rota.id)
+              ? "flex items-center gap-2 border border-blue-300 bg-blue-50 rounded-lg px-3 py-2 text-sm cursor-pointer font-semibold text-blue-700"
+              : "flex items-center gap-2 border rounded-lg px-3 py-2 text-sm cursor-pointer hover:bg-gray-50"
+          }
+        >
+          <input
+            type="checkbox"
+            checked={rotasSelecionadas.includes(rota.id)}
+            onChange={() => alternarRota(rota.id)}
+          />
+
+          {rota.nome}
+        </label>
+      ))}
+    </div>
+  </div>
+</div>
+
+
+
+
       </div>
 
       <CabecalhoImpressao

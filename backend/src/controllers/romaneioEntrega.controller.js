@@ -6,6 +6,7 @@ export async function romaneioEntrega(req, res) {
       dataInicio,
       dataFim,
       rotas,
+      status, 
       busca
     } = req.query
 
@@ -13,10 +14,20 @@ export async function romaneioEntrega(req, res) {
       ? rotas.split(",").filter(Boolean)
       : []
 
+    const statusSelecionados = status
+      ? status.split(",").filter(Boolean)
+      : [
+          "CONCLUIDO",
+          "PRONTO_ENTREGA"
+        ]  
+    
     const where = {
-      status: "CONCLUIDO"
+      status: {
+        in: statusSelecionados
+      }
     }
 
+  
     if (dataInicio || dataFim) {
       where.dataEntrega = {}
 
