@@ -33,6 +33,7 @@ import { RelatorioServicos } from "./pages/RelatorioServicos"
 import { RelatorioPendencias } from "./pages/RelatorioPendencias"
 import { RomaneioEntrega } from "./pages/RomaneioEntrega"
 import { RelatorioAuditoriaFrete } from "./pages/RelatorioAuditoriaFrete"
+import { PlanoCorteServico } from "./pages/PlanoCorteServico"
 
 
 export default function App() {
@@ -74,6 +75,11 @@ export default function App() {
           <Route
             path="/pedidos"
             element={<Pedidos />}
+          />
+
+          <Route
+            path="/plano-corte-servico"
+            element={<PlanoCorteServico />}
           />
 
           <Route

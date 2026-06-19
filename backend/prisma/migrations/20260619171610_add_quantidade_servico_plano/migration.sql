@@ -1,0 +1,2 @@
+-- Migration recriada apenas para sincronizar histórico local do Prisma.
+-- A alteração real será tratada em nova migration.

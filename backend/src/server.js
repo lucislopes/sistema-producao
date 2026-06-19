@@ -28,6 +28,8 @@ import configuracaoEmpresaRoutes from "./routes/configuracaoEmpresa.routes.js"
 import relatoriosRoutes from "./routes/relatorios.routes.js"
 import romaneioEntregaRoutes from "./routes/romaneioEntrega.routes.js"
 import relatorioFreteRoutes from "./routes/relatorioFrete.routes.js"
+import planoCorteServicoRoutes from "./routes/planoCorteServico.routes.js"
+
 
 
 
@@ -60,6 +62,7 @@ app.use("/configuracao-empresa", configuracaoEmpresaRoutes)
 app.use("/relatorios", relatoriosRoutes)
 app.use("/romaneio-entrega", romaneioEntregaRoutes)
 app.use("/relatorio-frete", relatorioFreteRoutes)
+app.use("/plano-corte-servico", planoCorteServicoRoutes)
 
 app.get("/", (req, res) => {
   return res.json({

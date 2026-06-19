@@ -224,6 +224,10 @@ export function MainLayout() {
                   <MenuLink to="/planos-corte" icon={Scissors}>
                     Planos de Corte
                   </MenuLink>
+
+                  <MenuLink to="/plano-corte-servico" icon={Scissors}>
+                    Teste Novo Plano
+                  </MenuLink>
                 </>
               )}
 
