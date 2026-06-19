@@ -83,9 +83,10 @@ export async function criarPlanosComServicos(req, res) {
         for (const servico of servicosSelecionados) {
           await tx.servicoPlano.create({
             data: {
-              planoId: plano.id,
+              planoId: id,
               tipoServicoId: servico.tipoServicoId,
-              status: "ABERTO",
+              operadorId: servico.operadorId || null,
+              status: servico.operadorId ? "INICIADO" : "ABERTO",
               observacoes: servico.observacoes || null
             }
           })
@@ -155,6 +156,9 @@ export async function atualizarPlanoComServicos(req, res) {
   try {
     const { id } = req.params
 
+    console.log("USUARIO LOGADO:", req.user)
+    console.log("PLANO EDITANDO:", id)
+
     const permitido = await podeEditarPlano(id, req.user)
 
     if (!permitido) {
@@ -203,9 +207,10 @@ export async function atualizarPlanoComServicos(req, res) {
       for (const servico of servicosSelecionados) {
         await tx.servicoPlano.create({
           data: {
-            planoId: id,
+            planoId: plano.id,
             tipoServicoId: servico.tipoServicoId,
-            status: "ABERTO",
+            operadorId: servico.operadorId || null,
+            status: servico.operadorId ? "INICIADO" : "ABERTO",
             observacoes: servico.observacoes || null
           }
         })

@@ -240,10 +240,128 @@ export function Pedidos() {
   valorFreteCobrado !== "" &&
   Number(valorFreteCobrado) !== Number(valorFretePadrao)
 
+
+  function criarDataLocal(dataTexto) {
+    if (!dataTexto) return null
+
+    const [ano, mes, dia] = dataTexto.split("-").map(Number)
+
+    return new Date(ano, mes - 1, dia)
+  }
+
+  function formatarDataInput(data) {
+    const ano = data.getFullYear()
+    const mes = String(data.getMonth() + 1).padStart(2, "0")
+    const dia = String(data.getDate()).padStart(2, "0")
+
+    return `${ano}-${mes}-${dia}`
+  }
+
+  function formatarDataBR(dataTexto) {
+    if (!dataTexto) return "-"
+
+    const [ano, mes, dia] = dataTexto.split("-")
+
+    return `${dia}/${mes}/${ano}`
+  }
+
+  function proximoDiaUtil(data) {
+    const novaData = new Date(data)
+
+    while (
+      novaData.getDay() === 0 ||
+      novaData.getDay() === 6
+    ) {
+      novaData.setDate(novaData.getDate() + 1)
+    }
+
+    return novaData
+  }
+
+  function verificarDataEntrega(dataTexto) {
+    const data = criarDataLocal(dataTexto)
+
+    if (!data) {
+      return { ok: true }
+    }
+
+    const hoje = new Date()
+    hoje.setHours(0, 0, 0, 0)
+
+    if (data < hoje) {
+      return {
+        ok: false,
+        bloquear: true,
+        mensagem: `A data prevista ${formatarDataBR(dataTexto)} já passou. Informe uma data de hoje em diante.`
+      }
+    }
+
+    const diaSemana = data.getDay()
+
+    if (diaSemana === 5) {
+      const sugestao = new Date(data)
+      sugestao.setDate(sugestao.getDate() + 3)
+
+      return {
+        ok: false,
+        precisaConfirmar: true,
+        mensagem:
+          `A data prevista (${formatarDataBR(dataTexto)}) cai em uma sexta-feira.\n\n` +
+          `Isso pode impactar a produção, transporte ou entrega.\n\n` +
+          `Deseja manter esta data?\n\n` +
+          `OK = manter sexta-feira\n` +
+          `Cancelar = alterar para segunda-feira (${formatarDataBR(formatarDataInput(sugestao))})`,
+        sugestao: formatarDataInput(sugestao)
+      }
+    }
+
+    if (diaSemana === 6 || diaSemana === 0) {
+      const sugestao = proximoDiaUtil(data)
+
+      return {
+        ok: false,
+        precisaConfirmar: true,
+       mensagem:
+        `A data prevista (${formatarDataBR(dataTexto)}) cai em um fim de semana.\n\n` +
+        `Normalmente não há expediente nesses dias.\n\n` +
+        `Deseja manter esta data?\n\n` +
+        `OK = manter data informada\n` +
+        `Cancelar = alterar para o próximo dia útil (${formatarDataBR(formatarDataInput(sugestao))})`,
+        sugestao: formatarDataInput(sugestao)
+      }
+    }
+
+    return { ok: true }
+  }
+  
+
   async function handleSubmit(e) {
     e.preventDefault()
 
-    const dados = {
+    if (tipoPedido === "DIRETO_ENTREGA" && !dataEntrega) {
+      alert(
+        "Data prevista para entrega é obrigatória para pedido direto para entrega."
+      )
+      return
+    }
+
+    const validacaoData = verificarDataEntrega(dataEntrega)
+
+    if (validacaoData.bloquear) {
+      alert(validacaoData.mensagem)
+      return
+    }
+
+    if (validacaoData.precisaConfirmar) {
+      const manterData = confirm(validacaoData.mensagem)
+
+      if (!manterData) {
+        setDataEntrega(validacaoData.sugestao)
+        return
+      }
+    }
+
+      const dados = {
       origemPedido,
       numeroPedidoManual,
       tipoPedido,
@@ -543,7 +661,17 @@ function aplicarRotaSelecionada(id) {
     ).length
   }
 
-  
+  function podeEditarPedido(pedido) {
+    const usuario = JSON.parse(localStorage.getItem("@usuario") || "{}")
+
+    if (usuario.funcao === "ADMIN") return true
+
+    return pedido.vendedorId === usuario.funcionarioId
+  }
+
+  const usuarioLogado = JSON.parse(localStorage.getItem("@usuario") || "{}")
+  const isAdmin = usuarioLogado.funcao === "ADMIN"
+
   return (
     <div>
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
@@ -729,6 +857,7 @@ function aplicarRotaSelecionada(id) {
                   value={vendedorId}
                   onChange={(e) => setVendedorId(e.target.value)}
                   required
+                  disabled={editandoId && !isAdmin}
                 >
                   <option value="">Selecione o vendedor</option>
                   {vendedores.map((vendedor) => (
@@ -743,6 +872,7 @@ function aplicarRotaSelecionada(id) {
                 <Input
                   type="date"
                   value={dataEntrega}
+                  min={new Date().toISOString().split("T")[0]}
                   onChange={(e) => setDataEntrega(e.target.value)}
                 />
               </Campo>
@@ -1133,13 +1263,23 @@ function aplicarRotaSelecionada(id) {
 
                 <Td>
                   <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => editarPedido(pedido)}
-                    >
-                      <SquarePen size={16} />
-                    </Button>
+                    {podeEditarPedido(pedido) ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => editarPedido(pedido)}
+                        title="Editar pedido"
+                      >
+                        <SquarePen size={16} />
+                      </Button>
+                    ) : (
+                      <span
+                        className="inline-flex items-center rounded-lg bg-yellow-50 px-3 py-2 text-xs font-semibold text-yellow-800 border border-yellow-200"
+                        title="Somente o vendedor responsável ou um ADMIN pode editar"
+                      >
+                        Somente leitura
+                      </span>
+                    )}
 
                     <Link
                       to={`/pedidos/${pedido.id}`}
@@ -1150,7 +1290,7 @@ function aplicarRotaSelecionada(id) {
 
                     {pedido.tipoPedido !== "DIRETO_ENTREGA" && (
                       <Link
-                        to={`/planos-corte?pedidoId=${pedido.id}`}
+                        to={`/plano-corte-servico?pedidoId=${pedido.id}`}
                         className="inline-flex items-center justify-center rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white hover:bg-purple-700"
                       >
                         <ClipboardList size={16} /> Planos

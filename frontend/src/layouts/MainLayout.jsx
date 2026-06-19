@@ -160,6 +160,7 @@ export function MainLayout() {
       "/rotas-entrega": "Rotas de Entrega",
       "/tipos-servico": "Tipos de Serviço",
       "/planos-corte": "Planos de Corte",
+      "/plano-corte-servico": "Planos de Corte e Serviços",
       "/servicos-plano": "Serviços do Plano",
       "/painel-operador": "Painel Operador",
       "/kanban": "Kanban",
@@ -172,7 +173,7 @@ export function MainLayout() {
       "/produtividade-operadores": "Produtividade",
       "/configuracao-empresa": "Configurações",
       "/minha-senha": "Alterar Senha",
-      "/relatorio-auditoria-frete": "Auditoria de Frete",
+      "/relatorio-auditoria-frete": "Auditoria de Frete"
     }
 
     return titulos[path] || "Sistema"
@@ -221,21 +222,23 @@ export function MainLayout() {
                     Pedidos
                   </MenuLink>
 
+                  {/*
                   <MenuLink to="/planos-corte" icon={Scissors}>
-                    Planos de Corte
+                   Planos de Corte
                   </MenuLink>
+                  */}
 
                   <MenuLink to="/plano-corte-servico" icon={Scissors}>
-                    Teste Novo Plano
+                    Planos de Corte e Serviços
                   </MenuLink>
                 </>
               )}
-
+            {/*
               <MenuLink to="/servicos-plano" icon={ListChecks}>
                 Serviços do Plano
               </MenuLink>
-
-              {(isAdmin || isVendedor || isVendedorOperador) && (
+            */}
+              {isAdmin && (
                 <MenuLink to="/expedicao" icon={Truck}>
                   Expedição
                 </MenuLink>
@@ -245,9 +248,11 @@ export function MainLayout() {
 
           {(isAdmin || isOperador || isVendedorOperador) && (
             <MenuGrupo titulo="Produção">
+              {/*
               <MenuLink to="/painel-operador" icon={Factory}>
                 Painel Operador
               </MenuLink>
+              */}
 
               <MenuLink to="/kanban" icon={Columns3}>
                 Kanban
@@ -391,33 +396,28 @@ export function MainLayout() {
             </button>
 
             {menuAberto && (
-              <div className="absolute right-0 mt-2 w-60 bg-white border rounded-xl shadow-lg z-50 overflow-hidden">
-                <Link
-                  to="/pedidos"
-                  className="flex items-center gap-2 px-4 py-3 hover:bg-gray-100 text-sm"
-                  onClick={() => setMenuAberto(false)}
-                >
-                  <ShoppingCart size={16} />
-                  Pedidos
-                </Link>
+              <div className="absolute right-0 mt-2 w-64 bg-white border rounded-xl shadow-lg z-50 overflow-hidden">
+                {(isAdmin || isVendedor || isVendedorOperador) && (
+                  <>
+                    <Link
+                      to="/pedidos"
+                      className="flex items-center gap-2 px-4 py-3 hover:bg-gray-100 text-sm"
+                      onClick={() => setMenuAberto(false)}
+                    >
+                      <ShoppingCart size={16} />
+                      Pedidos
+                    </Link>
 
-                <Link
-                  to="/expedicao"
-                  className="flex items-center gap-2 px-4 py-3 hover:bg-gray-100 text-sm"
-                  onClick={() => setMenuAberto(false)}
-                >
-                  <Truck size={16} />
-                  Expedição
-                </Link>
-
-                <Link
-                  to="/romaneio-entrega"
-                  className="flex items-center gap-2 px-4 py-3 hover:bg-gray-100 text-sm"
-                  onClick={() => setMenuAberto(false)}
-                >
-                  <Truck size={16} />
-                  Romaneio de Entrega
-                </Link>
+                    <Link
+                      to="/plano-corte-servico"
+                      className="flex items-center gap-2 px-4 py-3 hover:bg-gray-100 text-sm"
+                      onClick={() => setMenuAberto(false)}
+                    >
+                      <Scissors size={16} />
+                      Planos de Corte
+                    </Link>
+                  </>
+                )}
 
                 {(isAdmin || isOperador || isVendedorOperador) && (
                   <Link
@@ -430,6 +430,28 @@ export function MainLayout() {
                   </Link>
                 )}
 
+                {isAdmin && (
+                  <>
+                    <Link
+                      to="/expedicao"
+                      className="flex items-center gap-2 px-4 py-3 hover:bg-gray-100 text-sm"
+                      onClick={() => setMenuAberto(false)}
+                    >
+                      <Truck size={16} />
+                      Expedição
+                    </Link>
+
+                    <Link
+                      to="/romaneio-entrega"
+                      className="flex items-center gap-2 px-4 py-3 hover:bg-gray-100 text-sm"
+                      onClick={() => setMenuAberto(false)}
+                    >
+                      <Truck size={16} />
+                      Romaneio de Entrega
+                    </Link>
+                  </>
+                )}
+
                 <Link
                   to="/alertas"
                   className="flex items-center gap-2 px-4 py-3 hover:bg-gray-100 text-sm"
@@ -439,24 +461,16 @@ export function MainLayout() {
                   Alertas
                 </Link>
 
-                <Link
-                  to="/relatorio-pedidos"
-                  className="flex items-center gap-2 px-4 py-3 hover:bg-gray-100 text-sm"
-                  onClick={() => setMenuAberto(false)}
-                >
-                  <ClipboardList size={16} />
-                  Relatório de Pedidos
-                </Link>
-
-                <Link
-                  to="/relatorio-expedicao"
-                  className="flex items-center gap-2 px-4 py-3 hover:bg-gray-100 text-sm"
-                  onClick={() => setMenuAberto(false)}
-                >
-                  <FileText size={16} />
-                  Relatório de Expedição
-                </Link>
-                
+                {(isAdmin || isVendedor || isVendedorOperador) && (
+                  <Link
+                    to="/relatorio-pedidos"
+                    className="flex items-center gap-2 px-4 py-3 hover:bg-gray-100 text-sm"
+                    onClick={() => setMenuAberto(false)}
+                  >
+                    <ClipboardList size={16} />
+                    Relatório de Pedidos
+                  </Link>
+                )}
               </div>
             )}
           </div>

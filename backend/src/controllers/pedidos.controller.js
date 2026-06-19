@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.js"
+import { podeEditarPedido } from "../utils/permissoes.js"
 import { registrarHistoricoPedido } from "../utils/registrarHistoricoPedido.js"
 
 function valorNumericoOuNull(valor) {
@@ -7,6 +8,20 @@ function valorNumericoOuNull(valor) {
   }
 
   return Number(valor)
+}
+
+function validarDataEntregaPassada(dataEntrega) {
+  if (!dataEntrega) return null
+
+  const dataInformada = new Date(`${dataEntrega}T00:00:00`)
+  const hoje = new Date()
+  hoje.setHours(0, 0, 0, 0)
+
+  if (dataInformada < hoje) {
+    return "Data prevista para entrega não pode ser anterior à data atual"
+  }
+
+  return null
 }
 
 function validarPedido({
@@ -84,6 +99,7 @@ function montarDadosFrete({
       : null
   }
 }
+
 async function validarNumeroPedidoDuplicado({
   origemTratada,
   numeroManualTratado,
@@ -215,6 +231,14 @@ export async function criarPedido(req, res) {
       return res.status(400).json({ error: erroValidacao })
     }
 
+    const erroDataPassada = validarDataEntregaPassada(dataEntrega)
+
+    if (erroDataPassada) {
+      return res.status(400).json({
+        error: erroDataPassada
+      })
+    }
+
     if (freteAlterado && !motivoAlteracaoFrete?.trim()) {
       return res.status(400).json({
         error: "Informe o motivo da alteração do frete"
@@ -224,6 +248,12 @@ export async function criarPedido(req, res) {
     let quantidadeChapasDiretoEntregaTratada = null
 
     if (tipoPedido === "DIRETO_ENTREGA") {
+      if (!dataEntrega) {
+        return res.status(400).json({
+          error: "Data prevista para entrega é obrigatória para pedido direto para entrega"
+        })
+      }
+
       quantidadeChapasDiretoEntregaTratada = Number(
         quantidadeChapasDiretoEntrega
       )
@@ -419,6 +449,23 @@ export async function atualizarPedido(req, res) {
       })
     }
 
+    const permitido = await podeEditarPedido(id, req.user)
+
+    if (!permitido) {
+      return res.status(403).json({
+        error: "Você não tem permissão para alterar este pedido. Somente o vendedor responsável ou um administrador pode editar."
+      })
+    }
+
+    if (
+      req.user.funcao !== "ADMIN" &&
+      vendedorId !== pedidoAnterior.vendedorId
+    ) {
+      return res.status(403).json({
+        error: "Somente um administrador pode alterar o vendedor do pedido."
+      })
+    }
+
     if (
       updatedAt &&
       new Date(updatedAt).getTime() !==
@@ -442,6 +489,14 @@ export async function atualizarPedido(req, res) {
 
     if (erroValidacao) {
       return res.status(400).json({ error: erroValidacao })
+    }
+
+    const erroDataPassada = validarDataEntregaPassada(dataEntrega)
+
+    if (erroDataPassada) {
+      return res.status(400).json({
+        error: erroDataPassada
+      })
     }
 
     if (freteAlterado && !motivoAlteracaoFrete?.trim()) {
@@ -509,6 +564,12 @@ export async function atualizarPedido(req, res) {
     let quantidadeChapasDiretoEntregaTratada = null
 
     if (tipoPedido === "DIRETO_ENTREGA") {
+      if (!dataEntrega) {
+        return res.status(400).json({
+          error: "Data prevista para entrega é obrigatória para pedido direto para entrega"
+        })
+      }
+
       quantidadeChapasDiretoEntregaTratada = Number(
         quantidadeChapasDiretoEntrega
       )

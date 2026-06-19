@@ -17,13 +17,12 @@ export async function podeEditarPedido(pedidoId, user) {
   const pedido = await prisma.pedido.findUnique({
     where: { id: pedidoId },
     select: {
+      id: true,
       vendedorId: true
     }
   })
 
-  if (!pedido) {
-    return false
-  }
+  if (!pedido) return false
 
   return pedido.vendedorId === user.funcionarioId
 }
@@ -44,18 +43,18 @@ export async function podeEditarPlano(planoId, user) {
 
   const plano = await prisma.planoCorte.findUnique({
     where: { id: planoId },
-    include: {
+    select: {
+      id: true,
       pedido: {
         select: {
+          id: true,
           vendedorId: true
         }
       }
     }
   })
 
-  if (!plano) {
-    return false
-  }
+  if (!plano) return false
 
   return plano.pedido.vendedorId === user.funcionarioId
 }

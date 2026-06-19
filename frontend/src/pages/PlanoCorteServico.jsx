@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useSearchParams } from "react-router-dom"
 import { api } from "../services/api"
 import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
@@ -20,6 +21,8 @@ import {
 export function PlanoCorteServico() {
   const [pedidos, setPedidos] = useState([])
   const [tiposServico, setTiposServico] = useState([])
+  const [operadores, setOperadores] = useState([])  
+
   const [planosCadastrados, setPlanosCadastrados] = useState([])
 
   const [pedidoId, setPedidoId] = useState("")
@@ -32,15 +35,19 @@ export function PlanoCorteServico() {
 
   const [editandoId, setEditandoId] = useState(null)
 
+  const [searchParams] = useSearchParams()
+  const pedidoIdUrl = searchParams.get("pedidoId")
+
   async function carregarDados() {
     try {
-      const [pedidosRes, tiposRes] = await Promise.all([
+      const [pedidosRes, tiposRes, operadoresRes] = await Promise.all([
         api.get("/pedidos", {
           params: { page: 1, limit: 100, somenteAtivos: true }
         }),
-        api.get("/tipos-servico")
+        api.get("/tipos-servico"),
+        api.get("/funcionarios/operadores")
       ])
-
+    
     const pedidosCarregados = pedidosRes.data.dados || pedidosRes.data
 
     const pedidosComProducao = pedidosCarregados.filter(
@@ -50,6 +57,7 @@ export function PlanoCorteServico() {
     setPedidos(pedidosComProducao)
 
       setTiposServico(tiposRes.data.dados || tiposRes.data)
+      setOperadores(operadoresRes.data)
     } catch (error) {
       console.log(error)
       alert("Erro ao carregar dados")
@@ -75,7 +83,15 @@ export function PlanoCorteServico() {
   }
 
   useEffect(() => {
-    carregarDados()
+    async function carregarInicial() {
+      await carregarDados()
+
+      if (pedidoIdUrl) {
+        setPedidoId(pedidoIdUrl)
+      }
+    }
+
+    carregarInicial()
   }, [])
 
   useEffect(() => {
@@ -91,6 +107,7 @@ export function PlanoCorteServico() {
       } else {
         novo[tipoServicoId] = {
           tipoServicoId,
+          operadorId: "",
           observacoes: ""
         }
       }
@@ -106,6 +123,17 @@ export function PlanoCorteServico() {
         ...atual[tipoServicoId],
         tipoServicoId,
         observacoes
+      }
+    }))
+  }
+
+  function alterarOperadorServico(tipoServicoId, operadorId) {
+    setServicosSelecionados((atual) => ({
+      ...atual,
+      [tipoServicoId]: {
+        ...atual[tipoServicoId],
+        tipoServicoId,
+        operadorId
       }
     }))
   }
@@ -152,11 +180,12 @@ export function PlanoCorteServico() {
       await carregarPlanosComServicos(pedidoId)
     } catch (error) {
       console.log(error)
-      alert(
-        editandoId
-            ? "Plano e serviços atualizados com sucesso"
-            : "Planos e serviços criados com sucesso"
-        )
+
+      const mensagem =
+        error.response?.data?.error ||
+        "Erro ao salvar planos e serviços"
+
+      alert(mensagem)
     }
   }
 
@@ -176,8 +205,9 @@ export function PlanoCorteServico() {
 
     plano.servicos.forEach((servico) => {
         servicosMapeados[servico.tipoServicoId] = {
-        tipoServicoId: servico.tipoServicoId,
-        observacoes: servico.observacoes || ""
+          tipoServicoId: servico.tipoServicoId,
+          operadorId: servico.operadorId || "",
+          observacoes: servico.observacoes || ""
         }
     })
 
@@ -226,6 +256,26 @@ const totalChapasPlanos = planosCadastrados.reduce(
   (total, plano) => total + Number(plano.quantidadeChapas || 0),
   0
 )
+
+function podeEditarPlanoTela(plano) {
+    const usuario = JSON.parse(localStorage.getItem("@usuario") || "{}")
+
+    if (usuario.funcao === "ADMIN") {
+      return true
+    }
+
+    if (
+      usuario.funcao === "VENDEDOR" ||
+      usuario.funcao === "VENDEDOR_OPERADOR"
+    ) {
+      return plano.pedido?.vendedorId === usuario.funcionarioId
+    }
+
+    return false
+  }
+
+  const usuarioLogado = JSON.parse(localStorage.getItem("@usuario") || "{}")
+  const isAdmin = usuarioLogado.funcao === "ADMIN"
 
   return (
     <div>
@@ -294,6 +344,11 @@ const totalChapasPlanos = planosCadastrados.reduce(
                     <div>
                     <strong>Chapas:</strong>{" "}
                     {pedidoSelecionado.totalChapas || totalChapasPlanos || "-"}
+                    </div>
+
+                    <div>
+                      <strong>Vendedor:</strong>{" "}
+                      {pedidoSelecionado.vendedor?.nome || "-"}
                     </div>
                 </div>
                 )}
@@ -389,8 +444,14 @@ const totalChapasPlanos = planosCadastrados.reduce(
                     </th>
 
                     <th className="px-4 py-3 text-left font-semibold text-gray-700">
-                        Observação
+                      Observação
                     </th>
+
+                    {isAdmin && (
+                      <th className="w-[260px] px-4 py-3 text-left font-semibold text-gray-700">
+                        Operador
+                      </th>
+                    )}
                     </tr>
                 </thead>
 
@@ -441,6 +502,26 @@ const totalChapasPlanos = planosCadastrados.reduce(
                             }
                             />
                         </td>
+
+                        {isAdmin && (
+                          <td className="px-4 py-3">
+                            <Select
+                              value={selecionado?.operadorId || ""}
+                              disabled={!selecionado}
+                              onChange={(e) =>
+                                alterarOperadorServico(tipo.id, e.target.value)
+                              }
+                            >
+                              <option value="">Sem operador</option>
+
+                              {operadores.map((operador) => (
+                                <option key={operador.id} value={operador.id}>
+                                  {operador.nome}
+                                </option>
+                              ))}
+                            </Select>
+                          </td>
+                        )}
                         </tr>
                     )
                     })}
@@ -506,13 +587,19 @@ const totalChapasPlanos = planosCadastrados.reduce(
                     </p>
                     </div>
 
+                    {podeEditarPlanoTela(plano) ? (
                     <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => editarPlano(plano)}
+                      type="button"
+                      variant="secondary"
+                      onClick={() => editarPlano(plano)}
                     >
-                    Editar
+                      Editar
                     </Button>
+                  ) : (
+                    <span className="rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-2 text-xs font-semibold text-yellow-800">
+                      Bloqueado: vendedor responsável {plano.pedido?.vendedor?.nome || "-"}
+                    </span>
+                  )}
                 </div>
 
                 {plano.observacoes && (
