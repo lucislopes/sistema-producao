@@ -2,23 +2,86 @@ import { prisma } from "../lib/prisma.js"
 
 export async function obterKanban(req, res) {
   try {
+    const { busca } = req.query
 
-    const servicos = await prisma.servicoPlano.findMany({
+    const where = {
+      plano: {
+        pedido: {
+          status: {
+            notIn: ["ENTREGUE", "CANCELADO"]
+          }
+        }
+      }
+    }
 
-      where: {
-        plano: {
-          pedido: {
-            status: {
-              notIn: ["ENTREGUE", "CANCELADO"]
+    if (busca) {
+      const buscaTexto = String(busca).trim()
+      const numeroBusca = Number(buscaTexto)
+
+      where.OR = [
+        !isNaN(numeroBusca)
+          ? {
+              plano: {
+                pedido: {
+                  numeroPedido: numeroBusca
+                }
+              }
+            }
+          : null,
+
+        {
+          plano: {
+            numeroPlano: {
+              contains: buscaTexto,
+              mode: "insensitive"
+            }
+          }
+        },
+
+        {
+          plano: {
+            pedido: {
+              numeroPedidoManual: {
+                contains: buscaTexto,
+                mode: "insensitive"
+              }
+            }
+          }
+        },
+
+        {
+          plano: {
+            pedido: {
+              cliente: {
+                nome: {
+                  contains: buscaTexto,
+                  mode: "insensitive"
+                }
+              }
+            }
+          }
+        },
+
+        {
+          plano: {
+            pedido: {
+              cliente: {
+                endereco: {
+                  contains: buscaTexto,
+                  mode: "insensitive"
+                }
+              }
             }
           }
         }
-      },
+      ].filter(Boolean)
+    }
+
+    const servicos = await prisma.servicoPlano.findMany({
+      where,
 
       include: {
-
         tipoServico: true,
-
         operador: true,
 
         plano: {
@@ -30,7 +93,6 @@ export async function obterKanban(req, res) {
             }
           }
         }
-
       },
 
       orderBy: [
@@ -50,7 +112,6 @@ export async function obterKanban(req, res) {
           createdAt: "asc"
         }
       ]
-
     })
 
     const kanban = {
@@ -67,9 +128,7 @@ export async function obterKanban(req, res) {
     })
 
     return res.json(kanban)
-
   } catch (error) {
-
     console.log(error)
 
     return res.status(500).json({

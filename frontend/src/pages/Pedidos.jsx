@@ -164,6 +164,9 @@ export function Pedidos() {
   const [responsavelFrete, setResponsavelFrete] = useState("CLIENTE")
   const [rotaId, setRotaId] = useState("")
   const [valorFrete, setValorFrete] = useState("")
+  const [valorFretePadrao, setValorFretePadrao] = useState("")
+  const [valorFreteCobrado, setValorFreteCobrado] = useState("")
+  const [motivoAlteracaoFrete, setMotivoAlteracaoFrete] = useState("")
   const [valorTotal, setValorTotal] = useState("")
   const [nomeRecebedor, setNomeRecebedor] = useState("")
   const [contatoRecebedor, setContatoRecebedor] = useState("")
@@ -231,6 +234,12 @@ export function Pedidos() {
     carregarDados()
   }, [page, limit])
 
+  const freteAlterado =
+  tipoEntrega === "ENTREGA_EMPRESA" &&
+  valorFretePadrao !== "" &&
+  valorFreteCobrado !== "" &&
+  Number(valorFreteCobrado) !== Number(valorFretePadrao)
+
   async function handleSubmit(e) {
     e.preventDefault()
 
@@ -250,7 +259,19 @@ export function Pedidos() {
         tipoEntrega === "CLIENTE_RETIRA" ? null : rotaId,
 
       valorFrete:
-        tipoEntrega === "CLIENTE_RETIRA" ? null : valorFrete,
+        tipoEntrega === "CLIENTE_RETIRA" ? null : valorFreteCobrado,
+
+      valorFretePadrao:
+        tipoEntrega === "CLIENTE_RETIRA" ? null : valorFretePadrao,
+
+      valorFreteCobrado:
+        tipoEntrega === "CLIENTE_RETIRA" ? null : valorFreteCobrado,
+
+      freteAlterado:
+        tipoEntrega === "CLIENTE_RETIRA" ? false : freteAlterado,
+
+      motivoAlteracaoFrete:
+        freteAlterado ? motivoAlteracaoFrete : null,
 
       valorTotal,
 
@@ -272,6 +293,11 @@ export function Pedidos() {
       status,
       observacoes,
       updatedAt: updatedAtOriginal
+    }
+
+    if (freteAlterado && !motivoAlteracaoFrete.trim()) {
+      alert("Informe o motivo da alteração do frete")
+      return
     }
 
     try {
@@ -379,6 +405,9 @@ export function Pedidos() {
     setResponsavelFrete(pedido.responsavelFrete || "CLIENTE")
     setRotaId(pedido.rotaId || "")
     setValorFrete(pedido.valorFrete || "")
+    setValorFretePadrao(pedido.valorFretePadrao || pedido.rota?.valorFrete || pedido.valorFrete || "")
+    setValorFreteCobrado(pedido.valorFreteCobrado || pedido.valorFrete || "")
+    setMotivoAlteracaoFrete(pedido.motivoAlteracaoFrete || "")
     setValorTotal(pedido.valorTotal || "")
     setTotalChapas(pedido.totalChapas || "")
     setNomeRecebedor(pedido.nomeRecebedor || "")
@@ -401,6 +430,9 @@ export function Pedidos() {
     setResponsavelFrete("CLIENTE")
     setRotaId("")
     setValorFrete("")
+    setValorFretePadrao("")
+    setValorFreteCobrado("")
+    setMotivoAlteracaoFrete("")
     setValorTotal("")
     setTotalChapas("")
     setNomeRecebedor("")
@@ -410,13 +442,21 @@ export function Pedidos() {
     setObservacoes("")
   }
 
-  function aplicarRotaSelecionada(id) {
+function aplicarRotaSelecionada(id) {
     setRotaId(id)
 
     const rota = rotas.find((r) => r.id === id)
 
     if (rota) {
       setValorFrete(rota.valorFrete)
+      setValorFretePadrao(rota.valorFrete)
+      setValorFreteCobrado(rota.valorFrete)
+      setMotivoAlteracaoFrete("")
+    } else {
+      setValorFrete("")
+      setValorFretePadrao("")
+      setValorFreteCobrado("")
+      setMotivoAlteracaoFrete("")
     }
   }
 
@@ -503,7 +543,7 @@ export function Pedidos() {
     ).length
   }
 
-
+  
   return (
     <div>
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
@@ -817,10 +857,37 @@ export function Pedidos() {
                     type="number"
                     step="0.01"
                     placeholder="0,00"
-                    value={valorFrete}
-                    onChange={(e) => setValorFrete(e.target.value)}
+                    value={valorFreteCobrado}
+                    onChange={(e) => {
+                      setValorFreteCobrado(e.target.value)
+                      setValorFrete(e.target.value)
+                    }}
                   />
                 </Campo>
+
+                {freteAlterado && (
+                  <div className="md:col-span-2 rounded-xl bg-yellow-50 border border-yellow-300 p-4 text-sm text-yellow-800">
+                    <strong>Atenção:</strong> o frete cobrado está diferente do valor da rota.
+
+                    <div className="mt-2">
+                      Valor da rota: <strong>R$ {valorFretePadrao}</strong>
+                      {" | "}
+                      Valor cobrado: <strong>R$ {valorFreteCobrado}</strong>
+                    </div>
+
+                    <div className="mt-3">
+                      <Campo label="Motivo da alteração do frete" obrigatorio>
+                        <textarea
+                          className="w-full border border-yellow-300 p-3 rounded-lg min-h-[80px]"
+                          placeholder="Ex.: desconto autorizado, cliente negociou, rota especial..."
+                          value={motivoAlteracaoFrete}
+                          onChange={(e) => setMotivoAlteracaoFrete(e.target.value)}
+                          required
+                        />
+                      </Campo>
+                    </div>
+                  </div>
+                )}
 
                 <Campo label="Nome do recebedor">
                   <Input

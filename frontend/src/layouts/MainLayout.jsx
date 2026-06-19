@@ -34,7 +34,8 @@ import {
   ChevronDown,
   ChevronRight,
   Zap,
-  TriangleAlert
+  TriangleAlert,
+  DollarSign
 } from "lucide-react"
 
 import { AuthContext } from "../contexts/AuthContext"
@@ -170,7 +171,8 @@ export function MainLayout() {
       "/alertas": "Alertas",
       "/produtividade-operadores": "Produtividade",
       "/configuracao-empresa": "Configurações",
-      "/minha-senha": "Alterar Senha"
+      "/minha-senha": "Alterar Senha",
+      "/relatorio-auditoria-frete": "Auditoria de Frete",
     }
 
     return titulos[path] || "Sistema"
@@ -275,6 +277,10 @@ export function MainLayout() {
 
                   <MenuLink to="/produtividade-operadores" icon={Users}>
                     Produtividade
+                  </MenuLink>
+
+                  <MenuLink to="/relatorio-auditoria-frete" icon={DollarSign}>
+                    Auditoria de Frete
                   </MenuLink>
                 </>
               )}
@@ -409,14 +415,16 @@ export function MainLayout() {
                   Romaneio de Entrega
                 </Link>
 
-                <Link
-                  to="/kanban"
-                  className="flex items-center gap-2 px-4 py-3 hover:bg-gray-100 text-sm"
-                  onClick={() => setMenuAberto(false)}
-                >
-                  <Columns3 size={16} />
-                  Kanban
-                </Link>
+                {(isAdmin || isOperador || isVendedorOperador) && (
+                  <Link
+                    to="/kanban"
+                    className="flex items-center gap-2 px-4 py-3 hover:bg-gray-100 text-sm"
+                    onClick={() => setMenuAberto(false)}
+                  >
+                    <Columns3 size={16} />
+                    Kanban
+                  </Link>
+                )}
 
                 <Link
                   to="/alertas"
@@ -444,6 +452,7 @@ export function MainLayout() {
                   <FileText size={16} />
                   Relatório de Expedição
                 </Link>
+                
               </div>
             )}
           </div>

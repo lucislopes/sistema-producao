@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { api } from "../services/api"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
+import { useSearchParams } from "react-router-dom"
 
 import {
   ClipboardList,
@@ -21,6 +22,9 @@ export function Kanban() {
   const [servicoSelecionado, setServicoSelecionado] = useState(null)
   const [novoOperadorId, setNovoOperadorId] = useState("")
   const [motivoTransferencia, setMotivoTransferencia] = useState("")
+  const [searchParams] = useSearchParams()
+  const busca = searchParams.get("busca") || ""
+
 
   const [kanban, setKanban] = useState({
     ABERTO: [],
@@ -32,7 +36,11 @@ export function Kanban() {
   async function carregarKanban() {
     try {
       const [kanbanRes, operadoresRes] = await Promise.all([
-        api.get("/kanban"),
+        api.get("/kanban", {
+          params: {
+            busca
+          }
+        }),
         api.get("/funcionarios/operadores")
       ])
 
@@ -52,7 +60,7 @@ export function Kanban() {
     }, 30000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [busca])
 
   const colunas = [
     {

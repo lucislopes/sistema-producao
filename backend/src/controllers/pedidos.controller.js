@@ -1,6 +1,14 @@
 import { prisma } from "../lib/prisma.js"
 import { registrarHistoricoPedido } from "../utils/registrarHistoricoPedido.js"
 
+function valorNumericoOuNull(valor) {
+  if (valor === "" || valor === null || valor === undefined) {
+    return null
+  }
+
+  return Number(valor)
+}
+
 function validarPedido({
   clienteId,
   vendedorId,
@@ -10,76 +18,106 @@ function validarPedido({
   valorFrete,
   valorTotal
 }) {
-  if (!clienteId) {
-    return "Cliente é obrigatório"
-  }
+  if (!clienteId) return "Cliente é obrigatório"
+  if (!vendedorId) return "Vendedor é obrigatório"
+  if (!tipoEntrega) return "Tipo de entrega é obrigatório"
 
-  if (!vendedorId) {
-    return "Vendedor é obrigatório"
-  }
-
-  if (!tipoEntrega) {
-    return "Tipo de entrega é obrigatório"
-  }
-
-  if (
-    tipoEntrega !== "CLIENTE_RETIRA" &&
-    !responsavelFrete
-  ) {
+  if (tipoEntrega !== "CLIENTE_RETIRA" && !responsavelFrete) {
     return "Responsável pelo frete é obrigatório"
   }
 
   if (dataEntrega) {
     const data = new Date(dataEntrega)
-
-    if (Number.isNaN(data.getTime())) {
-      return "Data de entrega inválida"
-    }
+    if (Number.isNaN(data.getTime())) return "Data de entrega inválida"
   }
 
-  if (
-    valorFrete !== "" &&
-    valorFrete !== null &&
-    valorFrete !== undefined
-  ) {
+  if (valorFrete !== "" && valorFrete !== null && valorFrete !== undefined) {
     const valor = Number(valorFrete)
-
-    if (Number.isNaN(valor) || valor < 0) {
-      return "Valor do frete inválido"
-    }
+    if (Number.isNaN(valor) || valor < 0) return "Valor do frete inválido"
   }
 
-  if (
-    valorTotal !== "" &&
-    valorTotal !== null &&
-    valorTotal !== undefined
-  ) {
+  if (valorTotal !== "" && valorTotal !== null && valorTotal !== undefined) {
     const valor = Number(valorTotal)
-
-    if (Number.isNaN(valor) || valor < 0) {
-      return "Valor total inválido"
-    }
+    if (Number.isNaN(valor) || valor < 0) return "Valor total inválido"
   }
 
   return null
 }
 
 function obterNumeroPedidoExibicao(pedido) {
-  if (
-    pedido.origemPedido === "EXTERNO" &&
-    pedido.numeroPedidoManual
-  ) {
+  if (pedido.origemPedido === "EXTERNO" && pedido.numeroPedidoManual) {
     return pedido.numeroPedidoManual
   }
 
   return `#${pedido.numeroPedido}`
 }
 
+function montarDadosFrete({
+  tipoEntrega,
+  valorFrete,
+  valorFretePadrao,
+  valorFreteCobrado,
+  freteAlterado,
+  motivoAlteracaoFrete
+}) {
+  if (tipoEntrega === "CLIENTE_RETIRA") {
+    return {
+      valorFrete: null,
+      valorFretePadrao: null,
+      valorFreteCobrado: null,
+      freteAlterado: false,
+      motivoAlteracaoFrete: null
+    }
+  }
+
+  const valorCobradoTratado =
+    valorNumericoOuNull(valorFreteCobrado) ??
+    valorNumericoOuNull(valorFrete)
+
+  return {
+    valorFrete: valorCobradoTratado,
+    valorFretePadrao: valorNumericoOuNull(valorFretePadrao),
+    valorFreteCobrado: valorCobradoTratado,
+    freteAlterado: Boolean(freteAlterado),
+    motivoAlteracaoFrete: freteAlterado
+      ? motivoAlteracaoFrete?.trim()
+      : null
+  }
+}
+async function validarNumeroPedidoDuplicado({
+  origemTratada,
+  numeroManualTratado,
+  pedidoIdIgnorar = null
+}) {
+  if (origemTratada !== "EXTERNO") return null
+  if (!numeroManualTratado) return null
+
+  const pedidoExistente = await prisma.pedido.findFirst({
+    where: {
+      origemPedido: "EXTERNO",
+      numeroPedidoManual: numeroManualTratado,
+      ...(pedidoIdIgnorar
+        ? {
+            id: {
+              not: pedidoIdIgnorar
+            }
+          }
+        : {})
+    }
+  })
+
+  if (pedidoExistente) {
+    return "Já existe um pedido com este número externo"
+  }
+
+  return null
+}
+
 export async function listarPedidos(req, res) {
   try {
     const page = Number(req.query.page) || 1
     const limit = Number(req.query.limit) || 50
-    const { status, somenteAtivos } = req.query
+    const { status, somenteAtivos, frete } = req.query
 
     const skip = (page - 1) * limit
     const where = {}
@@ -94,10 +132,16 @@ export async function listarPedidos(req, res) {
       where.status = status
     }
 
+    if (frete === "ALTERADO") {
+      where.freteAlterado = true
+    }
+
+    if (frete === "CORRETO") {
+      where.freteAlterado = false
+    }
+
     const [total, pedidos] = await Promise.all([
-      prisma.pedido.count({
-        where
-      }),
+      prisma.pedido.count({ where }),
 
       prisma.pedido.findMany({
         where,
@@ -145,6 +189,10 @@ export async function criarPedido(req, res) {
       responsavelFrete,
       rotaId,
       valorFrete,
+      valorFretePadrao,
+      valorFreteCobrado,
+      freteAlterado,
+      motivoAlteracaoFrete,
       valorTotal,
       quantidadeChapasDiretoEntrega,
       nomeRecebedor,
@@ -164,8 +212,12 @@ export async function criarPedido(req, res) {
     })
 
     if (erroValidacao) {
+      return res.status(400).json({ error: erroValidacao })
+    }
+
+    if (freteAlterado && !motivoAlteracaoFrete?.trim()) {
       return res.status(400).json({
-        error: erroValidacao
+        error: "Informe o motivo da alteração do frete"
       })
     }
 
@@ -198,10 +250,19 @@ export async function criarPedido(req, res) {
       })
     }
 
+    const erroPedidoDuplicado = await validarNumeroPedidoDuplicado({
+      origemTratada,
+      numeroManualTratado
+    })
+
+    if (erroPedidoDuplicado) {
+      return res.status(400).json({
+        error: erroPedidoDuplicado
+      })
+    }
+
     const cliente = await prisma.cliente.findUnique({
-      where: {
-        id: clienteId
-      }
+      where: { id: clienteId }
     })
 
     if (!cliente) {
@@ -211,9 +272,7 @@ export async function criarPedido(req, res) {
     }
 
     const vendedor = await prisma.funcionario.findUnique({
-      where: {
-        id: vendedorId
-      }
+      where: { id: vendedorId }
     })
 
     if (!vendedor) {
@@ -224,9 +283,7 @@ export async function criarPedido(req, res) {
 
     if (rotaId) {
       const rota = await prisma.rotaEntrega.findUnique({
-        where: {
-          id: rotaId
-        }
+        where: { id: rotaId }
       })
 
       if (!rota) {
@@ -235,6 +292,15 @@ export async function criarPedido(req, res) {
         })
       }
     }
+
+    const dadosFrete = montarDadosFrete({
+      tipoEntrega,
+      valorFrete,
+      valorFretePadrao,
+      valorFreteCobrado,
+      freteAlterado,
+      motivoAlteracaoFrete
+    })
 
     const pedido = await prisma.pedido.create({
       data: {
@@ -245,38 +311,27 @@ export async function criarPedido(req, res) {
           tipoPedido === "DIRETO_ENTREGA"
             ? "PRONTO_ENTREGA"
             : "ABERTO",
+
         clienteId,
         vendedorId,
         dataEntrega: dataEntrega ? new Date(dataEntrega) : null,
         tipoEntrega,
+
         responsavelFrete:
-          tipoEntrega === "CLIENTE_RETIRA"
-            ? null
-            : responsavelFrete,
+          tipoEntrega === "CLIENTE_RETIRA" ? null : responsavelFrete,
+
         rotaId:
-          tipoEntrega === "CLIENTE_RETIRA"
-            ? null
-            : rotaId || null,
-        valorFrete:
-          tipoEntrega === "CLIENTE_RETIRA"
-            ? null
-            : (
-                valorFrete !== "" &&
-                valorFrete !== null &&
-                valorFrete !== undefined
-              )
-                ? Number(valorFrete)
-                : null,
-        valorTotal:
-          valorTotal !== "" &&
-          valorTotal !== null &&
-          valorTotal !== undefined
-            ? Number(valorTotal)
-            : null,
+          tipoEntrega === "CLIENTE_RETIRA" ? null : rotaId || null,
+
+        ...dadosFrete,
+
+        valorTotal: valorNumericoOuNull(valorTotal),
+
         quantidadeChapasDiretoEntrega:
           tipoPedido === "DIRETO_ENTREGA"
-            ? Number(quantidadeChapasDiretoEntrega)
+            ? quantidadeChapasDiretoEntregaTratada
             : null,
+
         nomeRecebedor:
           tipoEntrega === "CLIENTE_RETIRA" ? null : nomeRecebedor,
 
@@ -285,6 +340,7 @@ export async function criarPedido(req, res) {
 
         enderecoEntrega:
           tipoEntrega === "CLIENTE_RETIRA" ? null : enderecoEntrega,
+
         observacoes
       },
       include: {
@@ -300,6 +356,19 @@ export async function criarPedido(req, res) {
       tipo: "PEDIDO_CRIADO",
       descricao: `Pedido ${obterNumeroPedidoExibicao(pedido)} criado`
     })
+
+    if (pedido.freteAlterado) {
+      await registrarHistoricoPedido({
+        pedidoId: pedido.id,
+        usuarioId: req.user.id,
+        tipo: "FRETE_ALTERADO",
+        descricao:
+          `Pedido criado com frete diferente da rota. ` +
+          `Padrão: R$ ${Number(pedido.valorFretePadrao || 0).toFixed(2)}. ` +
+          `Cobrado: R$ ${Number(pedido.valorFreteCobrado || 0).toFixed(2)}. ` +
+          `Motivo: ${pedido.motivoAlteracaoFrete || "Não informado"}`
+      })
+    }
 
     return res.status(201).json(pedido)
   } catch (error) {
@@ -326,6 +395,10 @@ export async function atualizarPedido(req, res) {
       responsavelFrete,
       rotaId,
       valorFrete,
+      valorFretePadrao,
+      valorFreteCobrado,
+      freteAlterado,
+      motivoAlteracaoFrete,
       valorTotal,
       quantidadeChapasDiretoEntrega,
       nomeRecebedor,
@@ -337,9 +410,7 @@ export async function atualizarPedido(req, res) {
     } = req.body
 
     const pedidoAnterior = await prisma.pedido.findUnique({
-      where: {
-        id
-      }
+      where: { id }
     })
 
     if (!pedidoAnterior) {
@@ -370,8 +441,12 @@ export async function atualizarPedido(req, res) {
     })
 
     if (erroValidacao) {
+      return res.status(400).json({ error: erroValidacao })
+    }
+
+    if (freteAlterado && !motivoAlteracaoFrete?.trim()) {
       return res.status(400).json({
-        error: erroValidacao
+        error: "Informe o motivo da alteração do frete"
       })
     }
 
@@ -387,10 +462,20 @@ export async function atualizarPedido(req, res) {
       })
     }
 
+    const erroPedidoDuplicado = await validarNumeroPedidoDuplicado({
+      origemTratada,
+      numeroManualTratado,
+      pedidoIdIgnorar: id
+    })
+
+    if (erroPedidoDuplicado) {
+      return res.status(400).json({
+        error: erroPedidoDuplicado
+      })
+    }
+
     const cliente = await prisma.cliente.findUnique({
-      where: {
-        id: clienteId
-      }
+      where: { id: clienteId }
     })
 
     if (!cliente) {
@@ -400,9 +485,7 @@ export async function atualizarPedido(req, res) {
     }
 
     const vendedor = await prisma.funcionario.findUnique({
-      where: {
-        id: vendedorId
-      }
+      where: { id: vendedorId }
     })
 
     if (!vendedor) {
@@ -413,9 +496,7 @@ export async function atualizarPedido(req, res) {
 
     if (rotaId) {
       const rota = await prisma.rotaEntrega.findUnique({
-        where: {
-          id: rotaId
-        }
+        where: { id: rotaId }
       })
 
       if (!rota) {
@@ -427,7 +508,7 @@ export async function atualizarPedido(req, res) {
 
     let quantidadeChapasDiretoEntregaTratada = null
 
-      if (tipoPedido === "DIRETO_ENTREGA") {
+    if (tipoPedido === "DIRETO_ENTREGA") {
       quantidadeChapasDiretoEntregaTratada = Number(
         quantidadeChapasDiretoEntrega
       )
@@ -440,44 +521,38 @@ export async function atualizarPedido(req, res) {
           error: "Quantidade de chapas é obrigatória para pedido direto para entrega"
         })
       }
-    }         
+    }
+
+    const dadosFrete = montarDadosFrete({
+      tipoEntrega,
+      valorFrete,
+      valorFretePadrao,
+      valorFreteCobrado,
+      freteAlterado,
+      motivoAlteracaoFrete
+    })
 
     const pedido = await prisma.pedido.update({
-      where: {
-        id
-      },
+      where: { id },
       data: {
         origemPedido: origemTratada,
         numeroPedidoManual: numeroManualTratado,
         tipoPedido: tipoPedido || "COM_PRODUCAO",
+
         clienteId,
         vendedorId,
         dataEntrega: dataEntrega ? new Date(dataEntrega) : null,
         tipoEntrega,
+
         responsavelFrete:
-          tipoEntrega === "CLIENTE_RETIRA"
-            ? null
-            : responsavelFrete,
+          tipoEntrega === "CLIENTE_RETIRA" ? null : responsavelFrete,
+
         rotaId:
-          tipoEntrega === "CLIENTE_RETIRA"
-            ? null
-            : rotaId || null,
-        valorFrete:
-          tipoEntrega === "CLIENTE_RETIRA"
-            ? null
-            : (
-                valorFrete !== "" &&
-                valorFrete !== null &&
-                valorFrete !== undefined
-              )
-                ? Number(valorFrete)
-                : null, 
-        valorTotal:
-          valorTotal !== "" &&
-          valorTotal !== null &&
-          valorTotal !== undefined
-            ? Number(valorTotal)
-            : null,
+          tipoEntrega === "CLIENTE_RETIRA" ? null : rotaId || null,
+
+        ...dadosFrete,
+
+        valorTotal: valorNumericoOuNull(valorTotal),
         quantidadeChapasDiretoEntrega: quantidadeChapasDiretoEntregaTratada,
 
         nomeRecebedor:
@@ -488,6 +563,7 @@ export async function atualizarPedido(req, res) {
 
         enderecoEntrega:
           tipoEntrega === "CLIENTE_RETIRA" ? null : enderecoEntrega,
+
         status,
         observacoes
       },
@@ -497,6 +573,30 @@ export async function atualizarPedido(req, res) {
         rota: true
       }
     })
+
+    const freteAnterior = Number(
+      pedidoAnterior.valorFreteCobrado ??
+        pedidoAnterior.valorFrete ??
+        0
+    )
+
+    const freteAtual = Number(
+      pedido.valorFreteCobrado ??
+        pedido.valorFrete ??
+        0
+    )
+
+    if (freteAnterior !== freteAtual) {
+      await registrarHistoricoPedido({
+        pedidoId: pedido.id,
+        usuarioId: req.user.id,
+        tipo: "FRETE_ALTERADO",
+        descricao:
+          `Frete alterado de R$ ${freteAnterior.toFixed(2)} ` +
+          `para R$ ${freteAtual.toFixed(2)}. ` +
+          `Motivo: ${pedido.motivoAlteracaoFrete || "Não informado"}`
+      })
+    }
 
     if (pedidoAnterior.status !== pedido.status) {
       await registrarHistoricoPedido({

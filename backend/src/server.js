@@ -27,6 +27,8 @@ import { buscaGlobalRoutes } from "./routes/buscaGlobal.routes.js"
 import configuracaoEmpresaRoutes from "./routes/configuracaoEmpresa.routes.js"
 import relatoriosRoutes from "./routes/relatorios.routes.js"
 import romaneioEntregaRoutes from "./routes/romaneioEntrega.routes.js"
+import relatorioFreteRoutes from "./routes/relatorioFrete.routes.js"
+
 
 
 dotenv.config()
@@ -57,6 +59,7 @@ app.use("/busca-global", buscaGlobalRoutes)
 app.use("/configuracao-empresa", configuracaoEmpresaRoutes)
 app.use("/relatorios", relatoriosRoutes)
 app.use("/romaneio-entrega", romaneioEntregaRoutes)
+app.use("/relatorio-frete", relatorioFreteRoutes)
 
 app.get("/", (req, res) => {
   return res.json({

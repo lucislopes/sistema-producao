@@ -32,6 +32,7 @@ import { DashboardComercial } from "./pages/dashboard/DashboardComercial"
 import { RelatorioServicos } from "./pages/RelatorioServicos"
 import { RelatorioPendencias } from "./pages/RelatorioPendencias"
 import { RomaneioEntrega } from "./pages/RomaneioEntrega"
+import { RelatorioAuditoriaFrete } from "./pages/RelatorioAuditoriaFrete"
 
 
 export default function App() {
@@ -159,6 +160,11 @@ export default function App() {
           <Route
             path="/romaneio-entrega"
             element={<RomaneioEntrega />}
+          />
+
+          <Route
+            path="/relatorio-auditoria-frete"
+            element={<RelatorioAuditoriaFrete />}
           />
           
 

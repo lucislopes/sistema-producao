@@ -84,7 +84,11 @@ model Pedido {
   tipoEntrega        TipoEntrega
   responsavelFrete   ResponsavelFrete?
   rotaId             String?
-  valorFrete         Decimal?          @db.Decimal(10, 2)
+  valorFrete           Decimal?        @db.Decimal(10,2)
+  valorFretePadrao     Decimal?        @db.Decimal(10, 2)
+  valorFreteCobrado    Decimal?        @db.Decimal(10, 2)
+  freteAlterado        Boolean         @default(false)
+  motivoAlteracaoFrete String?
   nomeRecebedor      String?
   contatoRecebedor   String?
   enderecoEntrega    String?
@@ -94,7 +98,7 @@ model Pedido {
   updatedAt          DateTime          @updatedAt
   valorTotal         Decimal?          @db.Decimal(10, 2)
   quantidadeChapasDiretoEntrega Int?
-  numeroPedidoManual String?
+  numeroPedidoManual String?            
   origemPedido       String            @default("INTERNO")
   historicos         HistoricoPedido[]
   cliente            Cliente           @relation(fields: [clienteId], references: [id])
@@ -112,6 +116,8 @@ model Pedido {
   @@index([dataEntrega])
   @@index([createdAt])
   @@index([updatedAt])
+
+  @@unique([origemPedido, numeroPedidoManual])
 }
 
 model PlanoCorte {
@@ -232,4 +238,5 @@ enum TipoHistorico {
   STATUS_SERVICO_ALTERADO
   STATUS_PEDIDO_ALTERADO
   EXPEDICAO_ATUALIZADA
+  FRETE_ALTERADO
 }
