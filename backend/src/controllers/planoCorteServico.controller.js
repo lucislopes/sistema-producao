@@ -83,7 +83,7 @@ export async function criarPlanosComServicos(req, res) {
         for (const servico of servicosSelecionados) {
           await tx.servicoPlano.create({
             data: {
-              planoId: id,
+              planoId: plano.id,
               tipoServicoId: servico.tipoServicoId,
               operadorId: servico.operadorId || null,
               status: servico.operadorId ? "INICIADO" : "ABERTO",

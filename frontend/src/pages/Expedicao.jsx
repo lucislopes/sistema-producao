@@ -114,6 +114,11 @@ export function Expedicao() {
     return "border-gray-300 bg-white"
   }
 
+  const usuarioLogado = JSON.parse(localStorage.getItem("@usuario") || "{}")
+  const podeAlterarExpedicao =
+    usuarioLogado.funcao === "ADMIN" ||
+    usuarioLogado.funcao === "VENDEDOR_OPERADOR"
+
   function obterStatus(status) {
     const statusMap = {
       CONCLUIDO: {
@@ -312,7 +317,13 @@ export function Expedicao() {
                 </div>
 
                 <div className="flex flex-col gap-2 min-w-[180px]">
-                  {pedido.status === "CONCLUIDO" && (
+                  {!podeAlterarExpedicao && (
+                    <span className="rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-2 text-xs font-semibold text-yellow-800 text-center">
+                      Somente consulta
+                    </span>
+                  )}
+
+                  {podeAlterarExpedicao && pedido.status === "CONCLUIDO" && (
                     <button
                       onClick={() =>
                         alterarStatus(
@@ -326,7 +337,7 @@ export function Expedicao() {
                     </button>
                   )}
 
-                  {pedido.status === "PRONTO_ENTREGA" && (
+                  {podeAlterarExpedicao && pedido.status === "PRONTO_ENTREGA" && (
                     <button
                       onClick={() =>
                         alterarStatus(
@@ -340,7 +351,7 @@ export function Expedicao() {
                     </button>
                   )}
 
-                  {pedido.status === "SAIU_ENTREGA" && (
+                  {podeAlterarExpedicao && pedido.status === "SAIU_ENTREGA" && (
                     <button
                       onClick={() =>
                         alterarStatus(

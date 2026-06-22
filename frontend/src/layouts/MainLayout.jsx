@@ -238,7 +238,7 @@ export function MainLayout() {
                 Serviços do Plano
               </MenuLink>
             */}
-              {isAdmin && (
+              {(isAdmin || isVendedor || isVendedorOperador)  && (
                 <MenuLink to="/expedicao" icon={Truck}>
                   Expedição
                 </MenuLink>
