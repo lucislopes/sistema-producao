@@ -121,9 +121,17 @@ export function Expedicao() {
 
   function obterStatus(status) {
     const statusMap = {
+      CONCLUIDO: {
+        texto: "Concluído",
+        classe: "bg-gray-100 text-gray-700 border-gray-300"
+      },
       PRONTO_ENTREGA: {
         texto: "Pronto Entrega",
         classe: "bg-blue-100 text-blue-700 border-blue-400"
+      },
+      SAIU_ENTREGA: {
+        texto: "Saiu Entrega",
+        classe: "bg-yellow-100 text-yellow-700 border-yellow-400"
       },
       ENTREGUE: {
         texto: "Entregue",
@@ -315,23 +323,47 @@ export function Expedicao() {
                     </span>
                   )}
 
-                  {podeAlterarExpedicao &&
-                    ["CONCLUIDO", "PRONTO_ENTREGA"].includes(pedido.status) && (
-                      <button
-                        onClick={() => {
-                          const confirmar = confirm(
-                            `Deseja finalizar a entrega do pedido ${obterNumeroPedido(pedido)}?`
-                          )
+                  {podeAlterarExpedicao && pedido.status === "CONCLUIDO" && (
+                    <button
+                      onClick={() =>
+                        alterarStatus(
+                          pedido.id,
+                          "PRONTO_ENTREGA"
+                        )
+                      }
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+                    >
+                      Preparar Entrega
+                    </button>
+                  )}
 
-                          if (!confirmar) return
+                  {podeAlterarExpedicao && pedido.status === "PRONTO_ENTREGA" && (
+                    <button
+                      onClick={() =>
+                        alterarStatus(
+                          pedido.id,
+                          "SAIU_ENTREGA"
+                        )
+                      }
+                      className="bg-yellow-500 text-white px-4 py-2 rounded-lg"
+                    >
+                      Saiu Entrega
+                    </button>
+                  )}
 
-                          alterarStatus(pedido.id, "ENTREGUE")
-                        }}
-                        className="bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800"
-                      >
-                        Finalizar Entrega
-                      </button>
-                    )}
+                  {podeAlterarExpedicao && pedido.status === "SAIU_ENTREGA" && (
+                    <button
+                      onClick={() =>
+                        alterarStatus(
+                          pedido.id,
+                          "ENTREGUE"
+                        )
+                      }
+                      className="bg-green-700 text-white px-4 py-2 rounded-lg"
+                    >
+                      Finalizar Entrega
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

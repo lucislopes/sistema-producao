@@ -31,6 +31,12 @@ export function RelatorioExpedicao() {
   const [busca, setBusca] = useState("")
   const [incluirEntregues, setIncluirEntregues] = useState(false)
 
+  const usuarioLogado = JSON.parse(localStorage.getItem("@usuario") || "{}")
+  const isVendedor = usuarioLogado.funcao === "VENDEDOR"
+  const podeExportarImprimir =
+    usuarioLogado.funcao === "ADMIN" ||
+    usuarioLogado.funcao === "VENDEDOR_OPERADOR"
+
   async function carregarRotas() {
     try {
       const response = await api.get("/rotas-entrega")
@@ -52,16 +58,30 @@ export function RelatorioExpedicao() {
         ...filtros
       }
 
-      const [relatorioResponse, empresaResponse] = await Promise.all([
-        api.get("/relatorio-expedicao", { params }),
-        api.get("/configuracao-empresa")
-      ])
+      const relatorioResponse = await api.get("/relatorio-expedicao", { params })
 
       setPedidos(relatorioResponse.data)
-      setEmpresa(empresaResponse.data)
+
+      if (podeExportarImprimir) {
+        const empresaResponse = await api.get("/configuracao-empresa")
+        setEmpresa(empresaResponse.data)
+      } else {
+        setEmpresa(null)
+      }
+
+
     } catch (error) {
       console.log(error)
-      alert("Erro ao carregar relatório")
+
+      if (error.response?.status === 403) {
+        setPedidos([])
+        return
+      }
+
+      alert(
+        error.response?.data?.error ||
+        "Não foi possível carregar o relatório de expedição no momento."
+      )
     }
   }
 
@@ -133,7 +153,6 @@ export function RelatorioExpedicao() {
     const statusMap = {
       CONCLUIDO: "Concluído",
       PRONTO_ENTREGA: "Pronto Entrega",
-      SAIU_ENTREGA: "Saiu Entrega",
       ENTREGUE: "Entregue"
     }
 
@@ -375,12 +394,9 @@ export function RelatorioExpedicao() {
     (pedido) => pedido.status === "PRONTO_ENTREGA"
   ).length
 
-  const saiuEntrega = pedidos.filter(
-    (pedido) => pedido.status === "SAIU_ENTREGA"
-  ).length
-
   return (
     <div>
+      {podeExportarImprimir && (
       <div className="flex justify-between items-center mb-6 no-print">
         <div className="flex gap-2">
           <Button
@@ -402,6 +418,13 @@ export function RelatorioExpedicao() {
           </Button>
         </div>
       </div>
+    )}
+
+    {isVendedor && (
+      <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800 no-print">
+        <strong>Modo consulta:</strong> você está visualizando as entregas para acompanhamento. Alterações, exportações e impressões ficam restritas aos perfis autorizados.
+      </div>
+    )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 no-print">
         <ResumoCard
@@ -423,13 +446,6 @@ export function RelatorioExpedicao() {
           valor={prontoEntrega}
           tipo="sucesso"
           icon={PackageCheck}
-        />
-
-        <ResumoCard
-          titulo="Saiu Entrega"
-          valor={saiuEntrega}
-          tipo="info"
-          icon={Truck}
         />
       </div>
 
@@ -492,12 +508,8 @@ export function RelatorioExpedicao() {
             onChange={(e) => setStatus(e.target.value)}
           >
             <option value="">Todos os status</option>
-            <option value="ABERTO">Aberto</option>
-            <option value="EM_SEPARACAO">Em Separação</option>
-            <option value="EM_PRODUCAO">Em Produção</option>
             <option value="CONCLUIDO">Concluído</option>
             <option value="PRONTO_ENTREGA">Pronto Entrega</option>
-            <option value="SAIU_ENTREGA">Saiu Entrega</option>
             {incluirEntregues && (
               <option value="ENTREGUE">Entregue</option>
             )}

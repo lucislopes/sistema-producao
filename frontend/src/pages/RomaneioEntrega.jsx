@@ -30,8 +30,15 @@ export function RomaneioEntrega() {
     "EM_PRODUCAO",
     "CONCLUIDO",
     "PRONTO_ENTREGA",
-    "SAIU_ENTREGA"
   ])
+
+  const usuarioLogado = JSON.parse(localStorage.getItem("@usuario") || "{}")
+
+  const isVendedor = usuarioLogado.funcao === "VENDEDOR"
+
+  const podeImprimir =
+    usuarioLogado.funcao === "ADMIN" ||
+    usuarioLogado.funcao === "VENDEDOR_OPERADOR"
 
   const statusDisponiveis = [
     {
@@ -54,10 +61,6 @@ export function RomaneioEntrega() {
       valor: "PRONTO_ENTREGA",
       nome: "Pronto Entrega"
     },
-    {
-      valor: "SAIU_ENTREGA",
-      nome: "Saiu Entrega"
-    }
   ]
 
   async function carregarRotas() {
@@ -67,24 +70,31 @@ export function RomaneioEntrega() {
 
   async function carregarRelatorio() {
     try {
-      const [relatorioResponse, empresaResponse] = await Promise.all([
-        api.get("/romaneio-entrega", {
-          params: {
-            dataInicio,
-            dataFim,
-            rotas: rotasSelecionadas.join(","),
-            status: statusSelecionados.join(","),
-            busca
-          }
-        }),
-        api.get("/configuracao-empresa")
-      ])
+      const relatorioResponse = await api.get("/romaneio-entrega", {
+        params: {
+          dataInicio,
+          dataFim,
+          rotas: rotasSelecionadas.join(","),
+          status: statusSelecionados.join(","),
+          busca
+        }
+      })
 
       setPedidos(relatorioResponse.data)
-      setEmpresa(empresaResponse.data)
+
+      if (podeImprimir) {
+        const empresaResponse = await api.get("/configuracao-empresa")
+        setEmpresa(empresaResponse.data)
+      } else {
+        setEmpresa(null)
+      }
     } catch (error) {
       console.log(error)
-      alert("Erro ao carregar relatório de entregas")
+
+      alert(
+        error.response?.data?.error ||
+        "Não foi possível carregar o romaneio de entregas no momento."
+      )
     }
   }
 
@@ -161,7 +171,6 @@ export function RomaneioEntrega() {
       "EM_PRODUCAO",
       "CONCLUIDO",
       "PRONTO_ENTREGA",
-      "SAIU_ENTREGA"
     ])
 
     setTimeout(() => {
@@ -253,15 +262,23 @@ export function RomaneioEntrega() {
           </p>
         </div>
 
-        <Button
-          type="button"
-          onClick={imprimir}
-          className="bg-gray-800 text-white px-6 py-3 rounded-lg flex items-center gap-2"
-        >
-          <Printer size={18} />
-          Imprimir
-        </Button>
+        {podeImprimir && (
+          <Button
+            type="button"
+            onClick={imprimir}
+            className="bg-gray-800 text-white px-6 py-3 rounded-lg flex items-center gap-2"
+          >
+            <Printer size={18} />
+            Imprimir
+          </Button>
+        )}
       </div>
+
+      {isVendedor && (
+        <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800 no-print">
+          <strong>Modo consulta:</strong> você está visualizando o romaneio para acompanhamento das entregas. A impressão fica restrita aos perfis autorizados.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 no-print">
         <div className="bg-white border rounded-xl p-4 shadow-sm">

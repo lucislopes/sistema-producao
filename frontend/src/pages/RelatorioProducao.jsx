@@ -46,6 +46,13 @@ export function RelatorioProducao() {
     totalPages: 1
   })
 
+  const usuarioLogado = JSON.parse(localStorage.getItem("@usuario") || "{}")
+  const isVendedor = usuarioLogado.funcao === "VENDEDOR"
+
+  const podeExportarImprimir =
+    usuarioLogado.funcao === "ADMIN" ||
+    usuarioLogado.funcao === "VENDEDOR_OPERADOR"
+
   async function carregarBase() {
     try {
       const [operadoresRes, tiposRes] = await Promise.all([
@@ -75,17 +82,26 @@ export function RelatorioProducao() {
         ...filtros
       }
 
-      const [relatorioResponse, empresaResponse] = await Promise.all([
-        api.get("/relatorio-producao", { params }),
-        api.get("/configuracao-empresa")
-      ])
+      const relatorioResponse = await api.get("/relatorio-producao", {
+        params
+      })
 
       setServicos(relatorioResponse.data.dados)
       setPaginacao(relatorioResponse.data.paginacao)
-      setEmpresa(empresaResponse.data)
+
+      if (podeExportarImprimir) {
+        const empresaResponse = await api.get("/configuracao-empresa")
+        setEmpresa(empresaResponse.data)
+      } else {
+        setEmpresa(null)
+      }
     } catch (error) {
       console.log(error)
-      alert("Erro ao carregar relatório de produção")
+
+      alert(
+        error.response?.data?.error ||
+        "Não foi possível carregar o relatório de produção no momento."
+      )
     }
   }
 
@@ -583,27 +599,35 @@ export function RelatorioProducao() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6 no-print">
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            onClick={exportarCSV}
-            className="bg-green-700 text-white px-6 py-3 rounded-lg flex items-center gap-2"
-          >
-            <Download size={18} />
-            Exportar CSV
-          </Button>
+      {podeExportarImprimir && (
+        <div className="flex justify-between items-center mb-6 no-print">
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              onClick={exportarCSV}
+              className="bg-green-700 text-white px-6 py-3 rounded-lg flex items-center gap-2"
+            >
+              <Download size={18} />
+              Exportar CSV
+            </Button>
 
-          <Button
-            type="button"
-            onClick={imprimir}
-            className="bg-gray-800 text-white px-6 py-3 rounded-lg flex items-center gap-2"
-          >
-            <Printer size={18} />
-            Imprimir
-          </Button>
+            <Button
+              type="button"
+              onClick={imprimir}
+              className="bg-gray-800 text-white px-6 py-3 rounded-lg flex items-center gap-2"
+            >
+              <Printer size={18} />
+              Imprimir
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
+
+      {isVendedor && (
+        <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800 no-print">
+          <strong>Modo consulta:</strong> você está visualizando a produção para acompanhamento. Exportação e impressão ficam restritas aos perfis autorizados.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-6 no-print">
         <ResumoCard

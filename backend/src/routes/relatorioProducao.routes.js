@@ -15,6 +15,7 @@ router.get(
   "/",
   roleMiddleware(
     "ADMIN",
+    "VENDEDOR",
     "OPERADOR",
     "VENDEDOR_OPERADOR"
   ),

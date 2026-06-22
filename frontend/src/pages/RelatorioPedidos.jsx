@@ -46,6 +46,16 @@ export function RelatorioPedidos() {
     totalPages: 1
   })
 
+  const usuarioLogado = JSON.parse(localStorage.getItem("@usuario") || "{}")
+  const isVendedor = usuarioLogado.funcao === "VENDEDOR"
+
+  const podeExportarImprimir =
+    usuarioLogado.funcao === "ADMIN" ||
+    usuarioLogado.funcao === "VENDEDOR_OPERADOR"
+
+  const podeVerValores =
+    usuarioLogado.funcao === "ADMIN"
+
   function obterNumeroPedido(item) {
     if (item?.origemPedido === "EXTERNO" && item?.numeroPedidoManual) {
       return item.numeroPedidoManual
@@ -166,17 +176,26 @@ export function RelatorioPedidos() {
         ...filtros
       }
 
-      const [relatorioResponse, empresaResponse] = await Promise.all([
-        api.get("/relatorio-pedidos", { params }),
-        api.get("/configuracao-empresa")
-      ])
+      const relatorioResponse = await api.get("/relatorio-pedidos", {
+        params
+      })
 
       setPedidos(relatorioResponse.data.dados)
       setPaginacao(relatorioResponse.data.paginacao)
-      setEmpresa(empresaResponse.data)
+
+      if (podeExportarImprimir) {
+        const empresaResponse = await api.get("/configuracao-empresa")
+        setEmpresa(empresaResponse.data)
+      } else {
+        setEmpresa(null)
+      }
     } catch (error) {
       console.log(error)
-      alert("Erro ao carregar relatório de pedidos")
+
+      alert(
+        error.response?.data?.error ||
+        "Não foi possível carregar o relatório de pedidos no momento."
+      )
     }
   }
 
@@ -341,6 +360,7 @@ export function RelatorioPedidos() {
 
   return (
     <div>
+      {podeExportarImprimir && (
       <div className="flex justify-between items-center mb-6 no-print">
         <div className="flex gap-2">
           <Button
@@ -361,7 +381,14 @@ export function RelatorioPedidos() {
             Imprimir
           </Button>
         </div>
-      </div>
+        </div>
+      )}
+
+      {isVendedor && (
+        <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800 no-print">
+          <strong>Modo consulta:</strong> você está visualizando os pedidos para acompanhamento. Valores, exportação e impressão ficam restritos aos perfis autorizados.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-6 no-print">
         <div className="bg-white border border-gray-300 rounded-xl p-4 shadow-sm">
@@ -416,19 +443,21 @@ export function RelatorioPedidos() {
           </div>
         </div>
 
-        <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-emerald-700">Valor Exibido</p>
-              <strong className="text-xl font-bold text-emerald-800">
-                {formatarMoeda(valorTotalPedidos)}
-              </strong>
-            </div>
+        {podeVerValores && (
+          <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-emerald-700">Valor Exibido</p>
+                <strong className="text-xl font-bold text-emerald-800">
+                  {formatarMoeda(valorTotalPedidos)}
+                </strong>
+              </div>
 
-            <DollarSign size={30} className="text-emerald-500 shrink-0" />
+              <DollarSign size={30} className="text-emerald-500 shrink-0" />
+            </div>
           </div>
+        )}
         </div>
-      </div>
 
       <div className="flex flex-wrap gap-2 mb-4 no-print">
         <Button
@@ -556,7 +585,6 @@ export function RelatorioPedidos() {
             <option value="EM_PRODUCAO">Em Produção</option>
             <option value="CONCLUIDO">Concluído</option>
             <option value="PRONTO_ENTREGA">Pronto Entrega</option>
-            <option value="SAIU_ENTREGA">Saiu Entrega</option>
             <option value="ENTREGUE">Entregue</option>
             <option value="CANCELADO">Cancelado</option>
           </Select>
@@ -630,7 +658,7 @@ export function RelatorioPedidos() {
               <Th>Endereço</Th>
               <Th>Status</Th>
               <Th>Prazo</Th>
-              <Th>Valor</Th>
+              {podeVerValores && <Th>Valor</Th>}
             </tr>
           </thead>
 
@@ -667,15 +695,17 @@ export function RelatorioPedidos() {
                   <BadgePrazo prazo={item.situacaoPrazo} />
                 </Td>
 
-                <Td className="font-semibold text-green-700">
-                  {formatarMoeda(item.valorTotal)}
-                </Td>
+                {podeVerValores && (
+                  <Td className="font-semibold text-green-700">
+                    {formatarMoeda(item.valorTotal)}
+                  </Td>
+                )}
               </tr>
             ))}
 
             {pedidos.length === 0 && (
               <tr>
-                <Td className="p-4 border" colSpan="9">
+                <Td className="p-4 border" colSpan={podeVerValores ? "9" : "8"}>
                   Nenhum pedido encontrado.
                 </Td>
               </tr>

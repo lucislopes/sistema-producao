@@ -198,6 +198,7 @@ export function MainLayout() {
             </MenuLink>
           </MenuGrupo>
 
+        {/*
           {(isAdmin || isVendedor || isVendedorOperador) && (
             <MenuGrupo titulo="Dashboards">
               <MenuLink to="/dashboard/producao" icon={Factory}>
@@ -213,6 +214,7 @@ export function MainLayout() {
               </MenuLink>
             </MenuGrupo>
           )}
+        */}
 
           {(isAdmin || isVendedor || isVendedorOperador || isOperador) && (
             <MenuGrupo titulo="Operação">
@@ -275,23 +277,29 @@ export function MainLayout() {
                   <MenuLink to="/relatorio-pedidos" icon={ClipboardList}>
                     Pedidos
                   </MenuLink>
+                </>
+              )}
 
+              <MenuLink to="/alertas" icon={Bell}>
+                Alertas
+              </MenuLink>
+
+              {(isAdmin || isVendedorOperador) && (
+                <>
                   <MenuLink to="/relatorio-producao" icon={BarChart3}>
                     Produção
-                  </MenuLink>
-
-                  <MenuLink to="/alertas" icon={Bell}>
-                    Alertas
                   </MenuLink>
 
                   <MenuLink to="/produtividade-operadores" icon={Users}>
                     Produtividade
                   </MenuLink>
-
-                  <MenuLink to="/relatorio-auditoria-frete" icon={DollarSign}>
-                    Auditoria de Frete
-                  </MenuLink>
                 </>
+              )}
+
+              {isAdmin && (
+                <MenuLink to="/relatorio-auditoria-frete" icon={DollarSign}>
+                  Auditoria de Frete
+                </MenuLink>
               )}
 
               <MenuLink to="/relatorio-servicos" icon={ListChecks}>

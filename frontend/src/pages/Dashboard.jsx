@@ -8,20 +8,47 @@ import {
   Truck,
   ChartColumn,
   Columns3,
-  Boxes
+  Boxes,
+  LockKeyhole
 } from "lucide-react"
 
 import { api } from "../services/api"
 import { CardIndicador } from "./dashboard/components/CardIndicador"
-import { DashboardFiltro } from "./dashboard/components/DashboardFiltro"
 import { SecaoDashboard } from "./dashboard/components/SecaoDashboard"
+
+function CardRestrito({ titulo, descricao, icon: Icon }) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 shadow-sm opacity-80">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-gray-700">
+            {titulo}
+          </p>
+
+          <p className="mt-1 text-xs text-gray-500">
+            {descricao}
+          </p>
+        </div>
+
+        <div className="rounded-xl bg-white p-3 text-gray-400">
+          {Icon ? <Icon size={22} /> : <LockKeyhole size={22} />}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export function Dashboard() {
   const [dados, setDados] = useState(null)
   const [baseData, setBaseData] = useState("pedido")
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null)
-  const usuario = JSON.parse(localStorage.getItem("@usuario"))
+
+  const usuario = JSON.parse(localStorage.getItem("@usuario") || "{}")
+
+  const isAdmin = usuario?.funcao === "ADMIN"
   const isOperador = usuario?.funcao === "OPERADOR"
+  const isVendedor = usuario?.funcao === "VENDEDOR"
+  const isVendedorOperador = usuario?.funcao === "VENDEDOR_OPERADOR"
 
   function formatarDataLocal(data) {
     const ano = data.getFullYear()
@@ -42,71 +69,6 @@ export function Dashboard() {
   const [dataInicio, setDataInicio] = useState(primeiroDiaMes)
   const [dataFim, setDataFim] = useState(hojeFormatado)
 
-  function formatarDataFiltro(data) {
-    return formatarDataLocal(data)
-  }
-
-  function aplicarPeriodo(tipo) {
-  const hoje = new Date()
-
-  let inicio = new Date(hoje)
-  let fim = new Date(hoje)
-
-  if (tipo === "hoje") {
-    inicio = new Date(hoje)
-    fim = new Date(hoje)
-  }
-
-  if (tipo === "semana") {
-    if (baseData === "entrega") {
-      inicio = new Date(hoje)
-      fim = new Date(hoje)
-      fim.setDate(fim.getDate() + 7)
-    } else {
-      inicio = new Date(hoje)
-      fim = new Date(hoje)
-      inicio.setDate(inicio.getDate() - 7)
-    }
-  }
-
-  if (tipo === "15dias") {
-    if (baseData === "entrega") {
-      inicio = new Date(hoje)
-      fim = new Date(hoje)
-      fim.setDate(fim.getDate() + 15)
-    } else {
-      inicio = new Date(hoje)
-      fim = new Date(hoje)
-      inicio.setDate(inicio.getDate() - 15)
-    }
-  }
-
-  if (tipo === "30dias") {
-    if (baseData === "entrega") {
-      inicio = new Date(hoje)
-      fim = new Date(hoje)
-      fim.setDate(fim.getDate() + 30)
-    } else {
-      inicio = new Date(hoje)
-      fim = new Date(hoje)
-      inicio.setDate(inicio.getDate() - 30)
-    }
-  }
-
-  if (tipo === "mes") {
-    inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
-    fim = new Date(hoje)
-  }
-
-  if (tipo === "ano") {
-    inicio = new Date(hoje.getFullYear(), 0, 1)
-    fim = new Date(hoje)
-  }
-
-  setDataInicio(formatarDataFiltro(inicio))
-  setDataFim(formatarDataFiltro(fim))
-}
-
   async function carregarDashboard() {
     try {
       const response = await api.get("/dashboard", {
@@ -125,13 +87,6 @@ export function Dashboard() {
     }
   }
 
-  function formatarMoeda(valor) {
-    return Number(valor || 0).toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL"
-    })
-  }
-
   useEffect(() => {
     carregarDashboard()
 
@@ -148,7 +103,7 @@ export function Dashboard() {
 
   return (
     <div>
-     <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold">
           Operação em Tempo Real
         </h2>
@@ -159,13 +114,13 @@ export function Dashboard() {
       </div>
 
       <SecaoDashboard titulo="Situação Atual">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           <CardIndicador
             titulo="Pedidos Abertos"
             valor={dados.pedidos.abertos}
             tipo={dados.pedidos.abertos > 0 ? "info" : "normal"}
             icon={ClipboardList}
-            link="/pedidos"
+            link={isOperador ? "/kanban" : "/pedidos"}
           />
 
           <CardIndicador
@@ -189,15 +144,7 @@ export function Dashboard() {
             valor={dados.pedidos.prontoEntrega}
             tipo={dados.pedidos.prontoEntrega > 0 ? "info" : "normal"}
             icon={PackageCheck}
-            link="/expedicao"
-          />
-
-          <CardIndicador
-            titulo="Saiu Entrega"
-            valor={dados.pedidos.saiuEntrega}
-            tipo={dados.pedidos.saiuEntrega > 0 ? "info" : "normal"}
-            icon={Truck}
-            link="/expedicao"
+            link={isOperador ? "/kanban" : "/expedicao"}
           />
 
           <CardIndicador
@@ -219,21 +166,25 @@ export function Dashboard() {
             link="/dashboard/producao"
           />
 
-          {!isOperador && (
-            <CardIndicador
-              titulo="Expedição"
-              valor="Abrir"
-              icon={Truck}
-              link="/dashboard/expedicao"
-            />
-          )}
+          <CardIndicador
+            titulo="Expedição"
+            valor="Abrir"
+            icon={Truck}
+            link="/dashboard/expedicao"
+          />
 
-          {!isOperador && (
+          {isAdmin ? (
             <CardIndicador
               titulo="Comercial"
               valor="Abrir"
               icon={ChartColumn}
               link="/dashboard/comercial"
+            />
+          ) : (
+            <CardRestrito
+              titulo="Comercial"
+              descricao="Indicadores comerciais disponíveis apenas para administradores."
+              icon={ChartColumn}
             />
           )}
 
