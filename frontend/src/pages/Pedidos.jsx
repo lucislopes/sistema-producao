@@ -611,35 +611,43 @@ function aplicarRotaSelecionada(id) {
   }
 
     const pedidosFiltrados = pedidos.filter((pedido) => {
-    const textoBusca = busca.toLowerCase()
+      const textoBusca = busca.trim().toLowerCase()
 
-    const bateBusca =
-      String(pedido.numeroPedido).includes(textoBusca) ||
-      pedido.cliente?.nome?.toLowerCase().includes(textoBusca)
+      const numeroInterno = String(pedido.numeroPedido || "").toLowerCase()
+      const numeroManual = String(pedido.numeroPedidoManual || "").toLowerCase()
+      const clienteNome = String(pedido.cliente?.nome || "").toLowerCase()
+      const vendedorNome = String(pedido.vendedor?.nome || "").toLowerCase()
 
-    const bateStatus =
-      filtroStatus === "" || pedido.status === filtroStatus
+      const bateBusca =
+        textoBusca === "" ||
+        numeroInterno.includes(textoBusca) ||
+        numeroManual.includes(textoBusca) ||
+        clienteNome.includes(textoBusca) ||
+        vendedorNome.includes(textoBusca)
 
-    let batePeriodo = true
+      const bateStatus =
+        filtroStatus === "" || pedido.status === filtroStatus
 
-    if (dataInicio || dataFim) {
-      if (!pedido.dataEntrega) {
-        batePeriodo = false
-      } else {
-        const dataPedido = pedido.dataEntrega.substring(0, 10)
+      let batePeriodo = true
 
-        if (dataInicio && dataPedido < dataInicio) {
+      if (dataInicio || dataFim) {
+        if (!pedido.dataEntrega) {
           batePeriodo = false
-        }
+        } else {
+          const dataPedido = pedido.dataEntrega.substring(0, 10)
 
-        if (dataFim && dataPedido > dataFim) {
-          batePeriodo = false
+          if (dataInicio && dataPedido < dataInicio) {
+            batePeriodo = false
+          }
+
+          if (dataFim && dataPedido > dataFim) {
+            batePeriodo = false
+          }
         }
       }
-    }
 
-    return bateBusca && bateStatus && batePeriodo
-  })
+      return bateBusca && bateStatus && batePeriodo
+    })
 
   const resumoPedidos = {
     total: pedidosFiltrados.length,
@@ -1111,7 +1119,7 @@ function aplicarRotaSelecionada(id) {
 
               <Input
                 type="text"
-                placeholder="Buscar por número ou cliente..."
+                placeholder="Buscar por pedido, cliente ou vendedor..."
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
                 className="pl-10"
