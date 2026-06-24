@@ -25,6 +25,16 @@ export function Kanban() {
   const [searchParams] = useSearchParams()
   const busca = searchParams.get("busca") || ""
 
+  const usuarioLogado = JSON.parse(localStorage.getItem("@usuario") || "{}")
+
+  const podeAlterarKanban =
+    usuarioLogado.funcao === "ADMIN" ||
+    usuarioLogado.funcao === "OPERADOR" ||
+    usuarioLogado.funcao === "VENDEDOR_OPERADOR"
+
+  const podeTransferirOperador =
+    usuarioLogado.funcao === "ADMIN"
+
 
   const [kanban, setKanban] = useState({
     ABERTO: [],
@@ -370,7 +380,7 @@ export function Kanban() {
                     }
                   </p>
 
-                  {servico.operador && (
+                  {podeTransferirOperador && servico.operador && (
                     <button
                       onClick={() => abrirTransferencia(servico)}
                       className="mt-2 bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-lg text-sm"
@@ -379,7 +389,8 @@ export function Kanban() {
                     </button>
                   )}
 
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  {podeAlterarKanban ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
                     {servico.status === "ABERTO" && (
                       <button
                         onClick={() => alterarStatus(servico.id, "INICIADO")}
@@ -431,7 +442,12 @@ export function Kanban() {
                         Reabrir
                       </button>
                     )}
-                  </div>
+                    </div>
+                    ) : (
+                      <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800">
+                        Somente consulta
+                      </div>
+                    )}
 
                 </div>
 
