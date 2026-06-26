@@ -1,16 +1,12 @@
 import { prisma } from "../lib/prisma.js"
 
-
-export async function relatorioPedidos(req, res) {
+export async function relatorioPedidosEntregues(req, res) {
   try {
     const {
       dataInicio,
       dataFim,
       baseData = "entrega",
-      pedido,
-      cliente,
       vendedorId,
-      status,
       busca,
       page = 1,
       limit = 50
@@ -20,13 +16,9 @@ export async function relatorioPedidos(req, res) {
     const limite = Number(limit) || 50
     const skip = (paginaAtual - 1) * limite
 
-    const where = {}
-
-    const statusEmAndamento = [
-      "ABERTO",
-      "EM_SEPARACAO",
-      "EM_PRODUCAO"
-    ]
+    const where = {
+      status: "ENTREGUE"
+    }
 
     function criarDataLocal(data, fimDoDia = false) {
       if (!data) return null
@@ -61,27 +53,8 @@ export async function relatorioPedidos(req, res) {
       }
     }
 
-    if (pedido) {
-      where.OR = [
-        {
-          numeroPedido: Number(pedido) || -1
-        },
-        {
-          numeroPedidoManual: {
-            contains: pedido,
-            mode: "insensitive"
-          }
-        }
-      ]
-    }
-
-    if (cliente) {
-      where.cliente = {
-        nome: {
-          contains: cliente,
-          mode: "insensitive"
-        }
-      }
+    if (vendedorId) {
+      where.vendedorId = vendedorId
     }
 
     if (busca) {
@@ -118,47 +91,26 @@ export async function relatorioPedidos(req, res) {
       ]
     }
 
-    if (vendedorId) {
-      where.vendedorId = vendedorId
-    }
-
-    if (status) {
-      if (!statusEmAndamento.includes(status)) {
-        return res.status(400).json({
-          error: "Este relatório exibe somente pedidos em aberto ou em produção"
-        })
-      }
-
-      where.status = status
-    } else {
-      where.status = {
-        in: statusEmAndamento
-      }
-    }
-
     const orderBy =
       campoData === "dataPedido"
         ? [
-            { dataPedido: "asc" },
-            { numeroPedido: "asc" }
+            { dataPedido: "desc" },
+            { numeroPedido: "desc" }
           ]
         : [
-            { dataEntrega: "asc" },
-            { numeroPedido: "asc" }
+            { dataEntrega: "desc" },
+            { numeroPedido: "desc" }
           ]
 
     const [pedidos, total] = await Promise.all([
       prisma.pedido.findMany({
         where,
-
         include: {
           cliente: true,
           vendedor: true,
           rota: true
         },
-
         orderBy,
-
         skip,
         take: limite
       }),
@@ -168,32 +120,25 @@ export async function relatorioPedidos(req, res) {
       })
     ])
 
-    const hoje = new Date()
-    hoje.setHours(0, 0, 0, 0)
-
     const pedidosComPrazo = pedidos.map((pedido) => {
-      let situacaoPrazo = "No prazo"
+      let situacaoPrazo = "Entregue no prazo"
 
       if (!pedido.dataEntrega) {
         situacaoPrazo = "Sem data"
       } else {
+        const hoje = new Date()
+        hoje.setHours(0, 0, 0, 0)
+
         const dataEntrega = new Date(
           pedido.dataEntrega.getFullYear(),
           pedido.dataEntrega.getMonth(),
           pedido.dataEntrega.getDate()
         )
 
-        if (pedido.status === "ENTREGUE") {
-          situacaoPrazo =
-            dataEntrega < hoje
-              ? "Entregue com atraso"
-              : "Entregue no prazo"
-        } else {
-          situacaoPrazo =
-            dataEntrega < hoje
-              ? "Atrasado"
-              : "No prazo"
-        }
+        situacaoPrazo =
+          dataEntrega < hoje
+            ? "Entregue com atraso"
+            : "Entregue no prazo"
       }
 
       return {
@@ -217,7 +162,7 @@ export async function relatorioPedidos(req, res) {
     console.log(error)
 
     return res.status(500).json({
-      error: "Erro ao gerar relatório de pedidos"
+      error: "Erro ao gerar relatório de pedidos entregues"
     })
   }
 }

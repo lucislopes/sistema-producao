@@ -205,8 +205,10 @@ export function PlanoCorteServico() {
 
     plano.servicos.forEach((servico) => {
         servicosMapeados[servico.tipoServicoId] = {
+          id: servico.id,
           tipoServicoId: servico.tipoServicoId,
           operadorId: servico.operadorId || "",
+          status: servico.status,
           observacoes: servico.observacoes || ""
         }
     })
@@ -257,21 +259,10 @@ const totalChapasPlanos = planosCadastrados.reduce(
   0
 )
 
-function podeEditarPlanoTela(plano) {
+  function podeEditarPlanoTela() {
     const usuario = JSON.parse(localStorage.getItem("@usuario") || "{}")
 
-    if (usuario.funcao === "ADMIN") {
-      return true
-    }
-
-    if (
-      usuario.funcao === "VENDEDOR" ||
-      usuario.funcao === "VENDEDOR_OPERADOR"
-    ) {
-      return plano.pedido?.vendedorId === usuario.funcionarioId
-    }
-
-    return false
+    return usuario.funcao === "ADMIN"
   }
 
   const usuarioLogado = JSON.parse(localStorage.getItem("@usuario") || "{}")
@@ -386,13 +377,36 @@ function podeEditarPlanoTela(plano) {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Medida de Encabeçamento
+               Encabeçamento em metros
               </label>
 
               <Input
-                placeholder="Ex: 3mm"
+                type="text"
+                inputMode="decimal"
+                placeholder="Ex: 3,50"
                 value={medidaEncabecamento}
-                onChange={(e) => setMedidaEncabecamento(e.target.value)}
+                onChange={(e) => {
+                  let valor = e.target.value
+
+                  // troca ponto por vírgula
+                  valor = valor.replace(/\./g, ",")
+
+                  // permite apenas números e uma vírgula
+                  valor = valor.replace(/[^0-9,]/g, "")
+
+                  // impede mais de uma vírgula
+                  const partes = valor.split(",")
+                  if (partes.length > 2) {
+                    valor = partes[0] + "," + partes.slice(1).join("")
+                  }
+
+                  // limita a 2 casas decimais
+                  if (partes[1]) {
+                    valor = partes[0] + "," + partes[1].slice(0, 2)
+                  }
+
+                  setMedidaEncabecamento(valor)
+                }}
               />
             </div>
 
@@ -415,19 +429,6 @@ function podeEditarPlanoTela(plano) {
               </label>
             </div>
 
-            <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Observações do Plano
-              </label>
-
-              <textarea
-                className="w-full border border-gray-300 p-3 rounded-lg resize-none"
-                rows={2}
-                placeholder="Observações do plano..."
-                value={observacoes}
-                onChange={(e) => setObservacoes(e.target.value)}
-              />
-            </div>
           </div>
 
           <div className="mt-8">
@@ -581,7 +582,7 @@ function podeEditarPlanoTela(plano) {
                     <p className="mt-1 text-sm text-gray-600">
                         {plano.quantidadeChapas} chapa(s)
                         {plano.medidaEncabecamento
-                        ? ` • Encabeçamento: ${plano.medidaEncabecamento}`
+                        ? ` • Encabeçamento: ${plano.medidaEncabecamento} m`
                         : ""}
                         {plano.compraExterna ? " • Compra externa" : ""}
                     </p>
@@ -597,17 +598,10 @@ function podeEditarPlanoTela(plano) {
                     </Button>
                   ) : (
                     <span className="rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-2 text-xs font-semibold text-yellow-800">
-                      Bloqueado: vendedor responsável {plano.pedido?.vendedor?.nome || "-"}
+                      Edição permitida apenas para ADMIN
                     </span>
                   )}
                 </div>
-
-                {plano.observacoes && (
-                    <div className="mb-4 rounded-lg bg-gray-50 p-3 text-sm text-gray-700">
-                    <strong>Obs. do plano:</strong>{" "}
-                    {plano.observacoes}
-                    </div>
-                )}
 
                 <div className="overflow-hidden rounded-lg border border-gray-200">
                     <table className="w-full text-sm">

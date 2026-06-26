@@ -35,7 +35,8 @@ import {
   ChevronRight,
   Zap,
   TriangleAlert,
-  DollarSign
+  DollarSign,
+  PackageCheck
 } from "lucide-react"
 
 import { AuthContext } from "../contexts/AuthContext"
@@ -275,7 +276,11 @@ export function MainLayout() {
                   </MenuLink>
 
                   <MenuLink to="/relatorio-pedidos" icon={ClipboardList}>
-                    Pedidos
+                    Pedidos em Andamento
+                  </MenuLink>
+
+                  <MenuLink to="/relatorio-pedidos-entregues" icon={PackageCheck}>
+                    Pedidos Entregues
                   </MenuLink>
                 </>
               )}
@@ -294,6 +299,7 @@ export function MainLayout() {
                     Produtividade
                   </MenuLink>
                 </>
+
               )}
 
               {isAdmin && (

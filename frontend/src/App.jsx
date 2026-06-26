@@ -34,6 +34,7 @@ import { RelatorioPendencias } from "./pages/RelatorioPendencias"
 import { RomaneioEntrega } from "./pages/RomaneioEntrega"
 import { RelatorioAuditoriaFrete } from "./pages/RelatorioAuditoriaFrete"
 import { PlanoCorteServico } from "./pages/PlanoCorteServico"
+import { RelatorioPedidosEntregues } from "./pages/RelatorioPedidosEntregues.jsx"
 
 
 export default function App() {
@@ -171,6 +172,11 @@ export default function App() {
           <Route
             path="/relatorio-auditoria-frete"
             element={<RelatorioAuditoriaFrete />}
+          />
+
+          <Route
+            path="/relatorio-pedidos-entregues"
+            element={<RelatorioPedidosEntregues />}
           />
           
 

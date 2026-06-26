@@ -22,6 +22,7 @@ export function Kanban() {
   const [servicoSelecionado, setServicoSelecionado] = useState(null)
   const [novoOperadorId, setNovoOperadorId] = useState("")
   const [motivoTransferencia, setMotivoTransferencia] = useState("")
+  const [observacoesAbertas, setObservacoesAbertas] = useState({})
   const [searchParams] = useSearchParams()
   const busca = searchParams.get("busca") || ""
 
@@ -264,6 +265,13 @@ export function Kanban() {
     }
   }
 
+  function alternarObservacao(id) {
+    setObservacoesAbertas((atual) => ({
+      ...atual,
+      [id]: !atual[id]
+    }))
+  }
+
   return (
     <div>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -379,6 +387,37 @@ export function Kanban() {
                       servico.operador?.nome || "Sem operador"
                     }
                   </p>
+
+                  {servico.observacoes && (
+                    <div className="mt-3 rounded-lg border border-yellow-200 bg-yellow-50 p-2 text-sm text-yellow-900">
+                      <div className="mb-1 flex items-center justify-between gap-2">
+                        <strong className="text-xs uppercase tracking-wide">
+                          Observação
+                        </strong>
+
+                        {servico.observacoes.length > 50 && (
+                          <button
+                            type="button"
+                            onClick={() => alternarObservacao(servico.id)}
+                            className="text-xs font-semibold text-yellow-800 hover:underline"
+                          >
+                            {observacoesAbertas[servico.id] ? "Ver menos" : "Ver mais"}
+                          </button>
+                        )}
+                      </div>
+
+                      <p
+                        className={
+                          servico.observacoes.length > 50 &&
+                          !observacoesAbertas[servico.id]
+                            ? "max-h-10 overflow-hidden"
+                            : ""
+                        }
+                      >
+                        {servico.observacoes}
+                      </p>
+                    </div>
+                  )}
 
                   {podeTransferirOperador && servico.operador && (
                     <button

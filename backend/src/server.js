@@ -63,6 +63,7 @@ app.use("/relatorios", relatoriosRoutes)
 app.use("/romaneio-entrega", romaneioEntregaRoutes)
 app.use("/relatorio-frete", relatorioFreteRoutes)
 app.use("/plano-corte-servico", planoCorteServicoRoutes)
+app.use("/relatorios", relatoriosRoutes)
 
 app.get("/", (req, res) => {
   return res.json({

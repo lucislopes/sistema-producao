@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 import { api } from "../services/api"
 import { CabecalhoImpressao } from "../components/CabecalhoImpressao"
 import { Button } from "../components/ui/Button"
@@ -7,7 +8,6 @@ import { Select } from "../components/ui/Select"
 import { Table, Th, Td } from "../components/ui/Table"
 import { BadgePrazo } from "../components/ui/BadgePrazo"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
-import { Link } from "react-router-dom"
 
 import {
   Download,
@@ -16,15 +16,12 @@ import {
   Search,
   Eraser,
   ClipboardList,
-  Package,
-  Factory,
   PackageCheck,
-  TriangleAlert,
   DollarSign,
-  Filter
+  UserCheck
 } from "lucide-react"
 
-export function RelatorioPedidos() {
+export function RelatorioPedidosEntregues() {
   const [pedidos, setPedidos] = useState([])
   const [vendedores, setVendedores] = useState([])
   const [empresa, setEmpresa] = useState(null)
@@ -32,11 +29,7 @@ export function RelatorioPedidos() {
   const [dataInicio, setDataInicio] = useState("")
   const [dataFim, setDataFim] = useState("")
   const [baseData, setBaseData] = useState("entrega")
-  const [pedido, setPedido] = useState("")
-  const [cliente, setCliente] = useState("")
   const [vendedorId, setVendedorId] = useState("")
-  const [status, setStatus] = useState("")
-
   const [busca, setBusca] = useState("")
 
   const [page, setPage] = useState(1)
@@ -56,8 +49,7 @@ export function RelatorioPedidos() {
     usuarioLogado.funcao === "ADMIN" ||
     usuarioLogado.funcao === "VENDEDOR_OPERADOR"
 
-  const podeVerValores =
-    usuarioLogado.funcao === "ADMIN"
+  const podeVerValores = usuarioLogado.funcao === "ADMIN"
 
   function obterNumeroPedido(item) {
     if (item?.origemPedido === "EXTERNO" && item?.numeroPedidoManual) {
@@ -90,62 +82,9 @@ export function RelatorioPedidos() {
   }
 
   function obterClassePrazo(prazo) {
-    if (prazo === "ATRASADO" || prazo === "Atrasado") {
-      return "bg-red-50"
-    }
-
-    if (prazo === "HOJE") {
-      return "bg-yellow-50"
-    }
-
+    if (prazo === "Entregue com atraso") return "bg-red-50"
+    if (prazo === "Entregue no prazo") return "bg-green-50"
     return ""
-  }
-
-  function exportarCSV() {
-    const cabecalho = [
-      "Pedido",
-      "Cliente",
-      "Vendedor",
-      "Data Pedido",
-      "Data Entrega",
-      "Endereco",
-      "Status",
-      "Prazo",
-      "Valor"
-    ]
-
-    const linhas = pedidos.map((item) => [
-      obterNumeroPedido(item),
-      item.cliente?.nome || "",
-      item.vendedor?.nome || "",
-      formatarData(item.dataPedido),
-      formatarData(item.dataEntrega),
-      item.enderecoEntrega || item.cliente?.endereco || "",
-      item.status || "",
-      item.situacaoPrazo || "",
-      item.valorTotal || ""
-    ])
-
-    const csv = [cabecalho, ...linhas]
-      .map((linha) =>
-        linha
-          .map((campo) => `"${String(campo).replace(/"/g, '""')}"`)
-          .join(";")
-      )
-      .join("\n")
-
-    const blob = new Blob(["\uFEFF" + csv], {
-      type: "text/csv;charset=utf-8;"
-    })
-
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-
-    link.href = url
-    link.download = "relatorio-pedidos.csv"
-    link.click()
-
-    URL.revokeObjectURL(url)
   }
 
   async function carregarVendedores() {
@@ -170,17 +109,14 @@ export function RelatorioPedidos() {
         dataInicio,
         dataFim,
         baseData,
-        pedido,
-        cliente,
         vendedorId,
-        status,
         busca,
         page: pagina,
         limit,
         ...filtros
       }
 
-      const relatorioResponse = await api.get("/relatorio-pedidos", {
+      const relatorioResponse = await api.get("/relatorios/relatorio-pedidos-entregues", {
         params
       })
 
@@ -198,7 +134,7 @@ export function RelatorioPedidos() {
 
       alert(
         error.response?.data?.error ||
-        "Não foi possível carregar o relatório de pedidos no momento."
+        "Não foi possível carregar o relatório de pedidos entregues no momento."
       )
     }
   }
@@ -221,27 +157,17 @@ export function RelatorioPedidos() {
     setDataInicio("")
     setDataFim("")
     setBaseData("entrega")
-    setPedido("")
-    setCliente("")
     setVendedorId("")
-    setStatus("")
-    setPage(1)
     setBusca("")
+    setPage(1)
 
     carregarRelatorio(1, {
       dataInicio: "",
       dataFim: "",
       baseData: "entrega",
-      pedido: "",
-      cliente: "",
       vendedorId: "",
-      status: "",
       busca: ""
     })
-  }
-
-  function imprimir() {
-    window.print()
   }
 
   function filtroHoje() {
@@ -254,25 +180,6 @@ export function RelatorioPedidos() {
     carregarRelatorio(1, {
       dataInicio: hoje,
       dataFim: hoje
-    })
-  }
-
-  function filtroProximos5Dias() {
-    const hoje = new Date()
-    const fim = new Date()
-
-    fim.setDate(fim.getDate() + 5)
-
-    const dataInicioFiltro = formatarDataFiltro(hoje)
-    const dataFimFiltro = formatarDataFiltro(fim)
-
-    setDataInicio(dataInicioFiltro)
-    setDataFim(dataFimFiltro)
-    setPage(1)
-
-    carregarRelatorio(1, {
-      dataInicio: dataInicioFiltro,
-      dataFim: dataFimFiltro
     })
   }
 
@@ -326,41 +233,65 @@ export function RelatorioPedidos() {
     })
   }
 
-  function filtroAtrasados() {
-    setStatus("")
-    setPage(1)
-
-    carregarRelatorio(1, {
-      status: "",
-      situacaoPrazo: "ATRASADO"
-    })
+  function imprimir() {
+    window.print()
   }
 
-  function filtroStatusRapido(novoStatus) {
-    setStatus(novoStatus)
-    setPage(1)
+  function exportarCSV() {
+    const cabecalho = [
+      "Pedido",
+      "Cliente",
+      "Vendedor",
+      "Data Pedido",
+      "Data Entrega",
+      "Endereco",
+      "Status",
+      "Prazo",
+      "Valor"
+    ]
 
-    carregarRelatorio(1, {
-      status: novoStatus
+    const linhas = pedidos.map((item) => [
+      obterNumeroPedido(item),
+      item.cliente?.nome || "",
+      item.vendedor?.nome || "",
+      formatarData(item.dataPedido),
+      formatarData(item.dataEntrega),
+      item.enderecoEntrega || item.cliente?.endereco || "",
+      item.status || "",
+      item.situacaoPrazo || "",
+      item.valorTotal || ""
+    ])
+
+    const csv = [cabecalho, ...linhas]
+      .map((linha) =>
+        linha
+          .map((campo) => `"${String(campo).replace(/"/g, '""')}"`)
+          .join(";")
+      )
+      .join("\n")
+
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;"
     })
+
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+
+    link.href = url
+    link.download = "relatorio-pedidos-entregues.csv"
+    link.click()
+
+    URL.revokeObjectURL(url)
   }
 
   const totalPedidos = paginacao.total
 
-  const abertos = pedidos.filter(
-    (p) => p.status === "ABERTO"
+  const entreguesNoPrazo = pedidos.filter(
+    (p) => p.situacaoPrazo === "Entregue no prazo"
   ).length
 
-  const emSeparacao = pedidos.filter(
-    (p) => p.status === "EM_SEPARACAO"
-  ).length
-
-  const emProducao = pedidos.filter(
-      p => p.status === "EM_PRODUCAO"
-  ).length
-
-  const atrasado = pedidos.filter(
-    (p) => p.situacaoPrazo === "ATRASADO" || p.situacaoPrazo === "Atrasado"
+  const entreguesComAtraso = pedidos.filter(
+    (p) => p.situacaoPrazo === "Entregue com atraso"
   ).length
 
   const valorTotalPedidos = pedidos.reduce(
@@ -371,103 +302,72 @@ export function RelatorioPedidos() {
   return (
     <div>
       {podeExportarImprimir && (
-      <div className="flex justify-between items-center mb-6 no-print">
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            onClick={exportarCSV}
-            className="bg-green-700 text-white px-6 py-3 rounded-lg flex items-center gap-2"
-          >
-            <Download size={18} />
-            Exportar CSV
-          </Button>
+        <div className="flex justify-between items-center mb-6 no-print">
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              onClick={exportarCSV}
+              className="bg-green-700 text-white px-6 py-3 rounded-lg flex items-center gap-2"
+            >
+              <Download size={18} />
+              Exportar CSV
+            </Button>
 
-          <Button
-            type="button"
-            onClick={imprimir}
-            className="bg-gray-800 text-white px-6 py-3 rounded-lg flex items-center gap-2"
-          >
-            <Printer size={18} />
-            Imprimir
-          </Button>
-        </div>
+            <Button
+              type="button"
+              onClick={imprimir}
+              className="bg-gray-800 text-white px-6 py-3 rounded-lg flex items-center gap-2"
+            >
+              <Printer size={18} />
+              Imprimir
+            </Button>
+          </div>
         </div>
       )}
 
       {isVendedor && (
         <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800 no-print">
-          <strong>Modo consulta:</strong> você está visualizando os pedidos para acompanhamento. Valores, exportação e impressão ficam restritos aos perfis autorizados.
+          <strong>Modo consulta:</strong> você está visualizando somente pedidos já entregues. Valores, exportação e impressão ficam restritos aos perfis autorizados.
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-6 no-print">
-
-      <div className="bg-white border border-gray-300 rounded-xl p-4 shadow-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-6 no-print">
+        <div className="bg-white border border-gray-300 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Total Pedidos</p>
+              <p className="text-sm text-gray-500">Total Entregues</p>
               <strong className="text-3xl font-bold text-gray-800">
                 {totalPedidos}
               </strong>
             </div>
 
-            <ClipboardList size={30} className="text-gray-400 shrink-0" />
+            <PackageCheck size={30} className="text-green-500 shrink-0" />
           </div>
         </div>
 
-      <div className="bg-gray-50 border border-gray-300 rounded-xl p-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-700">Abertos</p>
-            <strong className="text-3xl font-bold text-gray-800">
-              {abertos}
-            </strong>
-          </div>
-          <ClipboardList size={30} className="text-gray-500 shrink-0" />
-        </div>
-      </div>
-
-        
-
-        <div className="bg-blue-50 border border-blue-300 rounded-xl p-4 shadow-sm">
+        <div className="bg-green-50 border border-green-300 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-blue-700">Em Separação</p>
-              <strong className="text-3xl font-bold text-blue-800">
-                {emSeparacao}
+              <p className="text-sm text-green-700">No Prazo</p>
+              <strong className="text-3xl font-bold text-green-800">
+                {entreguesNoPrazo}
               </strong>
             </div>
 
-            <Package size={30} className="text-blue-500 shrink-0" />
-          </div>
-        </div>
-
-        <div className="bg-indigo-50 border border-indigo-300 rounded-xl p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-indigo-700">Em Produção</p>
-              <strong className="text-3xl font-bold text-indigo-800">
-                {emProducao}
-              </strong>
-            </div>
-
-            <Factory size={30} className="text-indigo-500 shrink-0" />
+            <UserCheck size={30} className="text-green-500 shrink-0" />
           </div>
         </div>
 
         <div className="bg-red-50 border border-red-300 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-red-700">Atrasados</p>
+              <p className="text-sm text-red-700">Com Atraso</p>
               <strong className="text-3xl font-bold text-red-800">
-                {atrasado}
+                {entreguesComAtraso}
               </strong>
             </div>
 
-            <TriangleAlert
-                size={30}
-                className="text-red-500 shrink-0"
-            />
+            <PackageCheck size={30} className="text-red-500 shrink-0" />
           </div>
         </div>
 
@@ -475,7 +375,7 @@ export function RelatorioPedidos() {
           <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-emerald-700">Valor Exibido</p>
+                <p className="text-sm text-emerald-700">Valor Entregue</p>
                 <strong className="text-xl font-bold text-emerald-800">
                   {formatarMoeda(valorTotalPedidos)}
                 </strong>
@@ -485,7 +385,7 @@ export function RelatorioPedidos() {
             </div>
           </div>
         )}
-        </div>
+      </div>
 
       <div className="flex flex-wrap gap-2 mb-4 no-print">
         <Button
@@ -495,15 +395,6 @@ export function RelatorioPedidos() {
         >
           <CalendarDays size={16} />
           Hoje
-        </Button>
-
-        <Button
-          type="button"
-          onClick={filtroProximos5Dias}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-        >
-          <CalendarDays size={16} />
-          Próximos 5 Dias
         </Button>
 
         <Button
@@ -523,18 +414,6 @@ export function RelatorioPedidos() {
           <CalendarDays size={16} />
           Este Mês
         </Button>
-
-        <div className="h-8 w-px bg-gray-300 mx-2" />
-
-        <Button
-          type="button"
-          onClick={filtroAtrasados}
-          className="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-        >
-          <TriangleAlert size={16} />
-          Atrasados
-        </Button>
-
       </div>
 
       <div className="bg-white p-6 rounded-2xl shadow-md mb-8 no-print">
@@ -580,16 +459,6 @@ export function RelatorioPedidos() {
           </Select>
 
           <Select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-          >
-            <option value="">Todos em andamento</option>
-            <option value="ABERTO">Aberto</option>
-            <option value="EM_SEPARACAO">Em Separação</option>
-            <option value="EM_PRODUCAO">Em Produção</option>
-          </Select>
-
-          <Select
             value={limit}
             onChange={(e) => {
               setLimit(Number(e.target.value))
@@ -603,7 +472,7 @@ export function RelatorioPedidos() {
 
           <div className="flex gap-4">
             <Button
-              variant="Primary"
+              type="button"
               onClick={buscar}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg flex items-center gap-2"
             >
@@ -613,6 +482,7 @@ export function RelatorioPedidos() {
 
             <Button
               variant=""
+              type="button"
               onClick={limparFiltros}
               className="bg-red-50 text-red-700 border border-red-200 px-6 py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-red-100"
             >
@@ -626,32 +496,30 @@ export function RelatorioPedidos() {
       <div className="bg-white rounded-2xl shadow-md p-6 print-area">
         <CabecalhoImpressao
           empresa={empresa}
-          titulo="Relatório de Pedidos"
+          titulo="Relatório de Pedidos Entregues"
           periodoInicio={dataInicio}
           periodoFim={dataFim}
           extra={
-            status
-              ? `Status filtrado: ${status}`
-              : baseData === "pedido"
-                ? "Base da data: Data do Pedido"
-                : "Base da data: Data de Entrega"
+            baseData === "pedido"
+              ? "Base da data: Data do Pedido"
+              : "Base da data: Data de Entrega"
           }
         />
 
         <div className="mb-6">
           <h2 className="text-2xl font-bold">
-            Listagem de Pedidos
+            Pedidos Entregues
           </h2>
 
           <p className="text-gray-600">
-            {paginacao.total} pedido{paginacao.total === 1 ? "" : "s"} encontrado{paginacao.total === 1 ? "" : "s"}
+            {paginacao.total} pedido{paginacao.total === 1 ? "" : "s"} entregue{paginacao.total === 1 ? "" : "s"} encontrado{paginacao.total === 1 ? "" : "s"}
           </p>
         </div>
 
         <Table>
           <thead>
             <tr>
-              <Th className="uppercase text-xs tracking-wide">Pedido</Th>
+              <Th>Pedido</Th>
               <Th>Cliente</Th>
               <Th>Vendedor</Th>
               <Th>Data Pedido</Th>
@@ -679,11 +547,8 @@ export function RelatorioPedidos() {
                 </Td>
 
                 <Td>{item.cliente?.nome}</Td>
-
                 <Td>{item.vendedor?.nome}</Td>
-
                 <Td>{formatarData(item.dataPedido)}</Td>
-
                 <Td>{formatarData(item.dataEntrega)}</Td>
 
                 <Td
@@ -712,7 +577,7 @@ export function RelatorioPedidos() {
             {pedidos.length === 0 && (
               <tr>
                 <Td className="p-4 border" colSpan={podeVerValores ? "9" : "8"}>
-                  Nenhum pedido encontrado.
+                  Nenhum pedido entregue encontrado.
                 </Td>
               </tr>
             )}

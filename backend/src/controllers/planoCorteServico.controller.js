@@ -2,7 +2,6 @@ import { prisma } from "../lib/prisma.js"
 
 import {
   podeEditarPedido,
-  podeEditarPlano
 } from "../utils/permissoes.js"
 
 function separarPlanos(numeroPlano) {
@@ -154,18 +153,13 @@ export async function listarPlanosComServicosPorPedido(req, res) {
 
 export async function atualizarPlanoComServicos(req, res) {
   try {
-    const { id } = req.params
-
-    console.log("USUARIO LOGADO:", req.user)
-    console.log("PLANO EDITANDO:", id)
-
-    const permitido = await podeEditarPlano(id, req.user)
-
-    if (!permitido) {
+    if (req.user.funcao !== "ADMIN") {
       return res.status(403).json({
-        error: "Você não tem permissão para alterar este plano"
+        error: "Somente usuários ADMIN podem editar planos e serviços."
       })
     }
+
+    const { id } = req.params
 
     const {
       numeroPlano,
@@ -210,7 +204,7 @@ export async function atualizarPlanoComServicos(req, res) {
             planoId: plano.id,
             tipoServicoId: servico.tipoServicoId,
             operadorId: servico.operadorId || null,
-            status: servico.operadorId ? "INICIADO" : "ABERTO",
+            status: servico.status || "ABERTO",
             observacoes: servico.observacoes || null
           }
         })

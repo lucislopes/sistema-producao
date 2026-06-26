@@ -361,6 +361,7 @@ export function RomaneioEntrega() {
             </Button>
 
             <Button
+              variant=""
               type="button"
               onClick={limparFiltros}
               className="bg-red-50 text-red-700 border border-red-200 px-4 py-2 rounded-lg flex items-center gap-2"
