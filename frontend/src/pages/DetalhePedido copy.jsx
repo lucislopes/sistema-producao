@@ -21,23 +21,15 @@ export function DetalhePedido() {
   const [pedido, setPedido] = useState(null)
   const [empresa, setEmpresa] = useState(null)
 
-  const usuarioLogado = JSON.parse(localStorage.getItem("@usuario") || "{}")
-
-  const podeCarregarEmpresa =
-    usuarioLogado.funcao === "ADMIN" ||
-    usuarioLogado.funcao === "VENDEDOR_OPERADOR"
-
   async function carregarDetalhe() {
     try {
-      const pedidoResponse = await api.get(`/detalhe-pedido/${id}`)
-      setPedido(pedidoResponse.data)
+      const [pedidoResponse, empresaResponse] = await Promise.all([
+        api.get(`/detalhe-pedido/${id}`),
+        api.get("/configuracao-empresa")
+      ])
 
-      if (podeCarregarEmpresa) {
-        const empresaResponse = await api.get("/configuracao-empresa")
-        setEmpresa(empresaResponse.data)
-      } else {
-        setEmpresa(null)
-      }
+      setPedido(pedidoResponse.data)
+      setEmpresa(empresaResponse.data)
     } catch (error) {
       console.log(error)
       alert("Erro ao carregar detalhe do pedido")

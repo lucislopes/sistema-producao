@@ -13,6 +13,7 @@ export function Expedicao() {
     try {
       const response = await api.get("/expedicao")
       setPedidos(response.data)
+
     } catch (error) {
       console.log(error)
       alert("Erro ao carregar expedição")
@@ -21,7 +22,6 @@ export function Expedicao() {
 
   useEffect(() => {
     carregarPedidos()
-
     const interval = setInterval(() => {
       carregarPedidos()
     }, 30000)
@@ -94,6 +94,20 @@ export function Expedicao() {
       texto: "No prazo",
       classe: "bg-green-100 text-green-700 border-green-400"
     }
+  }
+
+  function obterStatusExpedicao(pedido) {
+    if (
+      pedido.status === "PRONTO_ENTREGA" &&
+      pedido.tipoPedido === "DIRETO_ENTREGA"
+    ) {
+      return {
+        texto: "Pronto Entrega - Chapa Inteira",
+        classe: "bg-green-100 text-green-700 border-green-400"
+      }
+    }
+
+    return obterStatus(pedido.status)
   }
 
   function obterClasseCard(dataEntrega) {
@@ -194,7 +208,6 @@ export function Expedicao() {
             onChange={(e) => setFiltroStatus(e.target.value)}
           >
             <option value="">Todos os status</option>
-            <option value="CONCLUIDO">Concluído</option>
             <option value="PRONTO_ENTREGA">Pronto Entrega</option>
             <option value="SAIU_ENTREGA">Saiu Entrega</option>
           </Select>
@@ -229,7 +242,7 @@ export function Expedicao() {
       <div className="grid grid-cols-1 gap-4">
         {pedidosFiltrados.map((pedido) => {
           const situacaoPrazo = obterSituacaoPrazo(pedido.dataEntrega)
-          const statusInfo = obterStatus(pedido.status)
+          const statusInfo = obterStatusExpedicao(pedido)
 
           return (
             <div

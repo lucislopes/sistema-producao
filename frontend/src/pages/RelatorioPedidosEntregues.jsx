@@ -89,7 +89,7 @@ export function RelatorioPedidosEntregues() {
 
   async function carregarVendedores() {
     try {
-      const response = await api.get("/funcionarios/operadores")
+      const response = await api.get("/funcionarios/vendedores")
 
       setVendedores(
         response.data.filter(

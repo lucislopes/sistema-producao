@@ -95,14 +95,6 @@ export async function relatorioPedidos(req, res) {
           }
         },
         {
-          vendedor: {
-            nome: {
-              contains: busca,
-              mode: "insensitive"
-            }
-          }
-        },
-        {
           numeroPedidoManual: {
             contains: busca,
             mode: "insensitive"
@@ -183,18 +175,11 @@ export async function relatorioPedidos(req, res) {
           pedido.dataEntrega.getDate()
         )
 
-        if (pedido.status === "ENTREGUE") {
-          situacaoPrazo =
-            dataEntrega < hoje
-              ? "Entregue com atraso"
-              : "Entregue no prazo"
-        } else {
-          situacaoPrazo =
-            dataEntrega < hoje
-              ? "Atrasado"
-              : "No prazo"
-        }
-      }
+        situacaoPrazo =
+          dataEntrega < hoje
+            ? "Atrasado"
+            : "No prazo"
+              }
 
       return {
         ...pedido,

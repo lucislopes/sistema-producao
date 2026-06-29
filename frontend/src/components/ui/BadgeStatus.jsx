@@ -1,4 +1,4 @@
-export function BadgeStatus({ status }) {
+export function BadgeStatus({ status, tipoPedido }) {
   const classes = {
    // ABERTO: "bg-gray-100 text-gray-700",
     ABERTO: "bg-slate-200 text-slate-800",
@@ -7,7 +7,7 @@ export function BadgeStatus({ status }) {
     INICIADO: "bg-sky-100 text-sky-700",
     EM_SEPARACAO: "bg-orange-100 text-orange-700",
     CONCLUIDO: "bg-green-100 text-green-700",
-    PRONTO_ENTREGA: "bg-cyan-100 text-cyan-700",
+    PRONTO_ENTREGA: "bg-green-100 text-green-700",
     SAIU_ENTREGA: "bg-indigo-100 text-indigo-700",
     ENTREGUE: "bg-teal-100 text-teal-700",
     CANCELADO: "bg-red-100 text-red-700"
@@ -25,6 +25,17 @@ export function BadgeStatus({ status }) {
     ENTREGUE: "Entregue",
     CANCELADO: "Cancelado"
   }
+  
+  let label = labels[status] || status || "-"
+
+    if (
+      status === "PRONTO_ENTREGA" &&
+      tipoPedido === "DIRETO_ENTREGA"
+    ) {
+      label = "Pronto Entrega - Chapas Inteiras"
+    }
+
+
 
   return (
     <span
@@ -33,7 +44,7 @@ export function BadgeStatus({ status }) {
         ${classes[status] || "bg-gray-100 text-gray-700"}
       `}
     >
-      {labels[status] || status || "-"}
+      {label}
     </span>
   )
 }

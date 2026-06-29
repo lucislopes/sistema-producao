@@ -149,20 +149,22 @@ export function RelatorioPedidos() {
   }
 
   async function carregarVendedores() {
-    try {
-      const response = await api.get("/funcionarios/operadores")
+  try {
+    const response = await api.get("/funcionarios/vendedores")
 
-      setVendedores(
-        response.data.filter(
-          (f) =>
-            f.funcao === "VENDEDOR" ||
-            f.funcao === "VENDEDOR_OPERADOR"
-        )
+    console.log(response.data)
+
+    setVendedores(
+      response.data.filter(
+        (f) =>
+          f.funcao === "VENDEDOR" ||
+          f.funcao === "VENDEDOR_OPERADOR"
       )
-    } catch (error) {
-      console.log(error)
-    }
+    )
+  } catch (error) {
+    console.log(error)
   }
+}
 
   async function carregarRelatorio(pagina = page, filtros = {}) {
     try {
@@ -330,10 +332,7 @@ export function RelatorioPedidos() {
     setStatus("")
     setPage(1)
 
-    carregarRelatorio(1, {
-      status: "",
-      situacaoPrazo: "ATRASADO"
-    })
+    carregarRelatorio(1)
   }
 
   function filtroStatusRapido(novoStatus) {
@@ -561,7 +560,7 @@ export function RelatorioPedidos() {
 
           <Input
             type="text"
-            placeholder="Buscar pedido, cliente ou vendedor..."
+            placeholder="Buscar pedido ou cliente..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
           />

@@ -47,7 +47,7 @@ export async function recalcularStatusPedido(pedidoId) {
         id: pedidoId
       },
       data: {
-        status: "CONCLUIDO"
+        status: "PRONTO_ENTREGA"
       }
     })
 

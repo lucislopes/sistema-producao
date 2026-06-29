@@ -40,6 +40,12 @@ export async function obterDashboard(req, res) {
         ? "dataPedido"
         : "dataEntrega"
 
+    const statusContaAtrasoProducao = [
+      "ABERTO",
+      "EM_SEPARACAO",
+      "EM_PRODUCAO"
+    ]
+
     const filtroPeriodoPedido = {
       [campoDataPedido]: {
         gte: inicioPeriodo,
@@ -63,7 +69,7 @@ export async function obterDashboard(req, res) {
             lt: hoje
           },
           status: {
-            notIn: ["ENTREGUE", "CANCELADO"]
+            in: statusContaAtrasoProducao
           }
         }
       }
@@ -90,7 +96,7 @@ export async function obterDashboard(req, res) {
             lte: fimPeriodo
           },
           status: {
-            notIn: ["ENTREGUE", "CANCELADO"]
+            in: statusContaAtrasoProducao
           }
         }
       }
@@ -118,7 +124,7 @@ export async function obterDashboard(req, res) {
             lt: hoje
           },
           status: {
-            notIn: ["ENTREGUE", "CANCELADO"]
+            in: statusContaAtrasoProducao
           }
         }
       }
@@ -211,7 +217,9 @@ export async function obterDashboard(req, res) {
 
       prisma.pedido.count({
         where: {
-          ...filtroPedidoAtivo,
+          status: {
+            in: statusContaAtrasoProducao
+          },
           dataEntrega: {
             lt: hoje
           }

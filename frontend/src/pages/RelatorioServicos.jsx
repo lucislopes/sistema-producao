@@ -230,11 +230,10 @@ export function RelatorioServicos() {
         <ResumoCard titulo="Total" valor={total} icon={ClipboardList} />
         <ResumoCard titulo="Abertos" valor={abertos} icon={Clock} />
         <ResumoCard titulo="Em Produção" valor={iniciados} tipo="info" icon={Factory} />
-        <ResumoCard titulo="Concluídos" valor={concluidos} tipo="sucesso" icon={CheckCircle2} />
         <ResumoCard titulo="Operadores" valor={operadoresEnvolvidos} icon={User} />
       </div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-md mb-8 no-print">
+      <div className="bg-whitounded-2xl shadow-md mb-8 no-print">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <Input
             type="date"

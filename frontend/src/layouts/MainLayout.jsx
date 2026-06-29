@@ -268,7 +268,7 @@ export function MainLayout() {
               {(isAdmin || isVendedor || isVendedorOperador) && (
                 <>
                   <MenuLink to="/relatorio-expedicao" icon={FileText}>
-                    Expedição
+                    Relatório de Entrega
                   </MenuLink>
 
                   <MenuLink to="/romaneio-entrega" icon={Truck}>

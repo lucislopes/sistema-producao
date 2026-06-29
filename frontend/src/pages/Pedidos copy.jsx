@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { api } from "../services/api"
-import { Link, useNavigate } from "react-router-dom"
+import { Link } from "react-router-dom"
 import { AutocompleteCliente } from "../components/AutocompleteCliente"
 import { Button } from "../components/ui/Button"
 import { Input } from "../components/ui/Input"
@@ -176,11 +176,8 @@ export function Pedidos() {
 
   const [busca, setBusca] = useState("")
   const [filtroStatus, setFiltroStatus] = useState("")
-  const [filtroVendedorId, setFiltroVendedorId] = useState("")
-
   const [dataInicio, setDataInicio] = useState("")
   const [dataFim, setDataFim] = useState("")
-  
 
   const [totalChapas, setTotalChapas] = useState("")
   const [quantidadeChapasDiretoEntrega, setQuantidadeChapasDiretoEntrega] = useState("")
@@ -206,14 +203,7 @@ export function Pedidos() {
 
   const [tipoPedido, setTipoPedido] = useState("COM_PRODUCAO")
 
-  const navigate = useNavigate()
 
-  const usuarioLogado = JSON.parse(localStorage.getItem("@usuario") || "{}")
-
-  const isAdmin = usuarioLogado.funcao === "ADMIN"
-  const isVendedorLogado =
-    usuarioLogado.funcao === "VENDEDOR" ||
-    usuarioLogado.funcao === "VENDEDOR_OPERADOR"
 
   async function carregarDados() {
     try {
@@ -235,12 +225,6 @@ export function Pedidos() {
       alert("Erro ao carregar dados")
     }
   }
-
-  useEffect(() => {
-    if (!editandoId && isVendedorLogado && usuarioLogado.funcionarioId) {
-      setVendedorId(usuarioLogado.funcionarioId)
-    }
-  }, [editandoId, isVendedorLogado, usuarioLogado.funcionarioId])
 
   useEffect(() => {
     carregarDados()
@@ -435,22 +419,14 @@ export function Pedidos() {
     }
 
     try {
-      let pedidoSalvo
-
       if (editandoId) {
-        const response = await api.put(`/pedidos/${editandoId}`, dados)
-        pedidoSalvo = response.data
+        await api.put(`/pedidos/${editandoId}`, dados)
       } else {
-        const response = await api.post("/pedidos", dados)
-        pedidoSalvo = response.data
+        await api.post("/pedidos", dados)
       }
 
       limparFormulario()
       carregarDados()
-
-      if (tipoPedido === "COM_PRODUCAO" && pedidoSalvo?.id) {
-        navigate(`/plano-corte-servico?pedidoId=${pedidoSalvo.id}`)
-      }
     } catch (error) {
       console.log(error)
       alert(
@@ -566,9 +542,7 @@ export function Pedidos() {
     setEditandoId(null)
     setUpdatedAtOriginal("")
     setClienteId("")
-    setVendedorId(
-      isVendedorLogado ? usuarioLogado.funcionarioId : ""
-    )
+    setVendedorId("")
     setDataEntrega("")
     setTipoEntrega("ENTREGA_EMPRESA")
     setResponsavelFrete("CLIENTE")
@@ -620,13 +594,10 @@ function aplicarRotaSelecionada(id) {
   function pedidoAtrasado(pedido) {
     if (!pedido.dataEntrega) return false
 
-    const statusContaAtrasoProducao = [
-      "ABERTO",
-      "EM_SEPARACAO",
-      "EM_PRODUCAO"
-    ]
-
-    if (!statusContaAtrasoProducao.includes(pedido.status)) {
+    if (
+      pedido.status === "ENTREGUE" ||
+      pedido.status === "CANCELADO"
+    ) {
       return false
     }
 
@@ -651,10 +622,8 @@ function aplicarRotaSelecionada(id) {
         textoBusca === "" ||
         numeroInterno.includes(textoBusca) ||
         numeroManual.includes(textoBusca) ||
-        clienteNome.includes(textoBusca)
-
-      const bateVendedor =
-        filtroVendedorId === "" || pedido.vendedorId === filtroVendedorId
+        clienteNome.includes(textoBusca) ||
+        vendedorNome.includes(textoBusca)
 
       const bateStatus =
         filtroStatus === "" || pedido.status === filtroStatus
@@ -676,7 +645,8 @@ function aplicarRotaSelecionada(id) {
           }
         }
       }
-      return bateBusca && bateStatus && bateVendedor && batePeriodo
+
+      return bateBusca && bateStatus && batePeriodo
     })
 
   const resumoPedidos = {
@@ -706,6 +676,9 @@ function aplicarRotaSelecionada(id) {
 
     return pedido.vendedorId === usuario.funcionarioId
   }
+
+  const usuarioLogado = JSON.parse(localStorage.getItem("@usuario") || "{}")
+  const isAdmin = usuarioLogado.funcao === "ADMIN"
 
   return (
     <div>
@@ -892,8 +865,7 @@ function aplicarRotaSelecionada(id) {
                   value={vendedorId}
                   onChange={(e) => setVendedorId(e.target.value)}
                   required
-                  disabled={!isAdmin && isVendedorLogado}
-                  //disabled={editandoId && !isAdmin} //se quiser depois deixar o vendedor trocar por outro
+                  disabled={editandoId && !isAdmin}
                 >
                   <option value="">Selecione o vendedor</option>
                   {vendedores.map((vendedor) => (
@@ -1137,7 +1109,7 @@ function aplicarRotaSelecionada(id) {
       </form>
 
         <div className="bg-white p-4 rounded-2xl shadow-md mb-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-7 gap-4 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4 items-end">
 
             <div className="relative">
               <Search
@@ -1147,26 +1119,11 @@ function aplicarRotaSelecionada(id) {
 
               <Input
                 type="text"
-                placeholder="Buscar por pedido ou cliente..."
+                placeholder="Buscar por pedido, cliente ou vendedor..."
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
                 className="pl-10"
               />
-            </div>
-
-            <div>
-              <Select
-                value={filtroVendedorId}
-                onChange={(e) => setFiltroVendedorId(e.target.value)}
-              >
-                <option value="">Todos os vendedores</option>
-
-                {vendedores.map((vendedor) => (
-                  <option key={vendedor.id} value={vendedor.id}>
-                    {vendedor.nome}
-                  </option>
-                ))}
-              </Select>
             </div>
 
             <div className="relative">
@@ -1184,7 +1141,9 @@ function aplicarRotaSelecionada(id) {
                 <option value="ABERTO">Aberto</option>
                 <option value="EM_SEPARACAO">Em Separação</option>
                 <option value="EM_PRODUCAO">Em Produção</option>
+                <option value="CONCLUIDO">Concluído</option>
                 <option value="PRONTO_ENTREGA">Pronto Entrega</option>
+                <option value="SAIU_ENTREGA">Saiu Entrega</option>
                 <option value="ENTREGUE">Entregue</option>
                 <option value="CANCELADO">Cancelado</option>
               </Select>
@@ -1251,7 +1210,6 @@ function aplicarRotaSelecionada(id) {
                 setFiltroStatus("")
                 setDataInicio("")
                 setDataFim("")
-                setFiltroVendedorId("")
               }}
             >
               <Eraser size={16} />

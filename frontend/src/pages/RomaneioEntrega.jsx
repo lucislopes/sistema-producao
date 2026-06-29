@@ -53,10 +53,7 @@ export function RomaneioEntrega() {
       valor: "EM_PRODUCAO",
       nome: "Em Produção"
     },
-    {
-      valor: "CONCLUIDO",
-      nome: "Concluído"
-    },
+
     {
       valor: "PRONTO_ENTREGA",
       nome: "Pronto Entrega"

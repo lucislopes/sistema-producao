@@ -137,6 +137,16 @@ export function Kanban() {
   function pedidoAtrasado(pedido) {
     if (!pedido?.dataEntrega) return false
 
+    const statusContaAtraso = [
+      "ABERTO",
+      "EM_SEPARACAO",
+      "EM_PRODUCAO"
+    ]
+
+    if (!statusContaAtraso.includes(pedido.status)) {
+      return false
+    }
+
     const hoje = new Date()
     hoje.setHours(0, 0, 0, 0)
 

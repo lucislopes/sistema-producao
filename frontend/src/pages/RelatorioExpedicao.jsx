@@ -149,14 +149,21 @@ export function RelatorioExpedicao() {
     return `#${pedido?.numeroPedido}`
   }
 
-  function obterStatus(status) {
+    function obterStatus(pedido) {
+    if (
+      pedido.status === "PRONTO_ENTREGA" &&
+      pedido.tipoPedido === "DIRETO_ENTREGA"
+    ) {
+      return "Pronto Entrega - Chapa Inteira"
+    }
+
     const statusMap = {
       CONCLUIDO: "Concluído",
       PRONTO_ENTREGA: "Pronto Entrega",
       ENTREGUE: "Entregue"
     }
 
-    return statusMap[status] || status
+    return statusMap[pedido.status] || pedido.status
   }
 
   function obterQuantidadeChapas(pedido) {
@@ -347,7 +354,7 @@ export function RelatorioExpedicao() {
       pedido.nomeRecebedor || "",
       pedido.contatoRecebedor || "",
       pedido.enderecoEntrega || "",
-      obterStatus(pedido.status)
+      obterStatus(pedido)
     ])
 
     const csv = [cabecalho, ...linhas]
@@ -508,7 +515,6 @@ export function RelatorioExpedicao() {
             onChange={(e) => setStatus(e.target.value)}
           >
             <option value="">Todos os status</option>
-            <option value="CONCLUIDO">Concluído</option>
             <option value="PRONTO_ENTREGA">Pronto Entrega</option>
             {incluirEntregues && (
               <option value="ENTREGUE">Entregue</option>
@@ -622,7 +628,7 @@ export function RelatorioExpedicao() {
                 </Td>
 
                 <Td className="font-medium">
-                  {obterStatus(pedido.status)}
+                  {obterStatus(pedido)}
                 </Td>
               </tr>
             ))}

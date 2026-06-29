@@ -17,7 +17,7 @@ export async function obterAlertas(req, res) {
             lt: hoje
           },
           status: {
-            notIn: ["ENTREGUE", "CANCELADO"]
+            in: ["ABERTO", "EM_SEPARACAO", "EM_PRODUCAO"]
           }
         },
         include: {
