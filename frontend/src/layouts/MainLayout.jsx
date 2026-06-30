@@ -282,6 +282,16 @@ export function MainLayout() {
                   <MenuLink to="/relatorio-pedidos-entregues" icon={PackageCheck}>
                     Pedidos Entregues
                   </MenuLink>
+
+                  <MenuLink
+                  to="/relatorio-consumo-chapas"
+                  icon={PackageCheck}
+                >
+                  Consumo de Chapas
+                </MenuLink>
+
+
+
                 </>
               )}
 
