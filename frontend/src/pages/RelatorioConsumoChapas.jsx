@@ -58,13 +58,18 @@ export function RelatorioConsumoChapas() {
     return porOperador.length > 0 ? porOperador[0] : null
   }, [porOperador])
 
-  const maiorDia = useMemo(() => {
-    if (porDia.length === 0) return null
-
-    return [...porDia].sort(
-      (a, b) => Number(b.chapas || 0) - Number(a.chapas || 0)
-    )[0]
+  const diasOrdenados = useMemo(() => {
+    return [...porDia]
+      .sort((a, b) => Number(b.chapas || 0) - Number(a.chapas || 0))
+      .map((item) => ({
+        ...item,
+        dataFormatada: formatarData(item.data)
+      }))
   }, [porDia])
+
+  const maiorDia = useMemo(() => {
+    return diasOrdenados.length > 0 ? diasOrdenados[0] : null
+  }, [diasOrdenados])
 
   const maiorServico = useMemo(() => {
     return porTipoServico.length > 0 ? porTipoServico[0] : null
@@ -74,6 +79,15 @@ export function RelatorioConsumoChapas() {
     return Number(valor || 0).toLocaleString("pt-BR", {
       maximumFractionDigits: 2
     })
+  }
+
+  function percentual(valor, total) {
+    const totalNumero = Number(total || 0)
+    if (totalNumero <= 0) return "0%"
+
+    return `${((Number(valor || 0) / totalNumero) * 100).toLocaleString("pt-BR", {
+      maximumFractionDigits: 1
+    })}%`
   }
 
   function formatarDataFiltro(data) {
@@ -314,7 +328,7 @@ export function RelatorioConsumoChapas() {
           </h1>
 
           <p className="text-sm text-gray-600 mt-1">
-            Relatório gerencial por venda, produção, vendedor, operador e tipo de serviço.
+            Relatório gerencial por venda, produção, vendedor, operador, dia e tipo de serviço.
           </p>
         </div>
 
@@ -447,7 +461,7 @@ export function RelatorioConsumoChapas() {
 
         <InsightCard
           titulo={baseData === "producao" ? "Dia de maior produção" : "Dia de maior consumo"}
-          valor={maiorDia ? formatarData(maiorDia.data) : "-"}
+          valor={maiorDia ? maiorDia.dataFormatada : "-"}
           detalhe={`${numero(maiorDia?.chapas)} chapas`}
           icon={CalendarDays}
         />
@@ -481,28 +495,45 @@ export function RelatorioConsumoChapas() {
           />
         )}
 
-        {baseData === "producao" && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-1">
-              Produção por Operador
-            </h2>
+        <RankingCard
+          titulo="Ranking de Chapas por Dia"
+          subtitulo="Mostra os 10 dias com maior consumo no período filtrado."
+          dados={diasOrdenados}
+          campoNome="dataFormatada"
+          campoValor="chapas"
+        />
+      </div>
 
-            <p className="text-sm text-gray-500 mb-4">
-              Serviços concluídos, chapas produzidas e metros de encabeçamento por operador.
-            </p>
+      {baseData === "producao" && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-1">
+            Análise de Produção por Operador
+          </h2>
 
-            <Table>
-              <thead>
-                <tr>
-                  <Th>Operador</Th>
-                  <Th>Serviços</Th>
-                  <Th>Chapas</Th>
-                  <Th>Metros Encabeçamento</Th>
-                </tr>
-              </thead>
+          <p className="text-sm text-gray-500 mb-4">
+            Comparativo de produtividade por serviços concluídos, chapas produzidas, média por serviço e participação no total.
+          </p>
 
-              <tbody>
-                {porOperador.map((item) => (
+          <Table>
+            <thead>
+              <tr>
+                <Th>Operador</Th>
+                <Th>Serviços</Th>
+                <Th>Chapas</Th>
+                <Th>Média/Serviço</Th>
+                <Th>% Produção</Th>
+                <Th>Metros</Th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {porOperador.map((item) => {
+                const mediaServico =
+                  Number(item.quantidadeServicos || 0) > 0
+                    ? Number(item.chapas || 0) / Number(item.quantidadeServicos || 0)
+                    : 0
+
+                return (
                   <tr key={item.operadorId}>
                     <Td className="font-semibold text-gray-800">
                       {item.nome}
@@ -511,22 +542,28 @@ export function RelatorioConsumoChapas() {
                     <Td className="font-bold text-blue-700">
                       {numero(item.chapas)}
                     </Td>
+                    <Td>{numero(mediaServico)}</Td>
+                    <Td>
+                      <span className="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
+                        {percentual(item.chapas, resumo?.totalChapas)}
+                      </span>
+                    </Td>
                     <Td>{numero(item.metrosEncabecamento)}</Td>
                   </tr>
-                ))}
+                )
+              })}
 
-                {porOperador.length === 0 && (
-                  <tr>
-                    <Td colSpan="4">
-                      Nenhuma produção por operador encontrada. Verifique se existem serviços concluídos com operador vinculado.
-                    </Td>
-                  </tr>
-                )}
-              </tbody>
-            </Table>
-          </div>
-        )}
-      </div>
+              {porOperador.length === 0 && (
+                <tr>
+                  <Td colSpan="6">
+                    Nenhuma produção por operador encontrada. Verifique se existem serviços concluídos com operador vinculado.
+                  </Td>
+                </tr>
+              )}
+            </tbody>
+          </Table>
+        </div>
+      )}
 
       {baseData === "pedido" && (
         <div className="bg-blue-50 border border-blue-100 text-blue-800 rounded-2xl p-4 text-sm">
@@ -818,7 +855,7 @@ function RankingCard({ titulo, subtitulo, dados, campoNome, campoValor }) {
             maiorValor > 0 ? Math.max((valor / maiorValor) * 100, 4) : 0
 
           return (
-            <div key={item.operadorId || item.nome || index}>
+            <div key={item.operadorId || item.nome || item.data || index}>
               <div className="flex justify-between text-sm mb-1">
                 <span className="font-medium text-gray-700">
                   {index + 1}. {item[campoNome]}
@@ -838,6 +875,12 @@ function RankingCard({ titulo, subtitulo, dados, campoNome, campoValor }) {
             </div>
           )
         })}
+
+        {dados.length > 10 && (
+          <p className="text-xs text-gray-500 pt-2">
+            Exibindo os 10 maiores resultados do período filtrado.
+          </p>
+        )}
 
         {dados.length === 0 && (
           <p className="text-sm text-gray-500">
