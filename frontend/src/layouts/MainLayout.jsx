@@ -168,13 +168,17 @@ export function MainLayout() {
       "/expedicao": "Expedição",
       "/relatorio-expedicao": "Relatório de Expedição",
       "/romaneio-entrega": "Romaneio de Entrega",
-      "/relatorio-pedidos": "Relatório de Pedidos",
+      "/relatorio-pedidos": "Relatório de Pedidos em Andamento",
       "/relatorio-producao": "Relatório de Produção",
       "/alertas": "Alertas",
       "/produtividade-operadores": "Produtividade",
       "/configuracao-empresa": "Configurações",
       "/minha-senha": "Alterar Senha",
-      "/relatorio-auditoria-frete": "Auditoria de Frete"
+      "/relatorio-auditoria-frete": "Auditoria de Frete",
+      "/relatorio-consumo-chapas": "Relatório Consumo de Chapas",
+      "/relatorio-pedidos-entregues": "Relatório de Pedidos Entregues",
+      "/relatorio-servicos": "Relatório de Serviços",
+      "/relatorio-pendencias": "Relatório de Pendências"
     }
 
     return titulos[path] || "Sistema"

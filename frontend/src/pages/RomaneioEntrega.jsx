@@ -250,10 +250,6 @@ export function RomaneioEntrega() {
     <div>
       <div className="flex justify-between items-center mb-6 no-print">
         <div>
-          <h1 className="text-2xl font-bold">
-            Relatório de Entrega por Rotas
-          </h1>
-
           <p className="text-gray-600">
             Pedidos concluídos pendentes para entrega.
           </p>
