@@ -268,6 +268,9 @@ const totalChapasPlanos = planosCadastrados.reduce(
   const usuarioLogado = JSON.parse(localStorage.getItem("@usuario") || "{}")
   const isAdmin = usuarioLogado.funcao === "ADMIN"
 
+  const podeCadastrarNovoPlano =
+  isAdmin || planosCadastrados.length === 0
+
   return (
     <div>
       <div className="bg-white p-6 rounded-2xl shadow-md mb-8">
@@ -350,6 +353,7 @@ const totalChapasPlanos = planosCadastrados.reduce(
               </label>
 
               <Input
+                disabled={!podeCadastrarNovoPlano}
                 placeholder="Ex: 1 ou 1/2/3"
                 value={numeroPlano}
                 onChange={(e) => setNumeroPlano(e.target.value)}
@@ -367,6 +371,7 @@ const totalChapasPlanos = planosCadastrados.reduce(
               </label>
 
               <Input
+                disabled={!podeCadastrarNovoPlano}
                 type="number"
                 placeholder="Ex: 10"
                 value={quantidadeChapas}
@@ -381,6 +386,7 @@ const totalChapasPlanos = planosCadastrados.reduce(
               </label>
 
               <Input
+                disabled={!podeCadastrarNovoPlano}
                 type="text"
                 inputMode="decimal"
                 placeholder="Ex: 3,50"
@@ -417,6 +423,7 @@ const totalChapasPlanos = planosCadastrados.reduce(
 
               <label className="flex items-center gap-2 h-[46px] border border-gray-300 rounded-lg px-3">
                 <input
+                  disabled={!podeCadastrarNovoPlano}
                   type="checkbox"
                   checked={compraExterna}
                   onChange={(e) => setCompraExterna(e.target.checked)}
@@ -483,6 +490,7 @@ const totalChapasPlanos = planosCadastrados.reduce(
 
                         <td className="px-4 py-3">
                             <textarea
+                            disabled={!podeCadastrarNovoPlano || !selecionado}
                             rows={1}
                             placeholder={`Observação para ${tipo.nome}`}
                             disabled={!selecionado}
@@ -543,14 +551,20 @@ const totalChapasPlanos = planosCadastrados.reduce(
             </div>
 
           <div className="mt-6 flex justify-end">
-            <Button
-              type="submit"
-              variant="primary"
-              className="flex items-center gap-2 px-6 py-3"
-            >
-              <Save size={16} />
-              Salvar Planos e Serviços
-            </Button>
+            {podeCadastrarNovoPlano ? (
+              <Button
+                type="submit"
+                variant="primary"
+                className="flex items-center gap-2 px-6 py-3"
+              >
+                <Save size={16} />
+                {editandoId ? "Salvar Alterações" : "Salvar Planos e Serviços"}
+              </Button>
+            ) : (
+              <div className="rounded-lg border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+                Este pedido já possui plano(s) cadastrado(s). Apenas administradores podem adicionar novos planos.
+              </div>
+            )}
           </div>
         </form>
       </div>
