@@ -699,12 +699,10 @@ function aplicarRotaSelecionada(id) {
     ).length
   }
 
-  function podeEditarPedido(pedido) {
+  function podeEditarPedido() {
     const usuario = JSON.parse(localStorage.getItem("@usuario") || "{}")
 
-    if (usuario.funcao === "ADMIN") return true
-
-    return pedido.vendedorId === usuario.funcionarioId
+    return usuario.funcao === "ADMIN"
   }
 
   return (
@@ -1325,9 +1323,9 @@ function aplicarRotaSelecionada(id) {
                     ) : (
                       <span
                         className="inline-flex items-center rounded-lg bg-yellow-50 px-3 py-2 text-xs font-semibold text-yellow-800 border border-yellow-200"
-                        title="Somente o vendedor responsável ou um ADMIN pode editar"
+                        title="Somente usuários ADMIN podem editar pedidos"
                       >
-                        Somente leitura
+                        Administrador
                       </span>
                     )}
 
