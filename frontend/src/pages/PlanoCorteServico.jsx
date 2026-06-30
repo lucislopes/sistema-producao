@@ -151,6 +151,11 @@ export function PlanoCorteServico() {
   async function handleSubmit(e) {
     e.preventDefault()
 
+    if (!isAdmin && planosCadastrados.length > 0 && !editandoId) {
+      alert("Este pedido já possui plano cadastrado. Novos planos só podem ser adicionados por um administrador.")
+      return
+    }
+
     const servicos = Object.values(servicosSelecionados)
 
     if (servicos.length === 0) {
@@ -269,11 +274,53 @@ const totalChapasPlanos = planosCadastrados.reduce(
   const isAdmin = usuarioLogado.funcao === "ADMIN"
 
   const podeCadastrarNovoPlano =
-  isAdmin || planosCadastrados.length === 0
+    isAdmin || planosCadastrados.length === 0
+
+  const formularioBloqueado =
+    pedidoId && !isAdmin && planosCadastrados.length > 0
 
   return (
     <div>
-      <div className="bg-white p-6 rounded-2xl shadow-md mb-8">
+      {formularioBloqueado ? (
+        <div className="rounded-2xl border border-yellow-300 bg-yellow-50 p-5 mb-8 text-yellow-900">
+          <h2 className="text-lg font-bold mb-3">
+            Plano já cadastrado
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm mb-4">
+            <div>
+              <strong>Pedido:</strong>{" "}
+              {pedidoSelecionado?.origemPedido === "EXTERNO" &&
+              pedidoSelecionado?.numeroPedidoManual
+                ? pedidoSelecionado.numeroPedidoManual
+                : `#${pedidoSelecionado?.numeroPedido}`}
+            </div>
+
+            <div>
+              <strong>Cliente:</strong>{" "}
+              {pedidoSelecionado?.cliente?.nome || "-"}
+            </div>
+
+            <div>
+              <strong>Vendedor:</strong>{" "}
+              {pedidoSelecionado?.vendedor?.nome || "-"}
+            </div>
+
+            <div>
+              <strong>Planos:</strong>{" "}
+              {planosCadastrados.length}
+            </div>
+          </div>
+
+          <p className="text-sm">
+            Este pedido já possui plano(s) e serviço(s) cadastrados. Para evitar duplicidade,
+            novos planos só podem ser adicionados por um administrador.
+          </p>
+        </div>
+      ) : (
+
+        <div className="bg-white p-6 rounded-2xl shadow-md mb-8">
+
         <div className="flex items-center gap-3 mb-4">
           <ClipboardList size={24} className="text-blue-600" />
 
@@ -296,6 +343,7 @@ const totalChapasPlanos = planosCadastrados.reduce(
               </label>
 
               <Select
+                disabled={!podeCadastrarNovoPlano}
                 value={pedidoId}
                 onChange={(e) => {
                   setPedidoId(e.target.value)
@@ -423,8 +471,8 @@ const totalChapasPlanos = planosCadastrados.reduce(
 
               <label className="flex items-center gap-2 h-[46px] border border-gray-300 rounded-lg px-3">
                 <input
-                  disabled={!podeCadastrarNovoPlano}
                   type="checkbox"
+                  disabled={!podeCadastrarNovoPlano}
                   checked={compraExterna}
                   onChange={(e) => setCompraExterna(e.target.checked)}
                   className="h-4 w-4 accent-blue-600"
@@ -476,6 +524,7 @@ const totalChapasPlanos = planosCadastrados.reduce(
                             <label className="flex items-center gap-3 font-medium text-gray-800">
                             <input
                                 type="checkbox"
+                                disabled={!podeCadastrarNovoPlano}
                                 checked={Boolean(selecionado)}
                                 onChange={() => alternarServico(tipo.id)}
                                 className="h-4 w-4 accent-blue-600"
@@ -493,7 +542,6 @@ const totalChapasPlanos = planosCadastrados.reduce(
                             disabled={!podeCadastrarNovoPlano || !selecionado}
                             rows={1}
                             placeholder={`Observação para ${tipo.nome}`}
-                            disabled={!selecionado}
                             className={`
                                 w-full resize-none rounded-lg border p-2 text-sm
                                 ${
@@ -516,7 +564,10 @@ const totalChapasPlanos = planosCadastrados.reduce(
                           <td className="px-4 py-3">
                             <Select
                               value={selecionado?.operadorId || ""}
-                              disabled={!selecionado}
+                              disabled={
+                                !selecionado ||
+                                !podeCadastrarNovoPlano
+                              }
                               onChange={(e) =>
                                 alterarOperadorServico(tipo.id, e.target.value)
                               }
@@ -568,6 +619,7 @@ const totalChapasPlanos = planosCadastrados.reduce(
           </div>
         </form>
       </div>
+      )}
 
       {pedidoId && (
         <div className="bg-white p-6 rounded-2xl shadow-md">
