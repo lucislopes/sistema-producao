@@ -323,10 +323,6 @@ export function RelatorioConsumoChapas() {
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Relatório de Consumo de Chapas
-          </h1>
-
           <p className="text-sm text-gray-600 mt-1">
             Relatório gerencial por venda, produção, vendedor, operador, dia e tipo de serviço.
           </p>
@@ -343,7 +339,7 @@ export function RelatorioConsumoChapas() {
         </Button>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5">
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4">
         <div className="flex flex-wrap gap-2 mb-5">
           <PeriodoButton label="Hoje" onClick={() => aplicarPeriodo("hoje")} />
           <PeriodoButton label="Semana" onClick={() => aplicarPeriodo("semana")} />
