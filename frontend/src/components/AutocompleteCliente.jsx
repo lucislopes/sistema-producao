@@ -8,26 +8,28 @@ export function AutocompleteCliente({ clienteId, clienteInicial, onSelecionar })
   const [clienteSelecionado, setClienteSelecionado] = useState(null)
 
   useEffect(() => {
-    if (clienteInicial) {
+    if (!clienteId) {
+      setBusca("")
+      setClienteSelecionado(null)
+      setResultados([])
+      return
+    }
+
+    if (
+      clienteInicial &&
+      String(clienteInicial.id) === String(clienteId)
+    ) {
       setClienteSelecionado(clienteInicial)
       setBusca(clienteInicial.nome || "")
       setResultados([])
+      return
     }
-  }, [clienteInicial])
 
-  useEffect(() => {
     async function carregarClienteSelecionado() {
-      if (!clienteId) {
-        setBusca("")
-        setClienteSelecionado(null)
-        setResultados([])
-        return
-      }
-
       try {
         const response = await api.get("/clientes", {
           params: {
-            id: clienteId,
+            busca: clienteId,
             incluirInativos: true
           }
         })
@@ -47,6 +49,7 @@ export function AutocompleteCliente({ clienteId, clienteInicial, onSelecionar })
         } else {
           console.log("Cliente não encontrado para o pedido:", {
             clienteId,
+            clienteInicial,
             retorno: response.data
           })
 
@@ -63,7 +66,7 @@ export function AutocompleteCliente({ clienteId, clienteInicial, onSelecionar })
     }
 
     carregarClienteSelecionado()
-  }, [clienteId])
+  }, [clienteId, clienteInicial])
 
   useEffect(() => {
     async function buscarClientes() {
@@ -112,10 +115,8 @@ export function AutocompleteCliente({ clienteId, clienteInicial, onSelecionar })
   }
 
   function alterarBusca(e) {
-    const valor = e.target.value
-
     setClienteSelecionado(null)
-    setBusca(valor)
+    setBusca(e.target.value)
     setResultados([])
 
     if (onSelecionar) {
