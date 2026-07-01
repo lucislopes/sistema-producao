@@ -159,6 +159,7 @@ export function Pedidos() {
   const [updatedAtOriginal, setUpdatedAtOriginal] = useState("")
 
   const [clienteId, setClienteId] = useState("")
+  const [clienteInicial, setClienteInicial] = useState(null)
   const [vendedorId, setVendedorId] = useState("")
   const [dataEntrega, setDataEntrega] = useState("")
   const [tipoEntrega, setTipoEntrega] = useState("ENTREGA_EMPRESA")
@@ -528,8 +529,6 @@ export function Pedidos() {
   }
 
   function editarPedido(pedido) {
-
-    const [clienteInicial, setClienteInicial] = useState(null)
     //console.log("PEDIDO COMPLETO")
     //console.log(JSON.stringify(pedido, null, 2))
 
