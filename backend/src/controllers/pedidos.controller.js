@@ -271,7 +271,7 @@ export async function criarPedido(req, res) {
     const origemTratada = origemPedido || "INTERNO"
     const numeroManualTratado =
       origemTratada === "EXTERNO"
-        ? numeroPedidoManual?.trim() || null
+        ? numeroPedidoManual?.replace(/\s/g, "") || null
         : null
 
     if (origemTratada === "EXTERNO" && !numeroManualTratado) {
@@ -508,46 +508,46 @@ export async function atualizarPedido(req, res) {
     const origemTratada = origemPedido || "INTERNO"
     const numeroManualTratado =
       origemTratada === "EXTERNO"
-        ? numeroPedidoManual?.trim() || null
+        ? numeroPedidoManual?.replace(/\s/g, "") || null
         : null
 
-    if (origemTratada === "EXTERNO" && !numeroManualTratado) {
-      return res.status(400).json({
-        error: "Número do pedido externo é obrigatório"
+      if (origemTratada === "EXTERNO" && !numeroManualTratado) {
+        return res.status(400).json({
+          error: "Número do pedido externo é obrigatório"
+        })
+      }
+
+      const erroPedidoDuplicado = await validarNumeroPedidoDuplicado({
+        origemTratada,
+        numeroManualTratado,
+        pedidoIdIgnorar: id
       })
-    }
 
-    const erroPedidoDuplicado = await validarNumeroPedidoDuplicado({
-      origemTratada,
-      numeroManualTratado,
-      pedidoIdIgnorar: id
-    })
+      if (erroPedidoDuplicado) {
+        return res.status(400).json({
+          error: erroPedidoDuplicado
+        })
+      }
 
-    if (erroPedidoDuplicado) {
-      return res.status(400).json({
-        error: erroPedidoDuplicado
+      const cliente = await prisma.cliente.findUnique({
+        where: { id: clienteId }
       })
-    }
 
-    const cliente = await prisma.cliente.findUnique({
-      where: { id: clienteId }
-    })
+      if (!cliente) {
+        return res.status(400).json({
+          error: "Cliente informado não existe"
+        })
+      }
 
-    if (!cliente) {
-      return res.status(400).json({
-        error: "Cliente informado não existe"
+      const vendedor = await prisma.funcionario.findUnique({
+        where: { id: vendedorId }
       })
-    }
 
-    const vendedor = await prisma.funcionario.findUnique({
-      where: { id: vendedorId }
-    })
-
-    if (!vendedor) {
-      return res.status(400).json({
-        error: "Vendedor informado não existe"
-      })
-    }
+      if (!vendedor) {
+        return res.status(400).json({
+          error: "Vendedor informado não existe"
+        })
+      }
 
     if (rotaId) {
       const rota = await prisma.rotaEntrega.findUnique({

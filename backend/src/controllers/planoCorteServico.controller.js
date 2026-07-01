@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.js"
+import { recalcularStatusPedido } from "../utils/recalcularStatusPedido.js"
 
 import {
   podeEditarPedido,
@@ -222,6 +223,65 @@ export async function atualizarPlanoComServicos(req, res) {
 
     return res.status(400).json({
       error: error.message || "Erro ao atualizar plano com serviços"
+    })
+  }
+}
+
+export async function excluirPlanoComServicos(req, res) {
+  try {
+    if (req.user.funcao !== "ADMIN") {
+      return res.status(403).json({
+        error: "Somente usuários ADMIN podem excluir planos e serviços."
+      })
+    }
+
+    const { id } = req.params
+
+    const plano = await prisma.planoCorte.findUnique({
+      where: { id },
+      include: {
+        pedido: true,
+        servicos: true
+      }
+    })
+
+    if (!plano) {
+      return res.status(404).json({
+        error: "Plano de corte não encontrado"
+      })
+    }
+
+    if (["SAIU_ENTREGA", "ENTREGUE", "CANCELADO"].includes(plano.pedido.status)) {
+      return res.status(400).json({
+        error: "Não é possível excluir plano de pedido encerrado."
+      })
+    }
+
+    const pedidoId = plano.pedidoId
+    const pedidoEstavaProntoEntrega = plano.pedido.status === "PRONTO_ENTREGA"
+
+    await prisma.$transaction(async (tx) => {
+      await tx.servicoPlano.deleteMany({
+        where: { planoId: id }
+      })
+
+      await tx.planoCorte.delete({
+        where: { id }
+      })
+    })
+
+    await recalcularStatusPedido(pedidoId, {
+      permitirReabrirExpedicao: pedidoEstavaProntoEntrega
+    })
+
+    return res.json({
+      message: "Plano de corte e serviços excluídos com sucesso"
+    })
+  } catch (error) {
+    console.log(error)
+
+    return res.status(500).json({
+      error: "Erro ao excluir plano de corte"
     })
   }
 }

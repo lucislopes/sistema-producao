@@ -3,7 +3,8 @@ import { Router } from "express"
 import {
   criarPlanosComServicos,
   listarPlanosComServicosPorPedido,
-  atualizarPlanoComServicos
+  atualizarPlanoComServicos,
+  excluirPlanoComServicos
 } from "../controllers/planoCorteServico.controller.js"
 
 
@@ -22,8 +23,14 @@ router.get(
 
 router.put(
   "/:id",
-  roleMiddleware("ADMIN", "VENDEDOR", "VENDEDOR_OPERADOR"),
+  roleMiddleware("ADMIN"),
   atualizarPlanoComServicos
+)
+
+router.delete(
+  "/:id",
+  roleMiddleware("ADMIN"),
+  excluirPlanoComServicos
 )
 
 router.post(

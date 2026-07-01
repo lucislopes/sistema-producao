@@ -15,7 +15,8 @@ import {
   Scissors,
   Layers,
   Drill,
-  Cog
+  Cog,
+  Trash2
 } from "lucide-react"
 
 export function PlanoCorteServico() {
@@ -32,6 +33,10 @@ export function PlanoCorteServico() {
   const [compraExterna, setCompraExterna] = useState(false)
   const [observacoes, setObservacoes] = useState("")
   const [servicosSelecionados, setServicosSelecionados] = useState({})
+
+  const [modalExcluirPlano, setModalExcluirPlano] = useState(false)
+  const [planoParaExcluir, setPlanoParaExcluir] = useState(null)
+  const [excluindoPlano, setExcluindoPlano] = useState(false)
 
   const [editandoId, setEditandoId] = useState(null)
 
@@ -282,6 +287,65 @@ const totalChapasPlanos = planosCadastrados.reduce(
 
   const formularioBloqueado =
     pedidoId && !isAdmin && planosCadastrados.length > 0
+
+  async function excluirServico(servico) {
+    const confirmar = confirm(
+      `Deseja realmente excluir este serviço?
+
+    Serviço: ${servico.tipoServico?.nome || "-"}
+    Plano: ${servico.plano?.numeroPlano || numeroPlano || "-"}
+
+    Esta ação só deve ser usada para corrigir cadastro errado.`
+      )
+
+      if (!confirmar) return
+
+      try {
+        await api.delete(`/servicos-plano/${servico.id}`)
+
+        await carregarPlanosComServicos(pedidoId)
+      } catch (error) {
+        console.log(error)
+
+        alert(
+          error.response?.data?.error ||
+          "Erro ao excluir serviço"
+        )
+      }
+    }
+
+    function abrirModalExcluirPlano(plano) {
+  setPlanoParaExcluir(plano)
+  setModalExcluirPlano(true)
+}
+
+async function confirmarExclusaoPlano() {
+  if (!planoParaExcluir) return
+
+  try {
+    setExcluindoPlano(true)
+
+    await api.delete(`/plano-corte-servico/${planoParaExcluir.id}`)
+
+    if (editandoId === planoParaExcluir.id) {
+      limparFormulario()
+    }
+
+    await carregarPlanosComServicos(pedidoId)
+
+    setModalExcluirPlano(false)
+    setPlanoParaExcluir(null)
+  } catch (error) {
+    console.log(error)
+
+    alert(
+      error.response?.data?.error ||
+      "Erro ao excluir plano."
+    )
+  } finally {
+    setExcluindoPlano(false)
+  }
+}
 
   return (
     <div>
@@ -659,14 +723,26 @@ const totalChapasPlanos = planosCadastrados.reduce(
                     </div>
 
                     {podeEditarPlanoTela(plano) ? (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => editarPlano(plano)}
-                    >
-                      Editar
-                    </Button>
-                  ) : (
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => editarPlano(plano)}
+                        >
+                          Editar
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant="danger"
+                          onClick={() => abrirModalExcluirPlano(plano)}
+                          className="flex items-center gap-2"
+                        >
+                          <Trash2 size={16} />
+                          Excluir
+                        </Button>
+                      </div>
+                    ) : (
                     <span className="rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-2 text-xs font-semibold text-yellow-800">
                       Edição permitida apenas para ADMIN
                     </span>
@@ -693,6 +769,12 @@ const totalChapasPlanos = planosCadastrados.reduce(
                             Operador
                             </th>
                         </tr>
+
+                        {isAdmin && (
+                          <th className="w-[100px] px-3 py-2 text-left font-semibold text-gray-700">
+                            Ações
+                          </th>
+                        )}
                     </thead>
 
                     <tbody>
@@ -717,6 +799,18 @@ const totalChapasPlanos = planosCadastrados.reduce(
                             {servico.operador?.nome || "-"}
                             </td>
 
+                            {isAdmin && (
+                              <td className="px-3 py-2">
+                                <Button
+                                  type="button"
+                                  variant="danger"
+                                  onClick={() => excluirServico(servico)}
+                                >
+                                  <Trash2 size={16} />
+                                </Button>
+                              </td>
+                            )}
+
                         </tr>
                         ))}
 
@@ -738,6 +832,64 @@ const totalChapasPlanos = planosCadastrados.reduce(
           </div>
         </div>
       )}
+
+      {modalExcluirPlano && planoParaExcluir && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+    <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+      <h2 className="text-xl font-bold text-red-700 mb-3">
+        Excluir Plano de Corte
+      </h2>
+
+      <p className="text-sm text-gray-700 mb-4">
+        Tem certeza que deseja excluir este plano de corte?
+      </p>
+
+      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900 space-y-2">
+        <p>
+          <strong>Plano:</strong> {planoParaExcluir.numeroPlano}
+        </p>
+
+        <p>
+          <strong>Serviços vinculados:</strong>{" "}
+          {planoParaExcluir.servicos?.length || 0}
+        </p>
+
+        <p>
+          <strong>Atenção:</strong> todos os serviços deste plano também serão excluídos.
+        </p>
+
+        <p>
+          Esta ação não poderá ser desfeita.
+        </p>
+      </div>
+
+        <div className="mt-6 flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              setModalExcluirPlano(false)
+              setPlanoParaExcluir(null)
+            }}
+            disabled={excluindoPlano}
+          >
+            Cancelar
+          </Button>
+
+          <Button
+            type="button"
+            variant="danger"
+            onClick={confirmarExclusaoPlano}
+            disabled={excluindoPlano}
+            className="flex items-center gap-2"
+          >
+            <Trash2 size={16} />
+            {excluindoPlano ? "Excluindo..." : "Excluir Plano"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  )}
     </div>
   )
 }

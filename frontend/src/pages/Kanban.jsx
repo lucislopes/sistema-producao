@@ -477,7 +477,22 @@ export function Kanban() {
                     {servico.status === "INICIADO" && (
                       <>
                         <button
-                          onClick={() => alterarStatus(servico.id, "CONCLUIDO")}
+                          onClick={() =>
+                            alterarStatus(
+                              servico.id,
+                              "CONCLUIDO",
+                              `Deseja realmente concluir este serviço?
+
+                        Serviço: ${servico.tipoServico?.nome || "-"}
+                        Plano: ${servico.plano?.numeroPlano || "-"}
+                        Pedido: ${obterNumeroPedido(servico.plano?.pedido)}
+                        Cliente: ${servico.plano?.pedido?.cliente?.nome || "-"}
+
+                        Se este for o último serviço pendente, o pedido será enviado automaticamente para a Expedição.
+
+                        Esta ação poderá ser revertida somente por um administrador.`
+                            )
+                          }
                           className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm inline-flex items-center gap-2"
                         >
                           <CheckCircle2 size={15} />

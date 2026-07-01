@@ -798,7 +798,11 @@ function aplicarRotaSelecionada(id) {
                     type="text"
                     placeholder="Ex.: 12345/2026"
                     value={numeroPedidoManual}
-                    onChange={(e) => setNumeroPedidoManual(e.target.value)}
+                    onChange={(e) =>
+                      setNumeroPedidoManual(
+                        e.target.value.replace(/\s/g, "")
+                      )
+                    }
                     required
                   />
                 </Campo>

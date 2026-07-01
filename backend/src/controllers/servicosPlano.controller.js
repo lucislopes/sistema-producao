@@ -13,6 +13,14 @@ function validarStatusServico(status) {
   return STATUS_SERVICO_PERMITIDOS.includes(status)
 }
 
+function pedidoBloqueado(status) {
+  return ["PRONTO_ENTREGA", "SAIU_ENTREGA", "ENTREGUE", "CANCELADO"].includes(status)
+}
+
+function pedidoEncerrado(status) {
+  return ["SAIU_ENTREGA", "ENTREGUE", "CANCELADO"].includes(status)
+}
+
 export async function listarServicosPorPlano(req, res) {
   try {
     const { planoId } = req.params
@@ -49,23 +57,14 @@ export async function listarServicosPorPlano(req, res) {
 
 export async function criarServicoPlano(req, res) {
   try {
-    const {
-      planoId,
-      tipoServicoId,
-      operadorId,
-      observacoes
-    } = req.body
+    const { planoId, tipoServicoId, operadorId, observacoes } = req.body
 
     if (!planoId) {
-      return res.status(400).json({
-        error: "Plano é obrigatório"
-      })
+      return res.status(400).json({ error: "Plano é obrigatório" })
     }
 
     if (!tipoServicoId) {
-      return res.status(400).json({
-        error: "Tipo de serviço é obrigatório"
-      })
+      return res.status(400).json({ error: "Tipo de serviço é obrigatório" })
     }
 
     const plano = await prisma.planoCorte.findUnique({
@@ -76,12 +75,10 @@ export async function criarServicoPlano(req, res) {
     })
 
     if (!plano) {
-      return res.status(400).json({
-        error: "Plano não encontrado"
-      })
+      return res.status(400).json({ error: "Plano não encontrado" })
     }
 
-    if (["PRONTO_ENTREGA", "SAIU_ENTREGA", "ENTREGUE", "CANCELADO"].includes(plano.pedido.status)) {
+    if (pedidoBloqueado(plano.pedido.status)) {
       return res.status(400).json({
         error: "Pedido já está encerrado ou em expedição"
       })
@@ -103,15 +100,11 @@ export async function criarServicoPlano(req, res) {
       })
 
       if (!operador) {
-        return res.status(400).json({
-          error: "Operador não encontrado"
-        })
+        return res.status(400).json({ error: "Operador não encontrado" })
       }
 
       if (!operador.ativo) {
-        return res.status(400).json({
-          error: "Operador inativo"
-        })
+        return res.status(400).json({ error: "Operador inativo" })
       }
     }
 
@@ -133,8 +126,9 @@ export async function criarServicoPlano(req, res) {
         planoId,
         tipoServicoId,
         operadorId: operadorId || null,
-        observacoes,
-        status: "ABERTO"
+        observacoes: observacoes || null,
+        status: operadorId ? "INICIADO" : "ABERTO",
+        dataInicio: operadorId ? new Date() : null
       },
       include: {
         tipoServico: true,
@@ -165,13 +159,7 @@ export async function criarServicoPlano(req, res) {
 export async function atualizarServicoPlano(req, res) {
   try {
     const { id } = req.params
-
-    const {
-      tipoServicoId,
-      operadorId,
-      status,
-      observacoes
-    } = req.body
+    const { tipoServicoId, operadorId, status, observacoes } = req.body
 
     if (!tipoServicoId) {
       return res.status(400).json({
@@ -185,10 +173,26 @@ export async function atualizarServicoPlano(req, res) {
       })
     }
 
+    const usuario = await prisma.usuario.findUnique({
+      where: { id: req.user.id },
+      include: {
+        funcionario: true
+      }
+    })
+
+    if (!usuario || !usuario.funcionario) {
+      return res.status(404).json({
+        error: "Usuário não possui funcionário vinculado"
+      })
+    }
+
+    const ehAdmin = usuario.funcionario.funcao === "ADMIN"
+
     const servicoAtual = await prisma.servicoPlano.findUnique({
-      
       where: { id },
       include: {
+        operador: true,
+        tipoServico: true,
         plano: {
           include: {
             pedido: true
@@ -197,15 +201,31 @@ export async function atualizarServicoPlano(req, res) {
       }
     })
 
-    const usuario = await prisma.usuario.findUnique({
-      where: { id: req.user.id },
-      include: {
-        funcionario: true
-      }
-    })
+    if (!servicoAtual) {
+      return res.status(404).json({
+        error: "Serviço não encontrado"
+      })
+    }
 
-    const ehAdmin =
-      usuario?.funcionario?.funcao === "ADMIN"
+    const statusPedido = servicoAtual.plano.pedido.status
+
+    const adminReabrindoServico =
+      ehAdmin &&
+      servicoAtual.status === "CONCLUIDO" &&
+      ["INICIADO", "ABERTO"].includes(status) &&
+      statusPedido === "PRONTO_ENTREGA"
+
+    if (pedidoEncerrado(statusPedido)) {
+      return res.status(400).json({
+        error: "Pedido já está encerrado"
+      })
+    }
+
+    if (pedidoBloqueado(statusPedido) && !adminReabrindoServico) {
+      return res.status(400).json({
+        error: "Pedido já está encerrado ou em expedição"
+      })
+    }
 
     if (
       servicoAtual.operadorId &&
@@ -214,22 +234,7 @@ export async function atualizarServicoPlano(req, res) {
       !ehAdmin
     ) {
       return res.status(403).json({
-        error:
-          "Este serviço já possui operador. Somente administrador pode alterar."
-      })
-    }
-
-    
-
-    if (!servicoAtual) {
-      return res.status(404).json({
-        error: "Serviço não encontrado"
-      })
-    }
-
-    if (["PRONTO_ENTREGA", "SAIU_ENTREGA", "ENTREGUE", "CANCELADO"].includes(servicoAtual.plano.pedido.status)) {
-      return res.status(400).json({
-        error: "Pedido já está encerrado ou em expedição"
+        error: "Este serviço já possui operador. Somente administrador pode alterar."
       })
     }
 
@@ -281,15 +286,28 @@ export async function atualizarServicoPlano(req, res) {
       tipoServicoId,
       operadorId: operadorId || null,
       status,
-      observacoes
+      observacoes: observacoes || null
     }
 
-    if (status === "INICIADO" && !servicoAtual.dataInicio) {
-      dados.dataInicio = new Date()
+    if (status === "INICIADO") {
+      dados.dataInicio = servicoAtual.dataInicio || new Date()
+      dados.dataFim = null
     }
 
-    if (status === "CONCLUIDO" && !servicoAtual.dataFim) {
+    if (status === "CONCLUIDO") {
       dados.dataFim = new Date()
+    }
+
+    if (status === "ABERTO") {
+      if (!ehAdmin) {
+        return res.status(403).json({
+          error: "Somente administrador pode voltar o serviço para aberto."
+        })
+      }
+
+      dados.operadorId = null
+      dados.dataInicio = null
+      dados.dataFim = null
     }
 
     const servico = await prisma.servicoPlano.update({
@@ -302,7 +320,9 @@ export async function atualizarServicoPlano(req, res) {
       }
     })
 
-    await recalcularStatusPedido(servico.plano.pedidoId)
+    await recalcularStatusPedido(servico.plano.pedidoId, {
+      permitirReabrirExpedicao: adminReabrindoServico
+    })
 
     await registrarHistoricoPedido({
       pedidoId: servico.plano.pedidoId,
@@ -343,9 +363,24 @@ export async function deletarServicoPlano(req, res) {
       })
     }
 
-    if (["PRONTO_ENTREGA", "SAIU_ENTREGA", "ENTREGUE", "CANCELADO"].includes(servico.plano.pedido.status)) {
+    const usuario = await prisma.usuario.findUnique({
+      where: { id: req.user.id },
+      include: {
+        funcionario: true
+      }
+    })
+
+    const ehAdmin = usuario?.funcionario?.funcao === "ADMIN"
+
+    if (!ehAdmin) {
+      return res.status(403).json({
+        error: "Somente administrador pode excluir serviço."
+      })
+    }
+
+    if (pedidoEncerrado(servico.plano.pedido.status)) {
       return res.status(400).json({
-        error: "Pedido já está encerrado ou em expedição"
+        error: "Pedido já está encerrado"
       })
     }
 
@@ -361,7 +396,9 @@ export async function deletarServicoPlano(req, res) {
       where: { id }
     })
 
-    await recalcularStatusPedido(pedidoId)
+    await recalcularStatusPedido(pedidoId, {
+      permitirReabrirExpedicao: servico.plano.pedido.status === "PRONTO_ENTREGA"
+    })
 
     await registrarHistoricoPedido({
       pedidoId,
@@ -530,6 +567,8 @@ export async function assumirServico(req, res) {
       })
     }
 
+    const ehAdmin = usuario.funcionario.funcao === "ADMIN"
+
     const servicoAtual = await prisma.servicoPlano.findUnique({
       where: { id },
       include: {
@@ -549,10 +588,7 @@ export async function assumirServico(req, res) {
       })
     }
 
-    if (
-      ["PRONTO_ENTREGA", "SAIU_ENTREGA", "ENTREGUE", "CANCELADO"]
-        .includes(servicoAtual.plano.pedido.status)
-    ) {
+    if (pedidoBloqueado(servicoAtual.plano.pedido.status)) {
       return res.status(400).json({
         error: "Pedido já está encerrado ou em expedição"
       })
@@ -563,8 +599,6 @@ export async function assumirServico(req, res) {
         error: "Somente serviços abertos podem ser assumidos"
       })
     }
-
-    const ehAdmin = usuario.funcionario.funcao === "ADMIN"
 
     if (
       servicoAtual.operadorId &&
@@ -586,7 +620,10 @@ export async function assumirServico(req, res) {
     const servico = await prisma.servicoPlano.update({
       where: { id },
       data: {
-        operadorId: usuario.funcionario.id
+        operadorId: usuario.funcionario.id,
+        status: "INICIADO",
+        dataInicio: servicoAtual.dataInicio || new Date(),
+        dataFim: null
       },
       include: {
         tipoServico: true,
@@ -636,6 +673,8 @@ export async function alterarStatusServico(req, res) {
       })
     }
 
+    const ehAdmin = usuario.funcionario.funcao === "ADMIN"
+
     const servicoAtual = await prisma.servicoPlano.findUnique({
       where: { id },
       include: {
@@ -655,16 +694,29 @@ export async function alterarStatusServico(req, res) {
       })
     }
 
-    if (
-      ["PRONTO_ENTREGA", "SAIU_ENTREGA", "ENTREGUE", "CANCELADO"]
-        .includes(servicoAtual.plano.pedido.status)
-    ) {
+    const statusPedido = servicoAtual.plano.pedido.status
+
+    const adminReabrindoServico =
+      ehAdmin &&
+      servicoAtual.status === "CONCLUIDO" &&
+      ["INICIADO", "ABERTO"].includes(status) &&
+      statusPedido === "PRONTO_ENTREGA"
+
+    const reabrindoServicoConcluido =
+      servicoAtual.status === "CONCLUIDO" &&
+      ["INICIADO", "ABERTO"].includes(status)
+
+    if (reabrindoServicoConcluido && !ehAdmin) {
+      return res.status(403).json({
+        error: "Somente administrador pode reabrir serviço concluído."
+      })
+    }
+
+    if (pedidoBloqueado(statusPedido) && !adminReabrindoServico) {
       return res.status(400).json({
         error: "Pedido já está encerrado ou em expedição"
       })
     }
-
-    const ehAdmin = usuario.funcionario.funcao === "ADMIN"
 
     if (
       servicoAtual.operadorId &&
@@ -676,7 +728,9 @@ export async function alterarStatusServico(req, res) {
       })
     }
 
-    const dados = { status }
+    const dados = {
+      status
+    }
 
     if (status === "INICIADO") {
       dados.dataInicio = servicoAtual.dataInicio || new Date()
@@ -713,7 +767,9 @@ export async function alterarStatusServico(req, res) {
       }
     })
 
-    await recalcularStatusPedido(servico.plano.pedidoId)
+    await recalcularStatusPedido(servico.plano.pedidoId, {
+      permitirReabrirExpedicao: adminReabrindoServico
+    })
 
     await registrarHistoricoPedido({
       pedidoId: servico.plano.pedidoId,
@@ -741,13 +797,23 @@ export async function liberarOperadorServico(req, res) {
       include: {
         operador: true,
         tipoServico: true,
-        plano: true
+        plano: {
+          include: {
+            pedido: true
+          }
+        }
       }
     })
 
     if (!servicoAtual) {
       return res.status(404).json({
         error: "Serviço não encontrado"
+      })
+    }
+
+    if (pedidoEncerrado(servicoAtual.plano.pedido.status)) {
+      return res.status(400).json({
+        error: "Pedido já está encerrado"
       })
     }
 
@@ -766,7 +832,9 @@ export async function liberarOperadorServico(req, res) {
       }
     })
 
-    await recalcularStatusPedido(servico.plano.pedidoId)
+    await recalcularStatusPedido(servico.plano.pedidoId, {
+      permitirReabrirExpedicao: servicoAtual.plano.pedido.status === "PRONTO_ENTREGA"
+    })
 
     await registrarHistoricoPedido({
       pedidoId: servico.plano.pedidoId,
@@ -807,13 +875,23 @@ export async function transferirOperadorServico(req, res) {
       include: {
         operador: true,
         tipoServico: true,
-        plano: true
+        plano: {
+          include: {
+            pedido: true
+          }
+        }
       }
     })
 
     if (!servicoAtual) {
       return res.status(404).json({
         error: "Serviço não encontrado"
+      })
+    }
+
+    if (pedidoEncerrado(servicoAtual.plano.pedido.status)) {
+      return res.status(400).json({
+        error: "Pedido já está encerrado"
       })
     }
 
@@ -857,7 +935,9 @@ export async function transferirOperadorServico(req, res) {
       }
     })
 
-    await recalcularStatusPedido(servico.plano.pedidoId)
+    await recalcularStatusPedido(servico.plano.pedidoId, {
+      permitirReabrirExpedicao: servicoAtual.plano.pedido.status === "PRONTO_ENTREGA"
+    })
 
     await registrarHistoricoPedido({
       pedidoId: servico.plano.pedidoId,
