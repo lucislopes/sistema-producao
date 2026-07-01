@@ -1,5 +1,52 @@
 import { prisma } from "../lib/prisma.js"
 
+function criarDataLocal(data, fimDoDia = false) {
+  if (!data) return null
+
+  const [ano, mes, dia] = data.split("-").map(Number)
+
+  return new Date(
+    ano,
+    mes - 1,
+    dia,
+    fimDoDia ? 23 : 0,
+    fimDoDia ? 59 : 0,
+    fimDoDia ? 59 : 0,
+    fimDoDia ? 999 : 0
+  )
+}
+
+function calcularSituacaoPrazo(pedido, hoje) {
+  if (!pedido.dataEntrega) {
+    return "Sem data"
+  }
+
+  const statusContaAtrasoProducao = [
+    "ABERTO",
+    "EM_SEPARACAO",
+    "EM_PRODUCAO"
+  ]
+
+  if (!statusContaAtrasoProducao.includes(pedido.status)) {
+    return "Produção finalizada"
+  }
+
+  const dataEntrega = new Date(
+    pedido.dataEntrega.getFullYear(),
+    pedido.dataEntrega.getMonth(),
+    pedido.dataEntrega.getDate()
+  )
+
+  if (dataEntrega < hoje) {
+    return "Atrasado"
+  }
+
+  if (dataEntrega.getTime() === hoje.getTime()) {
+    return "Último dia"
+  }
+
+  return "No prazo"
+}
 
 export async function relatorioPedidos(req, res) {
   try {
@@ -27,22 +74,6 @@ export async function relatorioPedidos(req, res) {
       "EM_SEPARACAO",
       "EM_PRODUCAO"
     ]
-
-    function criarDataLocal(data, fimDoDia = false) {
-      if (!data) return null
-
-      const [ano, mes, dia] = data.split("-").map(Number)
-
-      return new Date(
-        ano,
-        mes - 1,
-        dia,
-        fimDoDia ? 23 : 0,
-        fimDoDia ? 59 : 0,
-        fimDoDia ? 59 : 0,
-        fimDoDia ? 999 : 0
-      )
-    }
 
     const campoData =
       baseData === "pedido"
@@ -142,15 +173,12 @@ export async function relatorioPedidos(req, res) {
     const [pedidos, total] = await Promise.all([
       prisma.pedido.findMany({
         where,
-
         include: {
           cliente: true,
           vendedor: true,
           rota: true
         },
-
         orderBy,
-
         skip,
         take: limite
       }),
@@ -163,29 +191,10 @@ export async function relatorioPedidos(req, res) {
     const hoje = new Date()
     hoje.setHours(0, 0, 0, 0)
 
-    const pedidosComPrazo = pedidos.map((pedido) => {
-      let situacaoPrazo = "No prazo"
-
-      if (!pedido.dataEntrega) {
-        situacaoPrazo = "Sem data"
-      } else {
-        const dataEntrega = new Date(
-          pedido.dataEntrega.getFullYear(),
-          pedido.dataEntrega.getMonth(),
-          pedido.dataEntrega.getDate()
-        )
-
-        situacaoPrazo =
-          dataEntrega < hoje
-            ? "Atrasado"
-            : "No prazo"
-              }
-
-      return {
-        ...pedido,
-        situacaoPrazo
-      }
-    })
+    const pedidosComPrazo = pedidos.map((pedido) => ({
+      ...pedido,
+      situacaoPrazo: calcularSituacaoPrazo(pedido, hoje)
+    }))
 
     return res.json({
       baseData,

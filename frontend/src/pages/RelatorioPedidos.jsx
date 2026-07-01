@@ -359,7 +359,11 @@ export function RelatorioPedidos() {
   ).length
 
   const atrasado = pedidos.filter(
-    (p) => p.situacaoPrazo === "ATRASADO" || p.situacaoPrazo === "Atrasado"
+    pedido => pedido.situacaoPrazo === "Atrasado"
+  ).length
+
+  const ultimoDia = pedidos.filter(
+    (p) => p.situacaoPrazo === "Último dia"
   ).length
 
   const valorTotalPedidos = pedidos.reduce(

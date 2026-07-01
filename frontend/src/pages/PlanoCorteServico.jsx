@@ -239,10 +239,14 @@ export function PlanoCorteServico() {
     }
 
     function formatarData(data) {
-  if (!data) return "Sem data"
+      if (!data) return "-"
 
-  return new Date(data).toLocaleDateString("pt-BR")
-}
+      const dataTexto = String(data).substring(0, 10)
+
+      const [ano, mes, dia] = dataTexto.split("-")
+
+      return `${dia}/${mes}/${ano}`
+    }
 
 function statusPedidoTexto(status) {
   const mapa = {

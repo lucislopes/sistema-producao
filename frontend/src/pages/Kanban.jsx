@@ -113,7 +113,11 @@ export function Kanban() {
   function formatarData(data) {
     if (!data) return "-"
 
-    return new Date(data).toLocaleDateString("pt-BR")
+    const dataTexto = String(data).substring(0, 10)
+
+    const [ano, mes, dia] = dataTexto.split("-")
+
+    return `${dia}/${mes}/${ano}`
   }
 
   function statusAmigavel(status) {
@@ -134,26 +138,38 @@ export function Kanban() {
     setModalTransferir(true)
   }
 
-  function pedidoAtrasado(pedido) {
-    if (!pedido?.dataEntrega) return false
+  function obterSituacaoPrazoPedido(pedido) {
+    if (!pedido?.dataEntrega) return "SEM_DATA"
 
-    const statusContaAtraso = [
+    const statusParaContarAtraso = [
       "ABERTO",
       "EM_SEPARACAO",
       "EM_PRODUCAO"
     ]
 
-    if (!statusContaAtraso.includes(pedido.status)) {
-      return false
+    if (!statusParaContarAtraso.includes(pedido.status)) {
+      return "FINALIZADO_PRODUCAO"
     }
 
     const hoje = new Date()
     hoje.setHours(0, 0, 0, 0)
 
-    const entrega = new Date(pedido.dataEntrega)
-    entrega.setHours(0, 0, 0, 0)
+    const entregaTexto = String(pedido.dataEntrega).substring(0, 10)
+    const [ano, mes, dia] = entregaTexto.split("-").map(Number)
+    const entrega = new Date(ano, mes - 1, dia)
 
-    return entrega < hoje
+    if (entrega < hoje) return "ATRASADO"
+    if (entrega.getTime() === hoje.getTime()) return "ULTIMO_DIA"
+
+    return "NO_PRAZO"
+  }
+
+  function pedidoAtrasado(pedido) {
+    return obterSituacaoPrazoPedido(pedido) === "ATRASADO"
+  }
+
+  function pedidoUltimoDia(pedido) {
+    return obterSituacaoPrazoPedido(pedido) === "ULTIMO_DIA"
   }
 
   function obterPrioridade(pedido) {
@@ -332,6 +348,8 @@ export function Kanban() {
                     ${
                       pedidoAtrasado(servico.plano?.pedido)
                         ? "bg-red-50 border-red-300"
+                        : pedidoUltimoDia(servico.plano?.pedido)
+                        ? "bg-yellow-50 border-yellow-300"
                         : "bg-white border-gray-200"
                     }
                   `}
@@ -363,6 +381,12 @@ export function Kanban() {
                           {pedidoAtrasado(servico.plano?.pedido) && (
                             <span className="px-2 py-1 rounded-full text-xs font-semibold bg-red-600 text-white">
                               ATRASADO
+                            </span>
+                          )}
+
+                          {pedidoUltimoDia(servico.plano?.pedido) && (
+                            <span className="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-500 text-white">
+                              ÚLTIMO DIA
                             </span>
                           )}
                         </div>

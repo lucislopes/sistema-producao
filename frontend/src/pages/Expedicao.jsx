@@ -73,7 +73,10 @@ export function Expedicao() {
     const hoje = new Date()
     hoje.setHours(0, 0, 0, 0)
 
-    const entrega = new Date(dataEntrega)
+    const dataTexto = String(dataEntrega).substring(0, 10)
+    const [ano, mes, dia] = dataTexto.split("-").map(Number)
+
+    const entrega = new Date(ano, mes - 1, dia)
     entrega.setHours(0, 0, 0, 0)
 
     if (entrega < hoje) {
@@ -85,7 +88,7 @@ export function Expedicao() {
 
     if (entrega.getTime() === hoje.getTime()) {
       return {
-        texto: "Hoje",
+        texto: "Último dia",
         classe: "bg-yellow-100 text-yellow-700 border-yellow-400"
       }
     }
@@ -117,7 +120,7 @@ export function Expedicao() {
       return "border-red-500 bg-red-50"
     }
 
-    if (situacao.texto === "Hoje") {
+    if (situacao.texto === "Último dia") {
       return "border-yellow-500 bg-yellow-50"
     }
 
