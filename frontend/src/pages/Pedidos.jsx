@@ -527,6 +527,10 @@ export function Pedidos() {
   }
 
   function editarPedido(pedido) {
+
+  console.log("PEDIDO COMPLETO")
+  console.log(JSON.stringify(pedido, null, 2))
+
     setOrigemPedido(pedido.origemPedido || "INTERNO")
     setNumeroPedidoManual(pedido.numeroPedidoManual || "")
     setTipoPedido(
