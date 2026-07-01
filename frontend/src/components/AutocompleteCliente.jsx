@@ -2,10 +2,18 @@ import { useEffect, useState } from "react"
 import { api } from "../services/api"
 import { Input } from "./ui/Input"
 
-export function AutocompleteCliente({ clienteId, onSelecionar }) {
+export function AutocompleteCliente({ clienteId, clienteInicial, onSelecionar }) {
   const [busca, setBusca] = useState("")
   const [resultados, setResultados] = useState([])
   const [clienteSelecionado, setClienteSelecionado] = useState(null)
+
+  useEffect(() => {
+    if (clienteInicial) {
+      setClienteSelecionado(clienteInicial)
+      setBusca(clienteInicial.nome || "")
+      setResultados([])
+    }
+  }, [clienteInicial])
 
   useEffect(() => {
     async function carregarClienteSelecionado() {

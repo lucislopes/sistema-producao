@@ -8,6 +8,7 @@ import { Select } from "../components/ui/Select"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
 import { Table, Th, Td } from "../components/ui/Table"
 
+
 import {
   SquarePen,
   Eye,
@@ -528,8 +529,10 @@ export function Pedidos() {
 
   function editarPedido(pedido) {
 
-  console.log("PEDIDO COMPLETO")
-  console.log(JSON.stringify(pedido, null, 2))
+    const [clienteInicial, setClienteInicial] = useState(null)
+    //console.log("PEDIDO COMPLETO")
+    //console.log(JSON.stringify(pedido, null, 2))
+
 
     setOrigemPedido(pedido.origemPedido || "INTERNO")
     setNumeroPedidoManual(pedido.numeroPedidoManual || "")
@@ -539,6 +542,7 @@ export function Pedidos() {
     setEditandoId(pedido.id)
     setUpdatedAtOriginal(pedido.updatedAt || "")
     setClienteId(pedido.clienteId ? String(pedido.clienteId) : "")
+    setClienteInicial(pedido.cliente || null)
     setVendedorId(pedido.vendedorId)
     setDataEntrega(
       pedido.dataEntrega
@@ -568,6 +572,7 @@ export function Pedidos() {
     setEditandoId(null)
     setUpdatedAtOriginal("")
     setClienteId("")
+    setClienteInicial(null)
     setVendedorId(
       isVendedorLogado ? usuarioLogado.funcionarioId : ""
     )
@@ -856,8 +861,10 @@ function aplicarRotaSelecionada(id) {
                   <div className="flex-1">
                     <AutocompleteCliente
                       clienteId={clienteId}
+                      clienteInicial={clienteInicial}
                       onSelecionar={(cliente) => {
                         setClienteId(cliente ? cliente.id : "")
+                        setClienteInicial(cliente || null)
 
                         if (cliente) {
                           if (!nomeRecebedor) setNomeRecebedor(cliente.nome || "")
