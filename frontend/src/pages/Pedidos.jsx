@@ -354,10 +354,8 @@ export function Pedidos() {
   async function handleSubmit(e) {
     e.preventDefault()
 
-    if (tipoPedido === "DIRETO_ENTREGA" && !dataEntrega) {
-      alert(
-        "Data prevista para entrega é obrigatória para pedido direto para entrega."
-      )
+    if (!dataEntrega) {
+      alert("Data prevista para entrega é obrigatória.")
       return
     }
 
@@ -858,17 +856,9 @@ function aplicarRotaSelecionada(id) {
                         setClienteId(cliente ? cliente.id : "")
 
                         if (cliente) {
-                          if (!nomeRecebedor) {
-                            setNomeRecebedor(cliente.nome || "")
-                          }
-
-                          if (!contatoRecebedor) {
-                            setContatoRecebedor(cliente.telefone || "")
-                          }
-
-                          if (!enderecoEntrega) {
-                            setEnderecoEntrega(cliente.endereco || "")
-                          }
+                          if (!nomeRecebedor) setNomeRecebedor(cliente.nome || "")
+                          if (!contatoRecebedor) setContatoRecebedor(cliente.telefone || "")
+                          if (!enderecoEntrega) setEnderecoEntrega(cliente.endereco || "")
                         }
                       }}
                     />
@@ -902,12 +892,13 @@ function aplicarRotaSelecionada(id) {
                 </Select>
               </Campo>
 
-              <Campo label="Data prevista para entrega">
+              <Campo label="Data prevista para entrega *">
                 <Input
                   type="date"
                   value={dataEntrega}
                   min={new Date().toISOString().split("T")[0]}
                   onChange={(e) => setDataEntrega(e.target.value)}
+                  required
                 />
               </Campo>
 
