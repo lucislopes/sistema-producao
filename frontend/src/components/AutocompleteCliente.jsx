@@ -12,20 +12,45 @@ export function AutocompleteCliente({ clienteId, onSelecionar }) {
       if (!clienteId) {
         setBusca("")
         setClienteSelecionado(null)
+        setResultados([])
         return
       }
 
       try {
-        let cliente = null
-          const response = await api.get("/clientes")
-          cliente = response.data.find((item) => item.id === clienteId)
+        const response = await api.get("/clientes", {
+          params: {
+            id: clienteId,
+            incluirInativos: true
+          }
+        })
+
+        const lista = Array.isArray(response.data)
+          ? response.data
+          : response.data?.dados || []
+
+        const cliente = lista.find(
+          (item) => String(item.id) === String(clienteId)
+        )
 
         if (cliente) {
           setClienteSelecionado(cliente)
           setBusca(cliente.nome || "")
+          setResultados([])
+        } else {
+          console.log("Cliente não encontrado para o pedido:", {
+            clienteId,
+            retorno: response.data
+          })
+
+          setClienteSelecionado(null)
+          setBusca("")
+          setResultados([])
         }
       } catch (error) {
-        console.log(error)
+        console.log("Erro ao carregar cliente selecionado:", error)
+        setClienteSelecionado(null)
+        setBusca("")
+        setResultados([])
       }
     }
 
@@ -44,11 +69,23 @@ export function AutocompleteCliente({ clienteId, onSelecionar }) {
         return
       }
 
-      const response = await api.get("/clientes", {
-        params: { busca }
-      })
+      try {
+        const response = await api.get("/clientes", {
+          params: {
+            busca: busca.trim(),
+            incluirInativos: true
+          }
+        })
 
-      setResultados(response.data)
+        const lista = Array.isArray(response.data)
+          ? response.data
+          : response.data?.dados || []
+
+        setResultados(lista)
+      } catch (error) {
+        console.log("Erro ao buscar clientes:", error)
+        setResultados([])
+      }
     }
 
     const timeout = setTimeout(buscarClientes, 400)
@@ -60,14 +97,22 @@ export function AutocompleteCliente({ clienteId, onSelecionar }) {
     setClienteSelecionado(cliente)
     setBusca(cliente.nome || "")
     setResultados([])
-    onSelecionar(cliente)
+
+    if (onSelecionar) {
+      onSelecionar(cliente)
+    }
   }
 
   function alterarBusca(e) {
+    const valor = e.target.value
+
     setClienteSelecionado(null)
-    setBusca(e.target.value)
+    setBusca(valor)
     setResultados([])
-    onSelecionar(null)
+
+    if (onSelecionar) {
+      onSelecionar(null)
+    }
   }
 
   return (
@@ -77,6 +122,7 @@ export function AutocompleteCliente({ clienteId, onSelecionar }) {
         placeholder="Digite para buscar o cliente..."
         value={busca}
         onChange={alterarBusca}
+        autoComplete="off"
       />
 
       {resultados.length > 0 && (
@@ -89,7 +135,7 @@ export function AutocompleteCliente({ clienteId, onSelecionar }) {
               className="block w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50"
             >
               <p className="font-semibold text-sm">
-                {cliente.nome}
+                {cliente.nome || "Cliente sem nome"}
               </p>
 
               <p className="text-xs text-gray-500">

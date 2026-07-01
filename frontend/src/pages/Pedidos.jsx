@@ -534,7 +534,7 @@ export function Pedidos() {
     )
     setEditandoId(pedido.id)
     setUpdatedAtOriginal(pedido.updatedAt || "")
-    setClienteId(pedido.clienteId)
+    setClienteId(pedido.clienteId ? String(pedido.clienteId) : "")
     setVendedorId(pedido.vendedorId)
     setDataEntrega(
       pedido.dataEntrega
@@ -921,9 +921,7 @@ function aplicarRotaSelecionada(id) {
                     <option value="ABERTO">Aberto</option>
                     <option value="EM_SEPARACAO">Em Separação</option>
                     <option value="EM_PRODUCAO">Em Produção</option>
-                    <option value="CONCLUIDO">Concluído</option>
                     <option value="PRONTO_ENTREGA">Pronto Entrega</option>
-                    <option value="SAIU_ENTREGA">Saiu Entrega</option>
                     <option value="ENTREGUE">Entregue</option>
                     <option value="CANCELADO">Cancelado</option>
                   </Select>
