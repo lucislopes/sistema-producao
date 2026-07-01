@@ -10,10 +10,28 @@ function valorNumericoOuNull(valor) {
   return Number(valor)
 }
 
+function criarDataEntrega(dataEntrega) {
+  if (!dataEntrega) return null
+
+  const dataTexto = String(dataEntrega).trim()
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dataTexto)) {
+    throw new Error("Data de entrega inválida")
+  }
+
+  const [ano, mes, dia] = dataTexto.split("-").map(Number)
+
+  if (ano < 2000 || ano > 2100) {
+    throw new Error("Ano da data de entrega inválido")
+  }
+
+  return new Date(ano, mes - 1, dia, 0, 0, 0, 0)
+}
+
 function validarDataEntregaPassada(dataEntrega) {
   if (!dataEntrega) return null
 
-  const dataInformada = new Date(`${dataEntrega}T00:00:00`)
+  const dataInformada = criarDataEntrega(dataEntrega)
   const hoje = new Date()
   hoje.setHours(0, 0, 0, 0)
 
@@ -42,7 +60,7 @@ function validarPedido({
   }
 
   if (dataEntrega) {
-    const data = new Date(dataEntrega)
+    const data = criarDataEntrega(dataEntrega)
     if (Number.isNaN(data.getTime())) return "Data de entrega inválida"
   }
 
@@ -186,8 +204,8 @@ export async function listarPedidos(req, res) {
   } catch (error) {
     console.log(error)
 
-    return res.status(500).json({
-      error: "Erro ao listar pedidos"
+    return res.status(400).json({
+      error: error.message || "Erro ao criar pedido"
     })
   }
 }
@@ -332,6 +350,20 @@ export async function criarPedido(req, res) {
       motivoAlteracaoFrete
     })
 
+
+      console.log("====================================")
+  console.log("dataEntrega recebida:", dataEntrega)
+  console.log("tipo:", typeof dataEntrega)
+
+  const dataConvertida = criarDataEntrega(dataEntrega)
+
+  console.log("Date:", dataConvertida)
+  console.log("ISO:", dataConvertida?.toISOString())
+
+  console.log("====================================")
+
+
+
     const pedido = await prisma.pedido.create({
       data: {
         origemPedido: origemTratada,
@@ -344,7 +376,7 @@ export async function criarPedido(req, res) {
 
         clienteId,
         vendedorId,
-        dataEntrega: dataEntrega ? new Date(dataEntrega) : null,
+        dataEntrega: criarDataEntrega(dataEntrega),
         tipoEntrega,
 
         responsavelFrete:
@@ -356,6 +388,8 @@ export async function criarPedido(req, res) {
         ...dadosFrete,
 
         valorTotal: valorNumericoOuNull(valorTotal),
+
+        
 
         quantidadeChapasDiretoEntrega:
           tipoPedido === "DIRETO_ENTREGA"
@@ -602,7 +636,7 @@ export async function atualizarPedido(req, res) {
 
         clienteId,
         vendedorId,
-        dataEntrega: dataEntrega ? new Date(dataEntrega) : null,
+        dataEntrega: criarDataEntrega(dataEntrega),
         tipoEntrega,
 
         responsavelFrete:

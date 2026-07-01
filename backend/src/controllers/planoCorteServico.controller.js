@@ -12,6 +12,10 @@ function separarPlanos(numeroPlano) {
     .filter(Boolean)
 }
 
+function obterUsuarioId(req) {
+  return req.user?.id || req.user?.usuarioId || null
+}
+
 export async function criarPlanosComServicos(req, res) {
   try {
     const {
@@ -57,6 +61,18 @@ export async function criarPlanosComServicos(req, res) {
     const resultado = await prisma.$transaction(async (tx) => {
       const planosCriados = []
 
+      const tiposServico = await tx.tipoServico.findMany({
+        where: {
+          id: {
+            in: servicosSelecionados.map((servico) => servico.tipoServicoId)
+          }
+        }
+      })
+
+      const tiposServicoMap = new Map(
+        tiposServico.map((tipo) => [tipo.id, tipo.nome])
+      )
+
       for (const numero of planosNumeros) {
         const planoExistente = await tx.planoCorte.findFirst({
           where: {
@@ -80,14 +96,35 @@ export async function criarPlanosComServicos(req, res) {
           }
         })
 
+        await tx.historicoPedido.create({
+          data: {
+            pedidoId,
+            usuarioId: obterUsuarioId(req),
+            tipo: "PLANO_CRIADO",
+            descricao: `Plano ${numero} criado com ${Number(quantidadeChapas)} chapa(s).`
+          }
+        })
+
         for (const servico of servicosSelecionados) {
-          await tx.servicoPlano.create({
+          const servicoCriado = await tx.servicoPlano.create({
             data: {
               planoId: plano.id,
               tipoServicoId: servico.tipoServicoId,
               operadorId: servico.operadorId || null,
               status: servico.operadorId ? "INICIADO" : "ABERTO",
               observacoes: servico.observacoes || null
+            }
+          })
+
+          const nomeServico =
+            tiposServicoMap.get(servico.tipoServicoId) || servico.tipoServicoId
+
+          await tx.historicoPedido.create({
+            data: {
+              pedidoId,
+              usuarioId: obterUsuarioId(req),
+              tipo: "SERVICO_CRIADO",
+              descricao: `Serviço ${nomeServico} criado no plano ${numero} com status ${servicoCriado.status}.`
             }
           })
         }
@@ -99,6 +136,15 @@ export async function criarPlanosComServicos(req, res) {
         where: { id: pedidoId },
         data: {
           status: "EM_PRODUCAO"
+        }
+      })
+
+      await tx.historicoPedido.create({
+        data: {
+          pedidoId,
+          usuarioId: obterUsuarioId(req),
+          tipo: "STATUS_PEDIDO_ALTERADO",
+          descricao: "Pedido enviado para produção após criação de plano(s) e serviço(s)."
         }
       })
 
@@ -184,6 +230,21 @@ export async function atualizarPlanoComServicos(req, res) {
       : []
 
     const resultado = await prisma.$transaction(async (tx) => {
+      const planoAntes = await tx.planoCorte.findUnique({
+        where: { id },
+        include: {
+          servicos: {
+            include: {
+              tipoServico: true
+            }
+          }
+        }
+      })
+
+      if (!planoAntes) {
+        throw new Error("Plano não encontrado")
+      }
+
       const plano = await tx.planoCorte.update({
         where: { id },
         data: {
@@ -195,12 +256,49 @@ export async function atualizarPlanoComServicos(req, res) {
         }
       })
 
+      await tx.historicoPedido.create({
+        data: {
+          pedidoId: plano.pedidoId,
+          usuarioId: obterUsuarioId(req),
+          tipo: "PLANO_ATUALIZADO",
+          descricao: `Plano ${numeroPlano} atualizado. Chapas: ${Number(quantidadeChapas)}.`
+        }
+      })
+
+      if (planoAntes.servicos.length > 0) {
+        const nomesServicosAntigos = planoAntes.servicos
+          .map((servico) => servico.tipoServico?.nome)
+          .filter(Boolean)
+          .join(", ")
+
+        await tx.historicoPedido.create({
+          data: {
+            pedidoId: plano.pedidoId,
+            usuarioId: obterUsuarioId(req),
+            tipo: "SERVICO_ATUALIZADO",
+            descricao: `Serviços do plano ${planoAntes.numeroPlano} foram substituídos. Serviços anteriores: ${nomesServicosAntigos || "-"}`
+          }
+        })
+      }
+
       await tx.servicoPlano.deleteMany({
         where: { planoId: id }
       })
 
+      const tiposServico = await tx.tipoServico.findMany({
+        where: {
+          id: {
+            in: servicosSelecionados.map((servico) => servico.tipoServicoId)
+          }
+        }
+      })
+
+      const tiposServicoMap = new Map(
+        tiposServico.map((tipo) => [tipo.id, tipo.nome])
+      )
+
       for (const servico of servicosSelecionados) {
-        await tx.servicoPlano.create({
+        const servicoCriado = await tx.servicoPlano.create({
           data: {
             planoId: plano.id,
             tipoServicoId: servico.tipoServicoId,
@@ -209,10 +307,24 @@ export async function atualizarPlanoComServicos(req, res) {
             observacoes: servico.observacoes || null
           }
         })
+
+        const nomeServico =
+          tiposServicoMap.get(servico.tipoServicoId) || servico.tipoServicoId
+
+        await tx.historicoPedido.create({
+          data: {
+            pedidoId: plano.pedidoId,
+            usuarioId: obterUsuarioId(req),
+            tipo: "SERVICO_CRIADO",
+            descricao: `Serviço ${nomeServico} recriado no plano ${numeroPlano} com status ${servicoCriado.status}.`
+          }
+        })
       }
 
       return plano
     })
+
+    await recalcularStatusPedido(resultado.pedidoId)
 
     return res.json({
       message: "Plano e serviços atualizados com sucesso",
@@ -241,7 +353,11 @@ export async function excluirPlanoComServicos(req, res) {
       where: { id },
       include: {
         pedido: true,
-        servicos: true
+        servicos: {
+          include: {
+            tipoServico: true
+          }
+        }
       }
     })
 
@@ -261,6 +377,20 @@ export async function excluirPlanoComServicos(req, res) {
     const pedidoEstavaProntoEntrega = plano.pedido.status === "PRONTO_ENTREGA"
 
     await prisma.$transaction(async (tx) => {
+      const nomesServicos = plano.servicos
+        .map((servico) => servico.tipoServico?.nome)
+        .filter(Boolean)
+        .join(", ")
+
+      await tx.historicoPedido.create({
+        data: {
+          pedidoId,
+          usuarioId: obterUsuarioId(req),
+          tipo: "PLANO_EXCLUIDO",
+          descricao: `Plano ${plano.numeroPlano} excluído com ${plano.servicos.length} serviço(s). Serviços: ${nomesServicos || "-"}`
+        }
+      })
+
       await tx.servicoPlano.deleteMany({
         where: { planoId: id }
       })

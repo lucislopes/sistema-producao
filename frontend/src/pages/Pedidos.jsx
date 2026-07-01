@@ -361,6 +361,11 @@ export function Pedidos() {
       return
     }
 
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dataEntrega)) {
+      alert("Data prevista para entrega inválida. Selecione novamente pelo calendário.")
+      return
+    }
+
     const validacaoData = verificarDataEntrega(dataEntrega)
 
     if (validacaoData.bloquear) {
@@ -911,7 +916,17 @@ function aplicarRotaSelecionada(id) {
                   type="date"
                   value={dataEntrega}
                   min={new Date().toISOString().split("T")[0]}
-                  onChange={(e) => setDataEntrega(e.target.value)}
+                  onChange={(e) => {
+                    const valor = e.target.value
+
+                    if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) {
+                      alert("Data inválida. Selecione a data pelo calendário.")
+                      setDataEntrega("")
+                      return
+                    }
+
+                    setDataEntrega(valor)
+                  }}
                   required
                 />
               </Campo>
