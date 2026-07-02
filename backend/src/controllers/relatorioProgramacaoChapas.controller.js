@@ -49,18 +49,13 @@ function obterNumeroPedido(pedido) {
 function calcularResumoPedido(pedido) {
   let totalChapas = 0
   let metrosEncabecamento = 0
-  let totalPlanos = 0
 
-  if (pedido.tipoPedido === "DIRETO_ENTREGA") {
-    totalChapas = Number(pedido.quantidadeChapasDiretoEntrega || 0)
-  } else {
-    totalPlanos = pedido.planos?.length || 0
+  const totalPlanos = pedido.planos?.length || 0
 
-    pedido.planos?.forEach((plano) => {
-      totalChapas += Number(plano.quantidadeChapas || 0)
-      metrosEncabecamento += converterNumero(plano.medidaEncabecamento)
-    })
-  }
+  pedido.planos?.forEach((plano) => {
+    totalChapas += Number(plano.quantidadeChapas || 0)
+    metrosEncabecamento += converterNumero(plano.medidaEncabecamento)
+  })
 
   return {
     totalChapas,
@@ -90,6 +85,7 @@ export async function relatorioProgramacaoChapas(req, res) {
       dataEntrega: {
         gte: hoje
       },
+      tipoPedido: "COM_PRODUCAO",
       status: {
         in: [
           "ABERTO",

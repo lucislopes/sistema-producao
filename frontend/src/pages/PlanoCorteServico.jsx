@@ -156,8 +156,10 @@ export function PlanoCorteServico() {
   async function handleSubmit(e) {
     e.preventDefault()
 
-    if (!isAdmin && planosCadastrados.length > 0 && !editandoId) {
-      alert("Este pedido já possui plano cadastrado. Novos planos só podem ser adicionados por um administrador.")
+    if (!editandoId && !podeCadastrarNovoPlano) {
+      alert(
+        "Este pedido já possui plano cadastrado há mais de 1 hora. Apenas um administrador pode adicionar novos planos."
+      )
       return
     }
 
@@ -282,11 +284,29 @@ const totalChapasPlanos = planosCadastrados.reduce(
   const usuarioLogado = JSON.parse(localStorage.getItem("@usuario") || "{}")
   const isAdmin = usuarioLogado.funcao === "ADMIN"
 
+  function estaDentroDeUmaHoraDoPrimeiroPlano() {
+    if (planosCadastrados.length === 0) return true
+
+    const primeiroPlano = [...planosCadastrados].sort(
+      (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+    )[0]
+
+    if (!primeiroPlano?.createdAt) return false
+
+    const agora = new Date()
+    const criadoEm = new Date(primeiroPlano.createdAt)
+
+    return agora.getTime() - criadoEm.getTime() <= 60 * 60 * 1000
+  }
+
   const podeCadastrarNovoPlano =
-    isAdmin || planosCadastrados.length === 0
+    isAdmin || planosCadastrados.length === 0 || estaDentroDeUmaHoraDoPrimeiroPlano()
 
   const formularioBloqueado =
-    pedidoId && !isAdmin && planosCadastrados.length > 0
+    pedidoId &&
+    !isAdmin &&
+    planosCadastrados.length > 0 &&
+    !estaDentroDeUmaHoraDoPrimeiroPlano()
 
   async function excluirServico(servico) {
     const confirmar = confirm(
@@ -472,12 +492,15 @@ async function confirmarExclusaoPlano() {
                 disabled={!podeCadastrarNovoPlano}
                 placeholder="Ex: 1 ou 1/2/3"
                 value={numeroPlano}
-                onChange={(e) => setNumeroPlano(e.target.value)}
+                onChange={(e) => {
+                  const valorSemEspaco = e.target.value.replace(/\s+/g, "")
+                  setNumeroPlano(valorSemEspaco)
+                }}
                 required
               />
 
               <p className="text-xs text-gray-500 mt-1">
-                Para vários planos juntos, use barra. Ex: 1/2/3.
+                Espaços serão removidos automaticamente. Ex: 252/353 será salvo como um único plano.
               </p>
             </div>
 

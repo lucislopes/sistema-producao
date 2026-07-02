@@ -5,15 +5,42 @@ import {
   podeEditarPedido,
 } from "../utils/permissoes.js"
 
-function separarPlanos(numeroPlano) {
-  return String(numeroPlano)
-    .split("/")
-    .map((item) => item.trim())
-    .filter(Boolean)
+function normalizarNumeroPlano(numeroPlano) {
+  return String(numeroPlano || "")
+    .replace(/\s+/g, "")
+    .trim()
 }
 
 function obterUsuarioId(req) {
   return req.user?.id || req.user?.usuarioId || null
+}
+
+function usuarioEhAdmin(req) {
+  return req.user?.funcao === "ADMIN"
+}
+
+async function validarCriacaoNovoPlano(tx, pedidoId, req) {
+  if (usuarioEhAdmin(req)) return
+
+  const planosExistentesPedido = await tx.planoCorte.findMany({
+    where: { pedidoId },
+    orderBy: { createdAt: "asc" }
+  })
+
+  if (planosExistentesPedido.length === 0) return
+
+  const primeiroPlano = planosExistentesPedido[0]
+  const agora = new Date()
+  const criadoEm = new Date(primeiroPlano.createdAt)
+
+  const diferencaMs = agora.getTime() - criadoEm.getTime()
+  const umaHoraMs = 60 * 60 * 1000
+
+  if (diferencaMs > umaHoraMs) {
+    throw new Error(
+      "Este pedido já possui plano cadastrado há mais de 1 hora. Apenas ADMIN pode adicionar novos planos."
+    )
+  }
 }
 
 export async function criarPlanosComServicos(req, res) {
@@ -40,7 +67,9 @@ export async function criarPlanosComServicos(req, res) {
       })
     }
 
-    if (!numeroPlano) {
+    const numeroPlanoNormalizado = normalizarNumeroPlano(numeroPlano)
+
+    if (!numeroPlanoNormalizado) {
       return res.status(400).json({ error: "Número do plano é obrigatório" })
     }
 
@@ -48,18 +77,31 @@ export async function criarPlanosComServicos(req, res) {
       return res.status(400).json({ error: "Quantidade de chapas inválida" })
     }
 
-    const planosNumeros = separarPlanos(numeroPlano)
-
-    if (planosNumeros.length === 0) {
-      return res.status(400).json({ error: "Informe pelo menos um plano" })
-    }
-
     const servicosSelecionados = Array.isArray(servicos)
       ? servicos.filter((servico) => servico.tipoServicoId)
       : []
 
+    if (servicosSelecionados.length === 0) {
+      return res.status(400).json({
+        error: "Selecione pelo menos um serviço"
+      })
+    }
+
     const resultado = await prisma.$transaction(async (tx) => {
-      const planosCriados = []
+      await validarCriacaoNovoPlano(tx, pedidoId, req)
+
+      const planoExistente = await tx.planoCorte.findFirst({
+        where: {
+          pedidoId,
+          numeroPlano: numeroPlanoNormalizado
+        }
+      })
+
+      if (planoExistente) {
+        throw new Error(
+          `O plano ${numeroPlanoNormalizado} já existe neste pedido`
+        )
+      }
 
       const tiposServico = await tx.tipoServico.findMany({
         where: {
@@ -73,63 +115,48 @@ export async function criarPlanosComServicos(req, res) {
         tiposServico.map((tipo) => [tipo.id, tipo.nome])
       )
 
-      for (const numero of planosNumeros) {
-        const planoExistente = await tx.planoCorte.findFirst({
-          where: {
-            pedidoId,
-            numeroPlano: numero
-          }
-        })
-
-        if (planoExistente) {
-          throw new Error(`O plano ${numero} já existe neste pedido`)
+      const plano = await tx.planoCorte.create({
+        data: {
+          pedidoId,
+          numeroPlano: numeroPlanoNormalizado,
+          quantidadeChapas: Number(quantidadeChapas),
+          medidaEncabecamento: medidaEncabecamento || null,
+          compraExterna: Boolean(compraExterna),
+          observacoes: observacoes || null
         }
+      })
 
-        const plano = await tx.planoCorte.create({
+      await tx.historicoPedido.create({
+        data: {
+          pedidoId,
+          usuarioId: obterUsuarioId(req),
+          tipo: "PLANO_CRIADO",
+          descricao: `Plano ${numeroPlanoNormalizado} criado com ${Number(quantidadeChapas)} chapa(s).`
+        }
+      })
+
+      for (const servico of servicosSelecionados) {
+        const servicoCriado = await tx.servicoPlano.create({
           data: {
-            pedidoId,
-            numeroPlano: numero,
-            quantidadeChapas: Number(quantidadeChapas),
-            medidaEncabecamento: medidaEncabecamento || null,
-            compraExterna: Boolean(compraExterna),
-            observacoes: observacoes || null
+            planoId: plano.id,
+            tipoServicoId: servico.tipoServicoId,
+            operadorId: servico.operadorId || null,
+            status: servico.operadorId ? "INICIADO" : "ABERTO",
+            observacoes: servico.observacoes || null
           }
         })
+
+        const nomeServico =
+          tiposServicoMap.get(servico.tipoServicoId) || servico.tipoServicoId
 
         await tx.historicoPedido.create({
           data: {
             pedidoId,
             usuarioId: obterUsuarioId(req),
-            tipo: "PLANO_CRIADO",
-            descricao: `Plano ${numero} criado com ${Number(quantidadeChapas)} chapa(s).`
+            tipo: "SERVICO_CRIADO",
+            descricao: `Serviço ${nomeServico} criado no plano ${numeroPlanoNormalizado} com status ${servicoCriado.status}.`
           }
         })
-
-        for (const servico of servicosSelecionados) {
-          const servicoCriado = await tx.servicoPlano.create({
-            data: {
-              planoId: plano.id,
-              tipoServicoId: servico.tipoServicoId,
-              operadorId: servico.operadorId || null,
-              status: servico.operadorId ? "INICIADO" : "ABERTO",
-              observacoes: servico.observacoes || null
-            }
-          })
-
-          const nomeServico =
-            tiposServicoMap.get(servico.tipoServicoId) || servico.tipoServicoId
-
-          await tx.historicoPedido.create({
-            data: {
-              pedidoId,
-              usuarioId: obterUsuarioId(req),
-              tipo: "SERVICO_CRIADO",
-              descricao: `Serviço ${nomeServico} criado no plano ${numero} com status ${servicoCriado.status}.`
-            }
-          })
-        }
-
-        planosCriados.push(plano)
       }
 
       await tx.pedido.update({
@@ -144,22 +171,22 @@ export async function criarPlanosComServicos(req, res) {
           pedidoId,
           usuarioId: obterUsuarioId(req),
           tipo: "STATUS_PEDIDO_ALTERADO",
-          descricao: "Pedido enviado para produção após criação de plano(s) e serviço(s)."
+          descricao: "Pedido enviado para produção após criação de plano e serviço(s)."
         }
       })
 
-      return planosCriados
+      return plano
     })
 
     return res.status(201).json({
-      message: "Planos e serviços criados com sucesso",
-      planos: resultado
+      message: "Plano e serviços criados com sucesso",
+      plano: resultado
     })
   } catch (error) {
     console.log(error)
 
     return res.status(400).json({
-      error: error.message || "Erro ao criar planos com serviços"
+      error: error.message || "Erro ao criar plano com serviços"
     })
   }
 }
@@ -217,7 +244,9 @@ export async function atualizarPlanoComServicos(req, res) {
       servicos
     } = req.body
 
-    if (!numeroPlano) {
+    const numeroPlanoNormalizado = normalizarNumeroPlano(numeroPlano)
+
+    if (!numeroPlanoNormalizado) {
       return res.status(400).json({ error: "Número do plano é obrigatório" })
     }
 
@@ -228,6 +257,12 @@ export async function atualizarPlanoComServicos(req, res) {
     const servicosSelecionados = Array.isArray(servicos)
       ? servicos.filter((servico) => servico.tipoServicoId)
       : []
+
+    if (servicosSelecionados.length === 0) {
+      return res.status(400).json({
+        error: "Selecione pelo menos um serviço"
+      })
+    }
 
     const resultado = await prisma.$transaction(async (tx) => {
       const planoAntes = await tx.planoCorte.findUnique({
@@ -245,10 +280,26 @@ export async function atualizarPlanoComServicos(req, res) {
         throw new Error("Plano não encontrado")
       }
 
+      const planoDuplicado = await tx.planoCorte.findFirst({
+        where: {
+          pedidoId: planoAntes.pedidoId,
+          numeroPlano: numeroPlanoNormalizado,
+          NOT: {
+            id
+          }
+        }
+      })
+
+      if (planoDuplicado) {
+        throw new Error(
+          `O plano ${numeroPlanoNormalizado} já existe neste pedido`
+        )
+      }
+
       const plano = await tx.planoCorte.update({
         where: { id },
         data: {
-          numeroPlano,
+          numeroPlano: numeroPlanoNormalizado,
           quantidadeChapas: Number(quantidadeChapas),
           medidaEncabecamento: medidaEncabecamento || null,
           compraExterna: Boolean(compraExterna),
@@ -261,7 +312,7 @@ export async function atualizarPlanoComServicos(req, res) {
           pedidoId: plano.pedidoId,
           usuarioId: obterUsuarioId(req),
           tipo: "PLANO_ATUALIZADO",
-          descricao: `Plano ${numeroPlano} atualizado. Chapas: ${Number(quantidadeChapas)}.`
+          descricao: `Plano ${numeroPlanoNormalizado} atualizado. Chapas: ${Number(quantidadeChapas)}.`
         }
       })
 
@@ -316,7 +367,7 @@ export async function atualizarPlanoComServicos(req, res) {
             pedidoId: plano.pedidoId,
             usuarioId: obterUsuarioId(req),
             tipo: "SERVICO_CRIADO",
-            descricao: `Serviço ${nomeServico} recriado no plano ${numeroPlano} com status ${servicoCriado.status}.`
+            descricao: `Serviço ${nomeServico} recriado no plano ${numeroPlanoNormalizado} com status ${servicoCriado.status}.`
           }
         })
       }

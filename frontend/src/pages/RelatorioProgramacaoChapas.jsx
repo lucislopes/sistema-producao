@@ -5,7 +5,6 @@ import { Button } from "../components/ui/Button"
 import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
 import { Table, Th, Td } from "../components/ui/Table"
-import { BadgeStatus } from "../components/ui/BadgeStatus"
 
 import {
   CalendarDays,
@@ -221,6 +220,30 @@ export function RelatorioProgramacaoChapas() {
     URL.revokeObjectURL(url)
   }
 
+  function situacaoProducaoTexto(status) {
+    const mapa = {
+      ABERTO: "Aguardando produção",
+      EM_SEPARACAO: "Em separação",
+      EM_PRODUCAO: "Em produção",
+      CONCLUIDO: "Produção concluída",
+      PRONTO_ENTREGA: "Pronto para expedição"
+    }
+
+    return mapa[status] || status || "-"
+  }
+
+  function situacaoProducaoClasse(status) {
+    const mapa = {
+      ABERTO: "bg-gray-100 text-gray-700 border-gray-300",
+      EM_SEPARACAO: "bg-orange-100 text-orange-700 border-orange-300",
+      EM_PRODUCAO: "bg-yellow-100 text-yellow-800 border-yellow-300",
+      CONCLUIDO: "bg-green-100 text-green-700 border-green-300",
+      PRONTO_ENTREGA: "bg-blue-100 text-blue-700 border-blue-300"
+    }
+
+    return mapa[status] || "bg-gray-100 text-gray-700 border-gray-300"
+  }
+
   return (
     <div>
       <div className="mb-6 flex items-start justify-between gap-4">
@@ -310,6 +333,7 @@ export function RelatorioProgramacaoChapas() {
 
           <Button
             type="button"
+            variant=""
             onClick={limparFiltros}
             className="bg-red-50 text-red-700 border border-red-200 px-6 py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-red-100"
           >
@@ -322,6 +346,8 @@ export function RelatorioProgramacaoChapas() {
           O período sempre começa em hoje. A data informada serve apenas como limite final.
         </p>
       </div>
+
+      {/*
 
       <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
         <h2 className="text-xl font-bold mb-4">
@@ -349,6 +375,7 @@ export function RelatorioProgramacaoChapas() {
           )}
         </div>
       </div>
+      */}
 
       <div className="bg-white rounded-2xl shadow-md p-6">
         <h2 className="text-xl font-bold mb-4">
@@ -380,8 +407,18 @@ export function RelatorioProgramacaoChapas() {
                   <Td className="font-bold">{formatarData(dia.data)}</Td>
                   <Td>{dia.pedidos}</Td>
                   <Td>{dia.planos || 0}</Td>
-                  <Td className="font-bold text-blue-700">
-                    {formatarNumero(dia.chapas)}
+                  <Td>
+                    <div className="flex justify-center">
+                      <div className="bg-blue-600 text-white rounded-xl px-5 py-2 shadow-lg min-w-[70px] text-center">
+                        <div className="text-2xl font-bold leading-none">
+                          {formatarNumero(dia.chapas)}
+                        </div>
+
+                        <div className="text-[10px] uppercase tracking-wide opacity-90">
+                          chapas
+                        </div>
+                      </div>
+                    </div>
                   </Td>
                   <Td className="font-semibold text-purple-700">
                     {formatarNumero(dia.metrosEncabecamento || 0, 2)} m
@@ -424,7 +461,11 @@ export function RelatorioProgramacaoChapas() {
                               Vendedor: {pedido.vendedor?.nome || "-"}
                             </span>
 
-                            <BadgeStatus status={pedido.status} />
+                            <span
+                              className={`rounded-full border px-3 py-1 text-xs font-semibold ${situacaoProducaoClasse(pedido.status)}`}
+                            >
+                              {situacaoProducaoTexto(pedido.status)}
+                            </span>
 
                             <strong>
                               {formatarNumero(pedido.totalChapas)} chapa(s)
