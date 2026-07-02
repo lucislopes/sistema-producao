@@ -188,10 +188,10 @@ export async function listarPedidos(req, res) {
         },
         orderBy: [
         {
-          dataEntrega: "desc"
+          dataEntrega: "asc"
         },
         {
-          createdAt: "desc"
+          createdAt: "asc"
         }
       ]
     })
