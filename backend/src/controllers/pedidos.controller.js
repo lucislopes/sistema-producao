@@ -186,11 +186,16 @@ export async function listarPedidos(req, res) {
           vendedor: true,
           rota: true
         },
-        orderBy: {
+        orderBy: [
+        {
+          dataEntrega: "desc"
+        },
+        {
           createdAt: "desc"
         }
-      })
-    ])
+      ]
+    })
+  ])
 
     return res.json({
       dados: pedidos,
