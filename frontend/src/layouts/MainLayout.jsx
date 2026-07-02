@@ -36,7 +36,8 @@ import {
   Zap,
   TriangleAlert,
   DollarSign,
-  PackageCheck
+  PackageCheck,
+  Package
 } from "lucide-react"
 
 import { AuthContext } from "../contexts/AuthContext"
@@ -178,8 +179,9 @@ export function MainLayout() {
       "/relatorio-consumo-chapas": "Relatório Consumo de Chapas",
       "/relatorio-pedidos-entregues": "Relatório de Pedidos Entregues",
       "/relatorio-servicos": "Relatório de Serviços",
-      "/relatorio-pendencias": "Relatório de Pendências"
-    }
+      "/relatorio-pendencias": "Relatório de Pendências",
+      "/relatorio-programacao-chapas": "Relatório Programação de Chapas"
+     }
 
     return titulos[path] || "Sistema"
   }
@@ -288,12 +290,18 @@ export function MainLayout() {
                   </MenuLink>
 
                   <MenuLink
-                  to="/relatorio-consumo-chapas"
-                  icon={PackageCheck}
-                >
+                    to="/relatorio-consumo-chapas"
+                    icon={PackageCheck}
+                  >
                   Consumo de Chapas
                 </MenuLink>
 
+                <MenuLink
+                  to="/relatorio-programacao-chapas"
+                  icon={Package}
+                >
+                  Programação de Chapas
+                </MenuLink>
 
 
                 </>

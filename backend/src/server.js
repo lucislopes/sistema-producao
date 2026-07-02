@@ -30,6 +30,7 @@ import romaneioEntregaRoutes from "./routes/romaneioEntrega.routes.js"
 import relatorioFreteRoutes from "./routes/relatorioFrete.routes.js"
 import planoCorteServicoRoutes from "./routes/planoCorteServico.routes.js"
 import relatorioConsumoChapasRoutes from "./routes/relatorioConsumoChapas.routes.js"
+import relatorioProgramacaoChapasRoutes from "./routes/relatorioProgramacaoChapas.routes.js"
 
 
 
@@ -66,6 +67,7 @@ app.use("/relatorio-frete", relatorioFreteRoutes)
 app.use("/plano-corte-servico", planoCorteServicoRoutes)
 app.use("/relatorios", relatoriosRoutes)
 app.use("/relatorio-consumo-chapas", relatorioConsumoChapasRoutes)
+app.use("/relatorio-programacao-chapas", relatorioProgramacaoChapasRoutes)
 
 app.get("/", (req, res) => {
   return res.json({
