@@ -87,13 +87,7 @@ export async function relatorioProgramacaoChapas(req, res) {
       },
       tipoPedido: "COM_PRODUCAO",
       status: {
-        in: [
-          "ABERTO",
-          "EM_SEPARACAO",
-          "EM_PRODUCAO",
-          "CONCLUIDO",
-          "PRONTO_ENTREGA"
-        ]
+        not: "CANCELADO"
       }
     }
 
