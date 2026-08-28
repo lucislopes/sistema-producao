@@ -23,7 +23,7 @@ export function Login() {
 
     } catch (error) {
       console.log(error)
-      alert("Erro ao logar")
+      alert(error.response?.data?.error || "Não foi possível realizar o login")
     }
   }
 

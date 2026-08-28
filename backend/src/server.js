@@ -2,9 +2,6 @@ import express from "express"
 import cors from "cors"
 import dotenv from "dotenv"
 
-import bcrypt from "bcrypt"
-import { prisma } from "./lib/prisma.js"
-
 import authRoutes from "./routes/auth.routes.js"
 import clientesRoutes from "./routes/clientes.routes.js"
 import funcionariosRoutes from "./routes/funcionarios.routes.js"
@@ -75,36 +72,8 @@ app.get("/", (req, res) => {
   })
 })
 
-app.listen(3333, () => {
-  console.log("Servidor rodando na porta 3333")
-})
+const port = Number(process.env.PORT) || 3333
 
-
-
-app.get("/criar-admin", async (req, res) => {
-  try {
-
-    const senhaHash = await bcrypt.hash("123456", 10)
-
-    const usuario = await prisma.usuario.create({
-      data: {
-        email: "admin@sistema.com",
-        senha: senhaHash,
-
-        funcionario: {
-          create: {
-            nome: "Administrador",
-            ativo: true,
-            funcao: "ADMIN"
-          }
-        }
-      }
-    })
-
-    res.json(usuario)
-
-  } catch (error) {
-    console.log(error)
-    res.status(500).json(error)
-  }
+app.listen(port, () => {
+  console.log(`Servidor rodando na porta ${port}`)
 })

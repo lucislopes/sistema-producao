@@ -4,8 +4,13 @@ import bcrypt from "bcrypt"
 const prisma = new PrismaClient()
 
 async function main() {
+  const senhaAdmin = process.env.ADMIN_PASSWORD
 
-  const senhaHash = await bcrypt.hash("luc1sl0p3s", 10)
+  if (!senhaAdmin || senhaAdmin.length < 8) {
+    throw new Error("Defina ADMIN_PASSWORD com pelo menos 8 caracteres para executar o seed")
+  }
+
+  const senhaHash = await bcrypt.hash(senhaAdmin, 10)
 
   const usuarioExistente = await prisma.usuario.findUnique({
     where: {

@@ -2,7 +2,13 @@ import bcrypt from "bcrypt"
 import { prisma } from "../lib/prisma.js"
 
 async function main() {
-  const senhaHash = await bcrypt.hash("123456", 10)
+  const senhaAdmin = process.env.ADMIN_PASSWORD
+
+  if (!senhaAdmin || senhaAdmin.length < 8) {
+    throw new Error("Defina ADMIN_PASSWORD com pelo menos 8 caracteres")
+  }
+
+  const senhaHash = await bcrypt.hash(senhaAdmin, 10)
 
   const usuario = await prisma.usuario.upsert({
     where: {
@@ -35,8 +41,6 @@ async function main() {
   })
 
   console.log("Admin criado/atualizado:", usuario.email)
-  console.log("Senha: 123456")
-  console.log("Hash:", usuario.senha)
 }
 
 main()

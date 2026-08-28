@@ -177,6 +177,7 @@ export function Pedidos() {
   const [observacoes, setObservacoes] = useState("")
 
   const [busca, setBusca] = useState("")
+  const [buscaDebounced, setBuscaDebounced] = useState("")
   const [filtroStatus, setFiltroStatus] = useState("")
   const [filtroVendedorId, setFiltroVendedorId] = useState("")
 
@@ -217,24 +218,45 @@ export function Pedidos() {
     usuarioLogado.funcao === "VENDEDOR" ||
     usuarioLogado.funcao === "VENDEDOR_OPERADOR"
 
-  async function carregarDados() {
+  async function carregarPedidos(signal) {
     try {
-      const [pedidosRes, clientesRes, funcionariosRes, rotasRes] =
-        await Promise.all([
-          api.get("/pedidos", {params: {page, limit}}),
-          api.get("/clientes"),
-          api.get("/funcionarios/vendedores"),
-          api.get("/rotas-entrega")
-        ])
+      const response = await api.get("/pedidos", {
+        signal,
+        params: {
+          page,
+          limit,
+          busca: buscaDebounced || undefined,
+          status: filtroStatus || undefined,
+          vendedorId: filtroVendedorId || undefined,
+          dataInicio: dataInicio || undefined,
+          dataFim: dataFim || undefined
+        }
+      })
 
-        setPedidos(pedidosRes.data.dados)
-        setPaginacao(pedidosRes.data.paginacao)
-        setClientes(clientesRes.data)
-        setVendedores(funcionariosRes.data)
+      setPedidos(response.data.dados)
+      setPaginacao(response.data.paginacao)
+    } catch (error) {
+      if (error.name !== "CanceledError") {
+        console.log(error)
+        alert("Erro ao carregar pedidos")
+      }
+    }
+  }
+
+  async function carregarCadastros() {
+    try {
+      const [clientesRes, funcionariosRes, rotasRes] = await Promise.all([
+        api.get("/clientes"),
+        api.get("/funcionarios/vendedores"),
+        api.get("/rotas-entrega")
+      ])
+
+      setClientes(clientesRes.data)
+      setVendedores(funcionariosRes.data)
       setRotas(rotasRes.data)
     } catch (error) {
       console.log(error)
-      alert("Erro ao carregar dados")
+      alert("Erro ao carregar cadastros")
     }
   }
 
@@ -245,12 +267,19 @@ export function Pedidos() {
   }, [editandoId, isVendedorLogado, usuarioLogado.funcionarioId])
 
   useEffect(() => {
-    carregarDados()
+    carregarCadastros()
   }, [])
 
   useEffect(() => {
-    carregarDados()
-  }, [page, limit])
+    const timer = setTimeout(() => setBuscaDebounced(busca.trim()), 350)
+    return () => clearTimeout(timer)
+  }, [busca])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    carregarPedidos(controller.signal)
+    return () => controller.abort()
+  }, [page, limit, buscaDebounced, filtroStatus, filtroVendedorId, dataInicio, dataFim])
 
   const freteAlterado =
   tipoEntrega === "ENTREGA_EMPRESA" &&
@@ -451,7 +480,7 @@ export function Pedidos() {
       }
 
       limparFormulario()
-      carregarDados()
+      carregarPedidos()
 
       if (tipoPedido === "COM_PRODUCAO" && pedidoSalvo?.id) {
         navigate(`/plano-corte-servico?pedidoId=${pedidoSalvo.id}`)
@@ -492,7 +521,7 @@ export function Pedidos() {
       setNovoClienteTelefone("")
       setNovoClienteEndereco("")
 
-      carregarDados()
+      carregarPedidos()
     } catch (error) {
       console.log(error)
       alert(
@@ -523,7 +552,7 @@ export function Pedidos() {
       setNovaRotaNome("")
       setNovaRotaValorFrete("")
 
-      carregarDados()
+      carregarPedidos()
     } catch (error) {
       console.log(error)
       alert(
@@ -650,45 +679,7 @@ function aplicarRotaSelecionada(id) {
     return entrega < hoje
   }
 
-    const pedidosFiltrados = pedidos.filter((pedido) => {
-      const textoBusca = busca.trim().toLowerCase()
-
-      const numeroInterno = String(pedido.numeroPedido || "").toLowerCase()
-      const numeroManual = String(pedido.numeroPedidoManual || "").toLowerCase()
-      const clienteNome = String(pedido.cliente?.nome || "").toLowerCase()
-      const vendedorNome = String(pedido.vendedor?.nome || "").toLowerCase()
-
-      const bateBusca =
-        textoBusca === "" ||
-        numeroInterno.includes(textoBusca) ||
-        numeroManual.includes(textoBusca) ||
-        clienteNome.includes(textoBusca)
-
-      const bateVendedor =
-        filtroVendedorId === "" || pedido.vendedorId === filtroVendedorId
-
-      const bateStatus =
-        filtroStatus === "" || pedido.status === filtroStatus
-
-      let batePeriodo = true
-
-      if (dataInicio || dataFim) {
-        if (!pedido.dataEntrega) {
-          batePeriodo = false
-        } else {
-          const dataPedido = pedido.dataEntrega.substring(0, 10)
-
-          if (dataInicio && dataPedido < dataInicio) {
-            batePeriodo = false
-          }
-
-          if (dataFim && dataPedido > dataFim) {
-            batePeriodo = false
-          }
-        }
-      }
-      return bateBusca && bateStatus && bateVendedor && batePeriodo
-    })
+  const pedidosFiltrados = pedidos
 
   const resumoPedidos = {
     total: pedidosFiltrados.length,
@@ -1165,7 +1156,10 @@ function aplicarRotaSelecionada(id) {
                 type="text"
                 placeholder="Buscar por pedido ou cliente..."
                 value={busca}
-                onChange={(e) => setBusca(e.target.value)}
+                onChange={(e) => {
+                  setBusca(e.target.value)
+                  setPage(1)
+                }}
                 className="pl-10"
               />
             </div>
@@ -1173,7 +1167,10 @@ function aplicarRotaSelecionada(id) {
             <div>
               <Select
                 value={filtroVendedorId}
-                onChange={(e) => setFiltroVendedorId(e.target.value)}
+                onChange={(e) => {
+                  setFiltroVendedorId(e.target.value)
+                  setPage(1)
+                }}
               >
                 <option value="">Todos os vendedores</option>
 
@@ -1193,7 +1190,10 @@ function aplicarRotaSelecionada(id) {
 
               <Select
                 value={filtroStatus}
-                onChange={(e) => setFiltroStatus(e.target.value)}
+                onChange={(e) => {
+                  setFiltroStatus(e.target.value)
+                  setPage(1)
+                }}
                 className="pl-10"
               >
                 <option value="">Todos os status</option>
@@ -1215,7 +1215,10 @@ function aplicarRotaSelecionada(id) {
               <Input
                 type="date"
                 value={dataInicio}
-                onChange={(e) => setDataInicio(e.target.value)}
+                onChange={(e) => {
+                  setDataInicio(e.target.value)
+                  setPage(1)
+                }}
                 className="pl-10"
               />
             </div>
@@ -1229,7 +1232,10 @@ function aplicarRotaSelecionada(id) {
               <Input
                 type="date"
                 value={dataFim}
-                onChange={(e) => setDataFim(e.target.value)}
+                onChange={(e) => {
+                  setDataFim(e.target.value)
+                  setPage(1)
+                }}
                 className="pl-10"
               />
             </div>
@@ -1268,6 +1274,7 @@ function aplicarRotaSelecionada(id) {
                 setDataInicio("")
                 setDataFim("")
                 setFiltroVendedorId("")
+                setPage(1)
               }}
             >
               <Eraser size={16} />

@@ -149,9 +149,17 @@ async function validarNumeroPedidoDuplicado({
 
 export async function listarPedidos(req, res) {
   try {
-    const page = Number(req.query.page) || 1
-    const limit = Number(req.query.limit) || 50
-    const { status, somenteAtivos, frete } = req.query
+    const page = Math.max(Number(req.query.page) || 1, 1)
+    const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 100)
+    const {
+      status,
+      somenteAtivos,
+      frete,
+      busca,
+      vendedorId,
+      dataInicio,
+      dataFim
+    } = req.query
 
     const skip = (page - 1) * limit
     const where = {}
@@ -172,6 +180,56 @@ export async function listarPedidos(req, res) {
 
     if (frete === "CORRETO") {
       where.freteAlterado = false
+    }
+
+    if (vendedorId) {
+      where.vendedorId = vendedorId
+    }
+
+    const textoBusca = busca?.trim()
+
+    if (textoBusca) {
+      const numeroPedido = Number(textoBusca.replace(/^#/, ""))
+
+      where.OR = [
+        {
+          numeroPedidoManual: {
+            contains: textoBusca,
+            mode: "insensitive"
+          }
+        },
+        {
+          cliente: {
+            nome: {
+              contains: textoBusca,
+              mode: "insensitive"
+            }
+          }
+        },
+        {
+          vendedor: {
+            nome: {
+              contains: textoBusca,
+              mode: "insensitive"
+            }
+          }
+        },
+        ...(!Number.isNaN(numeroPedido) ? [{ numeroPedido }] : [])
+      ]
+    }
+
+    if (dataInicio || dataFim) {
+      where.dataEntrega = {}
+
+      if (dataInicio) {
+        where.dataEntrega.gte = new Date(`${dataInicio}T00:00:00.000Z`)
+      }
+
+      if (dataFim) {
+        const limiteFim = new Date(`${dataFim}T00:00:00.000Z`)
+        limiteFim.setUTCDate(limiteFim.getUTCDate() + 1)
+        where.dataEntrega.lt = limiteFim
+      }
     }
 
     const [total, pedidos] = await Promise.all([
@@ -203,7 +261,7 @@ export async function listarPedidos(req, res) {
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.max(Math.ceil(total / limit), 1)
       }
     })
   } catch (error) {

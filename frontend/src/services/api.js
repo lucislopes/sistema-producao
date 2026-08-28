@@ -5,8 +5,7 @@ import {
 } from "./loadingService"
 
 export const api = axios.create({
-  //baseURL: "http://localhost:3333"
-  baseURL: import.meta.env.VITE_API_URL
+  baseURL: import.meta.env.VITE_API_URL || "/api"
 })
 
 //
@@ -51,12 +50,15 @@ api.interceptors.response.use(
     // 401
     //
 
-    if (status === 401) {
+    const requisicaoDeLogin = error.config?.url?.includes("/auth/login")
+
+    if (status === 401 && !requisicaoDeLogin) {
       localStorage.removeItem("@token")
+      localStorage.removeItem("@usuario")
 
       alert("Sessão expirada. Faça login novamente.")
 
-      window.location.href = "/login"
+      window.location.href = "/"
 
       return Promise.reject(error)
     }
