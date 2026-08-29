@@ -2,43 +2,63 @@ import { useEffect, useState } from "react"
 import { api } from "../services/api"
 import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
+import { Button } from "../components/ui/Button"
+import { ConfirmModal } from "../components/ui/ConfirmModal"
+import { EmptyState, ErrorState, LoadingState } from "../components/ui/FeedbackState"
+import { Link } from "react-router-dom"
+import { Eye, PackageCheck, TriangleAlert, Truck } from "lucide-react"
 
 export function Expedicao() {
   const [pedidos, setPedidos] = useState([])
   const [busca, setBusca] = useState("")
   const [filtroStatus, setFiltroStatus] = useState("")
   const [filtroRota, setFiltroRota] = useState("")
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState(false)
+  const [pedidoParaFinalizar, setPedidoParaFinalizar] = useState(null)
+  const [alterandoId, setAlterandoId] = useState(null)
 
-  async function carregarPedidos() {
+  async function carregarPedidos({ silencioso = false } = {}) {
+    if (!silencioso) setCarregando(true)
+
     try {
       const response = await api.get("/expedicao")
       setPedidos(response.data)
+      setErro(false)
 
     } catch (error) {
       console.log(error)
-      alert("Erro ao carregar expedição")
+      if (!silencioso) setErro(true)
+    } finally {
+      if (!silencioso) setCarregando(false)
     }
   }
 
   useEffect(() => {
     carregarPedidos()
     const interval = setInterval(() => {
-      carregarPedidos()
+      if (!document.hidden) carregarPedidos({ silencioso: true })
     }, 30000)
 
     return () => clearInterval(interval)
   }, [])
 
   async function alterarStatus(id, status) {
+    if (alterandoId) return
+    setAlterandoId(id)
+
     try {
       await api.put(`/expedicao/${id}/status`, {
         status
       })
 
-      carregarPedidos()
+      await carregarPedidos({ silencioso: true })
+      setPedidoParaFinalizar(null)
     } catch (error) {
       console.log(error)
-      alert("Erro ao alterar status")
+      alert(error?.response?.data?.error || "Erro ao alterar status")
+    } finally {
+      setAlterandoId(null)
     }
   }
 
@@ -117,18 +137,18 @@ export function Expedicao() {
     const situacao = obterSituacaoPrazo(dataEntrega)
 
     if (situacao.texto === "Atrasado") {
-      return "border-red-500 bg-red-50"
+      return "border-gray-200 border-l-red-500 bg-white"
     }
 
     if (situacao.texto === "Último dia") {
-      return "border-yellow-500 bg-yellow-50"
+      return "border-gray-200 border-l-yellow-500 bg-white"
     }
 
     if (situacao.texto === "No prazo") {
-      return "border-green-400 bg-white"
+      return "border-gray-200 border-l-green-500 bg-white"
     }
 
-    return "border-gray-300 bg-white"
+    return "border-gray-200 border-l-gray-400 bg-white"
   }
 
   const usuarioLogado = JSON.parse(localStorage.getItem("@usuario") || "{}")
@@ -145,6 +165,10 @@ export function Expedicao() {
       ENTREGUE: {
         texto: "Entregue",
         classe: "bg-green-100 text-green-700 border-green-400"
+      },
+      SAIU_ENTREGA: {
+        texto: "Saiu para Entrega",
+        classe: "bg-purple-100 text-purple-700 border-purple-300"
       }
     }
 
@@ -184,6 +208,12 @@ export function Expedicao() {
     ).values()
   )
 
+  const totalAtrasados = pedidos.filter(
+    (pedido) => obterSituacaoPrazo(pedido.dataEntrega).texto === "Atrasado"
+  ).length
+
+  const filtrosAtivos = Boolean(busca || filtroStatus || filtroRota)
+
   function obterQuantidadeChapas(pedido) {
   if (pedido.tipoPedido === "DIRETO_ENTREGA") {
     return Number(pedido.quantidadeChapasDiretoEntrega || 0)
@@ -196,8 +226,29 @@ export function Expedicao() {
 }
 
   return (
-    <div>
-      <div className="bg-white p-4 rounded-2xl shadow-md mb-6">
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm text-gray-500">Na expedição</p><strong className="text-2xl text-gray-900">{pedidos.length}</strong></div>
+            <Truck className="text-blue-600" aria-hidden="true" />
+          </div>
+        </div>
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm text-red-700">Atrasados</p><strong className="text-2xl text-red-900">{totalAtrasados}</strong></div>
+            <TriangleAlert className="text-red-600" aria-hidden="true" />
+          </div>
+        </div>
+        <div className="rounded-xl border border-green-200 bg-green-50 p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div><p className="text-sm text-green-700">Resultados exibidos</p><strong className="text-2xl text-green-900">{pedidosFiltrados.length}</strong></div>
+            <PackageCheck className="text-green-600" aria-hidden="true" />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Input
             type="text"
@@ -228,20 +279,26 @@ export function Expedicao() {
             ))}
           </Select>
 
-          <button
+          <Button
             type="button"
+            variant="dangerSoft"
+            disabled={!filtrosAtivos}
             onClick={() => {
               setBusca("")
               setFiltroStatus("")
               setFiltroRota("")
             }}
-            className="bg-gray-500 text-white px-4 py-2 rounded-lg"
           >
             Limpar filtros
-          </button>
+          </Button>
         </div>
       </div>
 
+      {carregando ? (
+        <LoadingState mensagem="Carregando pedidos da expedição..." />
+      ) : erro ? (
+        <ErrorState onRetry={() => carregarPedidos()} />
+      ) : (
       <div className="grid grid-cols-1 gap-4">
         {pedidosFiltrados.map((pedido) => {
           const situacaoPrazo = obterSituacaoPrazo(pedido.dataEntrega)
@@ -250,11 +307,11 @@ export function Expedicao() {
           return (
             <div
               key={pedido.id}
-              className={`rounded-2xl shadow-md p-4 border-2 ${obterClasseCard(pedido.dataEntrega)}`}
+              className={`rounded-2xl border border-l-4 p-4 shadow-sm transition-shadow hover:shadow-md ${obterClasseCard(pedido.dataEntrega)}`}
             >
-              <div className="flex justify-between gap-6 items-start">
+              <div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-start">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3">
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
                     <h2 className="text-2xl font-bold">
                       Pedido {obterNumeroPedido(pedido)}
                     </h2>
@@ -324,7 +381,14 @@ export function Expedicao() {
                 </div>
                 </div>
 
-                <div className="flex flex-col gap-2 min-w-[180px]">
+                <div className="flex flex-col gap-2 sm:flex-row xl:min-w-[190px] xl:flex-col">
+                  <Link
+                    to={`/pedidos/${pedido.id}`}
+                    className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100"
+                  >
+                    <Eye size={16} aria-hidden="true" />
+                    Ver pedido
+                  </Link>
                   {!podeAlterarExpedicao && (
                     <span className="rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-2 text-xs font-semibold text-yellow-800 text-center">
                       Somente consulta
@@ -333,20 +397,13 @@ export function Expedicao() {
 
                   {podeAlterarExpedicao &&
                     ["CONCLUIDO", "PRONTO_ENTREGA"].includes(pedido.status) && (
-                      <button
-                        onClick={() => {
-                          const confirmar = confirm(
-                            `Deseja finalizar a entrega do pedido ${obterNumeroPedido(pedido)}?`
-                          )
-
-                          if (!confirmar) return
-
-                          alterarStatus(pedido.id, "ENTREGUE")
-                        }}
-                        className="bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800"
+                      <Button
+                        variant="success"
+                        loading={alterandoId === pedido.id}
+                        onClick={() => setPedidoParaFinalizar(pedido)}
                       >
-                        Finalizar Entrega
-                      </button>
+                        Finalizar entrega
+                      </Button>
                     )}
                 </div>
               </div>
@@ -355,11 +412,23 @@ export function Expedicao() {
         })}
 
         {pedidosFiltrados.length === 0 && (
-          <div className="bg-white rounded-2xl shadow-md p-6">
-            Nenhum pedido na expedição.
-          </div>
+          <EmptyState
+            titulo="Nenhum pedido na expedição"
+            descricao={filtrosAtivos ? "Altere ou limpe os filtros para ver outros pedidos." : "Os pedidos prontos aparecerão aqui."}
+          />
         )}
       </div>
+      )}
+
+      <ConfirmModal
+        open={Boolean(pedidoParaFinalizar)}
+        title="Finalizar entrega"
+        message={`Confirma que o pedido ${obterNumeroPedido(pedidoParaFinalizar)} foi entregue?`}
+        confirmText="Confirmar entrega"
+        variant="success"
+        onCancel={() => setPedidoParaFinalizar(null)}
+        onConfirm={() => alterarStatus(pedidoParaFinalizar.id, "ENTREGUE")}
+      />
     </div>
   )
 }
