@@ -1,6 +1,7 @@
 import { prisma } from "../lib/prisma.js"
 import { podeEditarPedido } from "../utils/permissoes.js"
 import { registrarHistoricoPedido } from "../utils/registrarHistoricoPedido.js"
+import { montarConsultaPedidos } from "../utils/pedidosQuery.js"
 
 function valorNumericoOuNull(valor) {
   if (valor === "" || valor === null || valor === undefined) {
@@ -149,88 +150,7 @@ async function validarNumeroPedidoDuplicado({
 
 export async function listarPedidos(req, res) {
   try {
-    const page = Math.max(Number(req.query.page) || 1, 1)
-    const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 100)
-    const {
-      status,
-      somenteAtivos,
-      frete,
-      busca,
-      vendedorId,
-      dataInicio,
-      dataFim
-    } = req.query
-
-    const skip = (page - 1) * limit
-    const where = {}
-
-    if (somenteAtivos === "true") {
-      where.status = {
-        notIn: ["ENTREGUE", "CANCELADO"]
-      }
-    }
-
-    if (status) {
-      where.status = status
-    }
-
-    if (frete === "ALTERADO") {
-      where.freteAlterado = true
-    }
-
-    if (frete === "CORRETO") {
-      where.freteAlterado = false
-    }
-
-    if (vendedorId) {
-      where.vendedorId = vendedorId
-    }
-
-    const textoBusca = busca?.trim()
-
-    if (textoBusca) {
-      const numeroPedido = Number(textoBusca.replace(/^#/, ""))
-
-      where.OR = [
-        {
-          numeroPedidoManual: {
-            contains: textoBusca,
-            mode: "insensitive"
-          }
-        },
-        {
-          cliente: {
-            nome: {
-              contains: textoBusca,
-              mode: "insensitive"
-            }
-          }
-        },
-        {
-          vendedor: {
-            nome: {
-              contains: textoBusca,
-              mode: "insensitive"
-            }
-          }
-        },
-        ...(!Number.isNaN(numeroPedido) ? [{ numeroPedido }] : [])
-      ]
-    }
-
-    if (dataInicio || dataFim) {
-      where.dataEntrega = {}
-
-      if (dataInicio) {
-        where.dataEntrega.gte = new Date(`${dataInicio}T00:00:00.000Z`)
-      }
-
-      if (dataFim) {
-        const limiteFim = new Date(`${dataFim}T00:00:00.000Z`)
-        limiteFim.setUTCDate(limiteFim.getUTCDate() + 1)
-        where.dataEntrega.lt = limiteFim
-      }
-    }
+    const { page, limit, skip, where } = montarConsultaPedidos(req.query)
 
     const [total, pedidos] = await Promise.all([
       prisma.pedido.count({ where }),

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { CircleCheck, Info, TriangleAlert, X } from "lucide-react"
+import { identificarTipoNotificacao } from "../utils/notificationType"
 
 const estilos = {
   sucesso: {
@@ -24,20 +25,6 @@ const estilos = {
   }
 }
 
-function identificarTipo(mensagem) {
-  const texto = String(mensagem).toLocaleLowerCase("pt-BR")
-
-  if (/sucesso|salv[oa]|alterad[oa]|criad[oa]|exclu[ií]d[oa]/.test(texto)) {
-    return "sucesso"
-  }
-
-  if (/erro|n[aã]o foi poss[ií]vel|inv[aá]lid|expirad|sem permiss[aã]o|n[aã]o respondeu/.test(texto)) {
-    return "erro"
-  }
-
-  return "aviso"
-}
-
 export function NotificationProvider({ children }) {
   const [notificacoes, setNotificacoes] = useState([])
   const proximoId = useRef(1)
@@ -56,7 +43,7 @@ export function NotificationProvider({ children }) {
 
       setNotificacoes((atuais) => [
         ...atuais.slice(-3),
-        { id, mensagem: texto, tipo: identificarTipo(texto) }
+        { id, mensagem: texto, tipo: identificarTipoNotificacao(texto) }
       ])
 
       const temporizador = window.setTimeout(() => {
