@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { api } from "../services/api"
-import { AlertTriangle, ArrowLeft, CheckCircle2, Clock3, Factory, Layers3, Maximize, Minimize, MonitorPlay, PackageCheck, Pause, Play, RefreshCw, Truck, UserRoundCheck, UsersRound } from "lucide-react"
+import { AlertTriangle, ArrowLeft, CheckCircle2, Clock3, Factory, Layers3, Maximize, Minimize, MonitorPlay, PackageCheck, Pause, Play, RefreshCw, Settings, Truck, UserRoundCheck, UsersRound, X } from "lucide-react"
+import { CONFIG_MODO_TV_PADRAO, normalizarConfigModoTV, proximoPainelModoTV } from "../utils/modoTVConfig"
 
-const INTERVALO_ATUALIZACAO = 30000
-const INTERVALO_ROTACAO = 20000
-const INTERVALO_PAGINACAO = 8000
-const ITENS_POR_PAGINA = 6
+const CHAVE_CONFIG = "@modo-tv-config"
 
 function formatarData(valor) {
   return valor ? new Date(valor).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "Sem previsão"
@@ -56,13 +54,18 @@ function LinhaExpedicao({ item }) {
   </div>
 }
 
-function totalPaginas(itens) {
-  return Math.max(1, Math.ceil(itens.length / ITENS_POR_PAGINA))
+function totalPaginas(itens, itensPorPagina) {
+  return Math.max(1, Math.ceil(itens.length / itensPorPagina))
 }
 
-function paginaDe(itens, pagina) {
-  const paginaValida = pagina % totalPaginas(itens)
-  return itens.slice(paginaValida * ITENS_POR_PAGINA, (paginaValida + 1) * ITENS_POR_PAGINA)
+function paginaDe(itens, pagina, itensPorPagina) {
+  const paginaValida = pagina % totalPaginas(itens, itensPorPagina)
+  return itens.slice(paginaValida * itensPorPagina, (paginaValida + 1) * itensPorPagina)
+}
+
+function carregarConfigLocal() {
+  try { return normalizarConfigModoTV(JSON.parse(localStorage.getItem(CHAVE_CONFIG) || "{}")) }
+  catch { return CONFIG_MODO_TV_PADRAO }
 }
 
 export function ModoTV() {
@@ -75,6 +78,9 @@ export function ModoTV() {
   const [paginaExecucao, setPaginaExecucao] = useState(0)
   const [paginaAguardando, setPaginaAguardando] = useState(0)
   const [paginaExpedicao, setPaginaExpedicao] = useState(0)
+  const [config, setConfig] = useState(carregarConfigLocal)
+  const [configRascunho, setConfigRascunho] = useState(config)
+  const [configAberta, setConfigAberta] = useState(false)
 
   const carregar = useCallback(async ({ silencioso = false } = {}) => {
     if (!silencioso) setAtualizando(true)
@@ -88,15 +94,15 @@ export function ModoTV() {
 
   useEffect(() => {
     carregar()
-    const intervalo = setInterval(() => { if (!document.hidden) carregar({ silencioso: true }) }, INTERVALO_ATUALIZACAO)
+    const intervalo = setInterval(() => { if (!document.hidden) carregar({ silencioso: true }) }, config.atualizacaoSegundos * 1000)
     return () => clearInterval(intervalo)
-  }, [carregar])
+  }, [carregar, config.atualizacaoSegundos])
 
   useEffect(() => {
-    if (rotacaoPausada) return undefined
-    const intervalo = setInterval(() => setPainel((atual) => (atual + 1) % 3), INTERVALO_ROTACAO)
+    if (rotacaoPausada || !config.rotacaoAutomatica || config.paineis.length < 2) return undefined
+    const intervalo = setInterval(() => setPainel((atual) => proximoPainelModoTV(atual, config.paineis)), config.rotacaoSegundos * 1000)
     return () => clearInterval(intervalo)
-  }, [rotacaoPausada])
+  }, [config.paineis, config.rotacaoAutomatica, config.rotacaoSegundos, rotacaoPausada])
 
   useEffect(() => {
     if (rotacaoPausada) return undefined
@@ -106,9 +112,13 @@ export function ModoTV() {
         setPaginaAguardando((atual) => atual + 1)
       }
       if (painel === 2) setPaginaExpedicao((atual) => atual + 1)
-    }, INTERVALO_PAGINACAO)
+    }, config.paginacaoSegundos * 1000)
     return () => clearInterval(intervalo)
-  }, [painel, rotacaoPausada])
+  }, [config.paginacaoSegundos, painel, rotacaoPausada])
+
+  useEffect(() => {
+    if (!config.paineis.includes(painel)) setPainel(config.paineis[0])
+  }, [config.paineis, painel])
 
   useEffect(() => {
     function aoAlterarTelaCheia() { setTelaCheia(Boolean(document.fullscreenElement)) }
@@ -121,6 +131,31 @@ export function ModoTV() {
     else await document.documentElement.requestFullscreen()
   }
 
+  function abrirConfiguracoes() {
+    setConfigRascunho({ ...config, paineis: [...config.paineis] })
+    setConfigAberta(true)
+  }
+
+  function alternarPainelConfig(indice) {
+    setConfigRascunho((atual) => {
+      const existe = atual.paineis.includes(indice)
+      if (existe && atual.paineis.length === 1) return atual
+      return { ...atual, paineis: existe ? atual.paineis.filter((item) => item !== indice) : [...atual.paineis, indice].sort() }
+    })
+  }
+
+  function salvarConfiguracoes() {
+    const novaConfig = normalizarConfigModoTV(configRascunho)
+    localStorage.setItem(CHAVE_CONFIG, JSON.stringify(novaConfig))
+    setConfig(novaConfig)
+    setRotacaoPausada(false)
+    setConfigAberta(false)
+  }
+
+  function restaurarPadrao() {
+    setConfigRascunho({ ...CONFIG_MODO_TV_PADRAO, paineis: [...CONFIG_MODO_TV_PADRAO.paineis] })
+  }
+
   const resumo = dados?.resumo || {}
   const fila = dados?.fila || []
   const emExecucao = fila.filter((item) => item.status === "INICIADO")
@@ -130,11 +165,12 @@ export function ModoTV() {
 
   return <div className="min-h-screen bg-slate-950 text-white">
     <header className="flex min-h-20 items-center justify-between border-b border-slate-800 bg-slate-900 px-6 py-3">
-      <div className="flex items-center gap-4"><div className="rounded-xl bg-blue-600 p-3"><MonitorPlay size={30} /></div><div><h1 className="text-2xl font-black tracking-tight">Operação · Modo TV</h1><p className="text-sm text-slate-400">Painel {painel + 1} de 3 · atualização a cada 30s · troca a cada 20s</p></div></div>
+      <div className="flex items-center gap-4"><div className="rounded-xl bg-blue-600 p-3"><MonitorPlay size={30} /></div><div><h1 className="text-2xl font-black tracking-tight">Operação · Modo TV</h1><p className="text-sm text-slate-400">Painel {painel + 1} · atualização {config.atualizacaoSegundos}s · troca {config.rotacaoAutomatica ? `${config.rotacaoSegundos}s` : "manual"}</p></div></div>
       <div className="flex items-center gap-3">
         <div className={`flex items-center gap-2 rounded-full px-3 py-2 text-sm font-bold ${erro ? "bg-red-500/20 text-red-300" : "bg-emerald-500/15 text-emerald-300"}`}><span className={`h-2.5 w-2.5 rounded-full ${erro ? "bg-red-400" : "bg-emerald-400"}`} />{erro ? "Sem conexão" : `Atualizado ${formatarHora(dados?.atualizadoEm)}`}</div>
         <button type="button" onClick={() => carregar()} className="rounded-lg border border-slate-700 p-3 text-slate-200 hover:bg-slate-800" aria-label="Atualizar agora"><RefreshCw size={21} className={atualizando ? "animate-spin" : ""} /></button>
         <button type="button" onClick={() => setRotacaoPausada((atual) => !atual)} className="rounded-lg border border-slate-700 p-3 text-slate-200 hover:bg-slate-800" aria-label={rotacaoPausada ? "Retomar rotação" : "Pausar rotação"}>{rotacaoPausada ? <Play size={21} /> : <Pause size={21} />}</button>
+        <button type="button" onClick={abrirConfiguracoes} className="rounded-lg border border-slate-700 p-3 text-slate-200 hover:bg-slate-800" aria-label="Configurar Modo TV"><Settings size={21} /></button>
         <button type="button" onClick={alternarTelaCheia} className="rounded-lg border border-slate-700 p-3 text-slate-200 hover:bg-slate-800" aria-label={telaCheia ? "Sair da tela cheia" : "Entrar em tela cheia"}>{telaCheia ? <Minimize size={21} /> : <Maximize size={21} />}</button>
         <Link to="/dashboard" className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-4 py-3 text-sm font-bold text-slate-200 hover:bg-slate-800"><ArrowLeft size={18} />Sair</Link>
       </div>
@@ -147,20 +183,27 @@ export function ModoTV() {
       {dados && painel === 0 && <div className="space-y-6">
         <section className="grid grid-cols-2 gap-4 xl:grid-cols-4"><CartaoResumo titulo="Em separação" valor={resumo.pedidosSeparacao} icon={Layers3} /><CartaoResumo titulo="Em produção" valor={resumo.pedidosProducao} icon={Factory} tom="azul" /><CartaoResumo titulo="Prontos para entrega" valor={resumo.pedidosProntos} icon={PackageCheck} tom="verde" /><CartaoResumo titulo="Pedidos atrasados" valor={resumo.pedidosAtrasados} icon={AlertTriangle} tom={resumo.pedidosAtrasados ? "vermelho" : "cinza"} /></section>
         <section className="grid grid-cols-2 gap-4 xl:grid-cols-5"><CartaoResumo titulo="Serviços aguardando" valor={resumo.servicosAbertos} icon={Clock3} tom="amarelo" /><CartaoResumo titulo="Serviços em execução" valor={resumo.servicosIniciados} icon={Factory} /><CartaoResumo titulo="Concluídos hoje" valor={resumo.concluidosHoje} icon={CheckCircle2} tom="verde" /><CartaoResumo titulo="Chapas nos planos" valor={resumo.chapasAtivas} icon={Layers3} /><CartaoResumo titulo="Operadores ativos" valor={resumo.operadoresAtivos} icon={UsersRound} /></section>
-        <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5"><div className="mb-4 flex items-center justify-between"><div><h2 className="text-2xl font-black">Prioridades agora</h2><p className="text-slate-400">Serviços com prazo mais urgente aparecem primeiro</p></div><span className="rounded-full bg-slate-800 px-4 py-2 font-bold text-slate-300">{fila.length} na fila</span></div><div className="space-y-3">{fila.slice(0, 6).map((item) => <LinhaFila key={item.id} item={item} compacta />)}{fila.length === 0 && <p className="py-10 text-center text-xl text-emerald-300">Nenhum serviço aguardando ou em execução.</p>}</div></section>
+        <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5"><div className="mb-4 flex items-center justify-between"><div><h2 className="text-2xl font-black">Prioridades agora</h2><p className="text-slate-400">Serviços com prazo mais urgente aparecem primeiro</p></div><span className="rounded-full bg-slate-800 px-4 py-2 font-bold text-slate-300">{fila.length} na fila</span></div><div className="space-y-3">{fila.slice(0, config.itensPorPagina).map((item) => <LinhaFila key={item.id} item={item} compacta />)}{fila.length === 0 && <p className="py-10 text-center text-xl text-emerald-300">Nenhum serviço aguardando ou em execução.</p>}</div></section>
       </div>}
 
       {dados && painel === 1 && <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <section className="rounded-2xl border border-blue-500/30 bg-slate-900 p-5"><div className="mb-4 flex items-center justify-between"><div><h2 className="text-2xl font-black text-blue-200">Em execução</h2><p className="text-slate-400">Serviços que já possuem trabalho iniciado</p></div><span className="rounded-full bg-blue-500 px-4 py-2 text-xl font-black">{emExecucao.length}</span></div><div className="space-y-3">{paginaDe(emExecucao, paginaExecucao).map((item) => <LinhaFila key={item.id} item={item} compacta />)}{emExecucao.length === 0 && <p className="py-12 text-center text-xl text-slate-400">Nenhum serviço em execução.</p>}</div>{emExecucao.length > ITENS_POR_PAGINA && <p className="mt-3 text-center text-sm text-slate-400">Página {(paginaExecucao % totalPaginas(emExecucao)) + 1} de {totalPaginas(emExecucao)} · troca automática</p>}</section>
-        <section className="rounded-2xl border border-yellow-500/30 bg-slate-900 p-5"><div className="mb-4 flex items-center justify-between"><div><h2 className="text-2xl font-black text-yellow-200">Aguardando início</h2><p className="text-slate-400">Ordenado pelo prazo de entrega do pedido</p></div><span className="rounded-full bg-yellow-400 px-4 py-2 text-xl font-black text-slate-950">{aguardando.length}</span></div><div className="space-y-3">{paginaDe(aguardando, paginaAguardando).map((item) => <LinhaFila key={item.id} item={item} compacta />)}{aguardando.length === 0 && <p className="py-12 text-center text-xl text-slate-400">Nenhum serviço aguardando.</p>}</div>{aguardando.length > ITENS_POR_PAGINA && <p className="mt-3 text-center text-sm text-slate-400">Página {(paginaAguardando % totalPaginas(aguardando)) + 1} de {totalPaginas(aguardando)} · troca automática</p>}</section>
+        <section className="rounded-2xl border border-blue-500/30 bg-slate-900 p-5"><div className="mb-4 flex items-center justify-between"><div><h2 className="text-2xl font-black text-blue-200">Em execução</h2><p className="text-slate-400">Serviços que já possuem trabalho iniciado</p></div><span className="rounded-full bg-blue-500 px-4 py-2 text-xl font-black">{emExecucao.length}</span></div><div className="space-y-3">{paginaDe(emExecucao, paginaExecucao, config.itensPorPagina).map((item) => <LinhaFila key={item.id} item={item} compacta />)}{emExecucao.length === 0 && <p className="py-12 text-center text-xl text-slate-400">Nenhum serviço em execução.</p>}</div>{emExecucao.length > config.itensPorPagina && <p className="mt-3 text-center text-sm text-slate-400">Página {(paginaExecucao % totalPaginas(emExecucao, config.itensPorPagina)) + 1} de {totalPaginas(emExecucao, config.itensPorPagina)} · troca automática</p>}</section>
+        <section className="rounded-2xl border border-yellow-500/30 bg-slate-900 p-5"><div className="mb-4 flex items-center justify-between"><div><h2 className="text-2xl font-black text-yellow-200">Aguardando início</h2><p className="text-slate-400">Ordenado pelo prazo de entrega do pedido</p></div><span className="rounded-full bg-yellow-400 px-4 py-2 text-xl font-black text-slate-950">{aguardando.length}</span></div><div className="space-y-3">{paginaDe(aguardando, paginaAguardando, config.itensPorPagina).map((item) => <LinhaFila key={item.id} item={item} compacta />)}{aguardando.length === 0 && <p className="py-12 text-center text-xl text-slate-400">Nenhum serviço aguardando.</p>}</div>{aguardando.length > config.itensPorPagina && <p className="mt-3 text-center text-sm text-slate-400">Página {(paginaAguardando % totalPaginas(aguardando, config.itensPorPagina)) + 1} de {totalPaginas(aguardando, config.itensPorPagina)} · troca automática</p>}</section>
       </div>}
 
       {dados && painel === 2 && <div className="space-y-6">
         <section className="grid grid-cols-2 gap-4 xl:grid-cols-5"><CartaoResumo titulo="Fila da expedição" valor={expedicaoResumo.total || 0} icon={Truck} /><CartaoResumo titulo="Retiradas prontas" valor={expedicaoResumo.retiradasProntas || 0} icon={UserRoundCheck} tom="verde" /><CartaoResumo titulo="Entregas prontas" valor={expedicaoResumo.entregasProntas || 0} icon={PackageCheck} tom="verde" /><CartaoResumo titulo="Saiu para entrega" valor={expedicaoResumo.saiuEntrega || 0} icon={Truck} /><CartaoResumo titulo="Atrasados" valor={expedicaoResumo.atrasados || 0} icon={AlertTriangle} tom={expedicaoResumo.atrasados ? "vermelho" : "cinza"} /></section>
-        <section className="rounded-2xl border border-emerald-500/30 bg-slate-900 p-5"><div className="mb-4 flex items-center justify-between"><div><h2 className="text-2xl font-black text-emerald-200">Expedição</h2><p className="text-slate-400">Prontos, retiradas e pedidos que já saíram para entrega</p></div><div className="flex gap-2"><span className="rounded-full bg-orange-400 px-4 py-2 font-black text-slate-950">{expedicaoResumo.entregaHoje || 0} para hoje</span><span className="rounded-full bg-slate-800 px-4 py-2 font-bold text-slate-200">{expedicao.length} total</span></div></div><div className="space-y-3">{paginaDe(expedicao, paginaExpedicao).map((item) => <LinhaExpedicao key={item.id} item={item} />)}{expedicao.length === 0 && <p className="py-12 text-center text-xl text-emerald-300">Nenhum pedido aguardando expedição.</p>}</div>{expedicao.length > ITENS_POR_PAGINA && <p className="mt-3 text-center text-sm text-slate-400">Página {(paginaExpedicao % totalPaginas(expedicao)) + 1} de {totalPaginas(expedicao)} · troca automática a cada 8 segundos</p>}</section>
+        <section className="rounded-2xl border border-emerald-500/30 bg-slate-900 p-5"><div className="mb-4 flex items-center justify-between"><div><h2 className="text-2xl font-black text-emerald-200">Expedição</h2><p className="text-slate-400">Prontos, retiradas e pedidos que já saíram para entrega</p></div><div className="flex gap-2"><span className="rounded-full bg-orange-400 px-4 py-2 font-black text-slate-950">{expedicaoResumo.entregaHoje || 0} para hoje</span><span className="rounded-full bg-slate-800 px-4 py-2 font-bold text-slate-200">{expedicao.length} total</span></div></div><div className="space-y-3">{paginaDe(expedicao, paginaExpedicao, config.itensPorPagina).map((item) => <LinhaExpedicao key={item.id} item={item} />)}{expedicao.length === 0 && <p className="py-12 text-center text-xl text-emerald-300">Nenhum pedido aguardando expedição.</p>}</div>{expedicao.length > config.itensPorPagina && <p className="mt-3 text-center text-sm text-slate-400">Página {(paginaExpedicao % totalPaginas(expedicao, config.itensPorPagina)) + 1} de {totalPaginas(expedicao, config.itensPorPagina)} · troca automática a cada {config.paginacaoSegundos} segundos</p>}</section>
       </div>}
     </main>
 
-    <div className="fixed bottom-0 left-0 flex h-1 w-full">{[0, 1, 2].map((indice) => <button key={indice} type="button" aria-label={`Mostrar painel ${indice + 1}`} onClick={() => setPainel(indice)} className={`h-full flex-1 ${painel === indice ? "bg-blue-500" : "bg-slate-800"}`} />)}</div>
+    <div className="fixed bottom-0 left-0 flex h-1 w-full">{config.paineis.map((indice) => <button key={indice} type="button" aria-label={`Mostrar painel ${indice + 1}`} onClick={() => setPainel(indice)} className={`h-full flex-1 ${painel === indice ? "bg-blue-500" : "bg-slate-800"}`} />)}</div>
+
+    {configAberta && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-label="Configurações do Modo TV"><div className="w-full max-w-3xl rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl"><div className="mb-6 flex items-start justify-between"><div><h2 className="text-2xl font-black">Configurações do Modo TV</h2><p className="mt-1 text-sm text-slate-400">Estas preferências ficam salvas somente neste navegador.</p></div><button type="button" onClick={() => setConfigAberta(false)} className="rounded-lg p-2 text-slate-300 hover:bg-slate-800" aria-label="Fechar configurações"><X /></button></div><div className="grid grid-cols-1 gap-4 md:grid-cols-2">{[
+      ["atualizacaoSegundos", "Atualizar dados", [15, 30, 60, 120]],
+      ["rotacaoSegundos", "Trocar painel", [10, 20, 30, 60]],
+      ["paginacaoSegundos", "Trocar página da fila", [5, 8, 12, 15]],
+      ["itensPorPagina", "Itens visíveis por lista", [4, 6, 8]]
+    ].map(([campo, titulo, opcoes]) => <label key={campo} className="rounded-xl border border-slate-700 bg-slate-800/70 p-4"><span className="mb-2 block text-sm font-bold text-slate-200">{titulo}</span><select value={configRascunho[campo]} onChange={(e) => setConfigRascunho((atual) => ({ ...atual, [campo]: Number(e.target.value) }))} className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-3 text-white">{opcoes.map((opcao) => <option key={opcao} value={opcao}>{campo === "itensPorPagina" ? `${opcao} itens` : `${opcao} segundos`}</option>)}</select></label>)}</div><div className="mt-5 rounded-xl border border-slate-700 bg-slate-800/70 p-4"><label className="flex items-center gap-3 text-base font-bold"><input type="checkbox" checked={configRascunho.rotacaoAutomatica} onChange={(e) => setConfigRascunho((atual) => ({ ...atual, rotacaoAutomatica: e.target.checked }))} className="h-5 w-5" />Alternar os painéis automaticamente</label><p className="ml-8 mt-1 text-sm text-slate-400">Desative para trocar somente pelos controles na parte inferior.</p></div><fieldset className="mt-5 rounded-xl border border-slate-700 bg-slate-800/70 p-4"><legend className="px-1 text-sm font-bold text-slate-200">Painéis exibidos</legend><div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3">{["Resumo operacional", "Produção", "Expedição"].map((nome, indice) => <label key={nome} className="flex items-center gap-3 rounded-lg bg-slate-900 px-3 py-3"><input type="checkbox" checked={configRascunho.paineis.includes(indice)} onChange={() => alternarPainelConfig(indice)} className="h-5 w-5" />{nome}</label>)}</div><p className="mt-2 text-xs text-slate-400">Pelo menos um painel deve permanecer selecionado.</p></fieldset><div className="mt-6 flex flex-wrap justify-between gap-3"><button type="button" onClick={restaurarPadrao} className="rounded-lg border border-slate-600 px-4 py-3 font-bold text-slate-200 hover:bg-slate-800">Restaurar padrão</button><div className="flex gap-3"><button type="button" onClick={() => setConfigAberta(false)} className="rounded-lg border border-slate-600 px-5 py-3 font-bold text-slate-200 hover:bg-slate-800">Cancelar</button><button type="button" onClick={salvarConfiguracoes} className="rounded-lg bg-blue-600 px-5 py-3 font-black text-white hover:bg-blue-500">Salvar configurações</button></div></div></div></div>}
   </div>
 }
