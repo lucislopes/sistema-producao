@@ -38,6 +38,7 @@ import {
   DollarSign,
   PackageCheck,
   Package,
+  TrendingUp,
   Menu,
   X
 } from "lucide-react"
@@ -65,6 +66,7 @@ export function MainLayout() {
     Operação: true,
     Produção: true,
     Relatórios: false,
+    "Relatórios Novos": false,
     Cadastros: false,
     Sistema: false
   })
@@ -209,7 +211,8 @@ export function MainLayout() {
       "/relatorio-pedidos-entregues": "Relatório de Pedidos Entregues",
       "/relatorio-servicos": "Relatório de Serviços",
       "/relatorio-pendencias": "Relatório de Pendências",
-      "/relatorio-programacao-chapas": "Relatório Programação de Chapas"
+      "/relatorio-programacao-chapas": "Relatório Programação de Chapas",
+      "/relatorios-novos/comercial-vendedores": "Comercial por Vendedor"
      }
 
     return titulos[path] || "Sistema"
@@ -394,6 +397,14 @@ export function MainLayout() {
 
               <MenuLink to="/relatorio-pendencias" icon={TriangleAlert}>
                 Pendências
+              </MenuLink>
+            </MenuGrupo>
+          )}
+
+          {(isAdmin || isVendedor || isVendedorOperador) && (
+            <MenuGrupo titulo="Relatórios Novos">
+              <MenuLink to="/relatorios-novos/comercial-vendedores" icon={TrendingUp}>
+                Comercial por Vendedor
               </MenuLink>
             </MenuGrupo>
           )}

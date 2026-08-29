@@ -28,6 +28,7 @@ import relatorioFreteRoutes from "./routes/relatorioFrete.routes.js"
 import planoCorteServicoRoutes from "./routes/planoCorteServico.routes.js"
 import relatorioConsumoChapasRoutes from "./routes/relatorioConsumoChapas.routes.js"
 import relatorioProgramacaoChapasRoutes from "./routes/relatorioProgramacaoChapas.routes.js"
+import relatoriosNovosRoutes from "./routes/relatoriosNovos.routes.js"
 import { securityHeaders } from "./middlewares/security.middleware.js"
 import { errorMiddleware, rotaNaoEncontrada } from "./middlewares/error.middleware.js"
 
@@ -89,6 +90,7 @@ app.use("/plano-corte-servico", planoCorteServicoRoutes)
 app.use("/relatorios", relatoriosRoutes)
 app.use("/relatorio-consumo-chapas", relatorioConsumoChapasRoutes)
 app.use("/relatorio-programacao-chapas", relatorioProgramacaoChapasRoutes)
+app.use("/relatorios-novos", relatoriosNovosRoutes)
 
 app.get("/", (req, res) => {
   return res.json({

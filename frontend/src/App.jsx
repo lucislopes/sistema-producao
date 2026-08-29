@@ -43,6 +43,7 @@ const PlanoCorteServico = lazyNamed(() => import("./pages/PlanoCorteServico"), "
 const RelatorioPedidosEntregues = lazyNamed(() => import("./pages/RelatorioPedidosEntregues.jsx"), "RelatorioPedidosEntregues")
 const RelatorioConsumoChapas = lazyNamed(() => import("./pages/RelatorioConsumoChapas"), "RelatorioConsumoChapas")
 const RelatorioProgramacaoChapas = lazyNamed(() => import("./pages/RelatorioProgramacaoChapas"), "RelatorioProgramacaoChapas")
+const RelatorioComercialVendedores = lazyNamed(() => import("./pages/relatoriosNovos/RelatorioComercialVendedores"), "RelatorioComercialVendedores")
 
 
 export default function App() {
@@ -191,6 +192,11 @@ export default function App() {
           <Route
             path="/relatorio-programacao-chapas"
             element={<RelatorioProgramacaoChapas />}
+          />
+
+          <Route
+            path="/relatorios-novos/comercial-vendedores"
+            element={<RelatorioComercialVendedores />}
           />
           
 
