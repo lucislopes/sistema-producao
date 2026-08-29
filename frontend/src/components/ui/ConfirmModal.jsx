@@ -18,7 +18,7 @@ export function ConfirmModal({
       onClose={onCancel}
       width="max-w-md"
     >
-      <p className="text-gray-700 mb-6">
+      <p className="mb-6 whitespace-pre-line text-gray-700">
         {message}
       </p>
 

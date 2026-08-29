@@ -2,6 +2,11 @@ import { useEffect, useState } from "react"
 import { api } from "../services/api"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
 import { useSearchParams } from "react-router-dom"
+import { Button } from "../components/ui/Button"
+import { Modal } from "../components/ui/Modal"
+import { Select } from "../components/ui/Select"
+import { EmptyState, ErrorState, LoadingState } from "../components/ui/FeedbackState"
+import { ConfirmModal } from "../components/ui/ConfirmModal"
 
 import {
   ClipboardList,
@@ -23,6 +28,10 @@ export function Kanban() {
   const [novoOperadorId, setNovoOperadorId] = useState("")
   const [motivoTransferencia, setMotivoTransferencia] = useState("")
   const [observacoesAbertas, setObservacoesAbertas] = useState({})
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState(false)
+  const [alterandoId, setAlterandoId] = useState(null)
+  const [confirmacao, setConfirmacao] = useState(null)
   const [searchParams] = useSearchParams()
   const busca = searchParams.get("busca") || ""
 
@@ -44,30 +53,42 @@ export function Kanban() {
     CANCELADO: []
   })
 
-  async function carregarKanban() {
+  async function carregarOperadores() {
     try {
-      const [kanbanRes, operadoresRes] = await Promise.all([
-        api.get("/kanban", {
-          params: {
-            busca
-          }
-        }),
-        api.get("/funcionarios/operadores")
-      ])
-
-      setKanban(kanbanRes.data)
+      const operadoresRes = await api.get("/funcionarios/operadores")
       setOperadores(operadoresRes.data)
     } catch (error) {
       console.log(error)
-      alert("Erro ao carregar kanban")
     }
   }
+
+  async function carregarKanban({ silencioso = false } = {}) {
+    if (!silencioso) setCarregando(true)
+
+    try {
+      const kanbanRes = await api.get("/kanban", {
+        params: { busca }
+      })
+
+      setKanban(kanbanRes.data)
+      setErro(false)
+    } catch (error) {
+      console.log(error)
+      if (!silencioso) setErro(true)
+    } finally {
+      if (!silencioso) setCarregando(false)
+    }
+  }
+
+  useEffect(() => {
+    carregarOperadores()
+  }, [])
 
   useEffect(() => {
     carregarKanban()
 
     const interval = setInterval(() => {
-      carregarKanban()
+      if (!document.hidden) carregarKanban({ silencioso: true })
     }, 30000)
 
     return () => clearInterval(interval)
@@ -88,25 +109,34 @@ export function Kanban() {
     },
   ]
 
-  async function alterarStatus(id, status, mensagemConfirmacao = null) {
+  function alterarStatus(id, status, mensagemConfirmacao = null) {
     if (mensagemConfirmacao) {
-      const confirmar = confirm(mensagemConfirmacao)
-
-      if (!confirmar) return
+      setConfirmacao({ id, status, mensagem: mensagemConfirmacao })
+      return
     }
+
+    executarAlteracaoStatus(id, status)
+  }
+
+  async function executarAlteracaoStatus(id, status) {
+    if (alterandoId) return
+    setAlterandoId(id)
 
     try {
       await api.put(`/servicos-plano/status/${id}`, {
         status
       })
 
-      carregarKanban()
+      await carregarKanban({ silencioso: true })
+      setConfirmacao(null)
     } catch (error) {
       console.log(error)
       alert(
         error.response?.data?.error ||
         "Erro ao alterar status"
       )
+    } finally {
+      setAlterandoId(null)
     }
   }
 
@@ -257,7 +287,7 @@ export function Kanban() {
       setNovoOperadorId("")
       setMotivoTransferencia("")
 
-      carregarKanban()
+      await carregarKanban({ silencioso: true })
     } catch (error) {
       console.log(error)
 
@@ -299,13 +329,18 @@ export function Kanban() {
   }
 
   return (
-    <div>
+    <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <ResumoCard titulo="Abertos" valor={totalAbertos} icon={ClipboardList} />
           <ResumoCard titulo="Em Produção" valor={totalIniciados} tipo="info" icon={Factory} />
           <ResumoCard titulo="Concluídos" valor={totalConcluidos} tipo="sucesso" icon={CheckCircle2} />
           <ResumoCard titulo="Concluídos Hoje" valor={totalConcluidosHoje} tipo="sucesso" icon={CalendarCheck} />
       </div>
+      {carregando ? (
+        <LoadingState mensagem="Carregando quadro de produção..." />
+      ) : erro ? (
+        <ErrorState onRetry={() => carregarKanban()} />
+      ) : (
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
           {colunas.map((coluna) => (
@@ -337,20 +372,20 @@ export function Kanban() {
             </span>
             </h2>
 
-            <div className="grid grid-cols-1 2xl:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
 
               {kanban[coluna.key]?.map((servico) => (
 
                 <div
                   key={servico.id}
                   className={`
-                    rounded-xl shadow-sm p-3 border
+                    rounded-xl p-4 border border-l-4 shadow-sm transition-shadow hover:shadow-md
                     ${
                       pedidoAtrasado(servico.plano?.pedido)
-                        ? "bg-red-50 border-red-300"
+                        ? "bg-white border-gray-200 border-l-red-500"
                         : pedidoUltimoDia(servico.plano?.pedido)
-                        ? "bg-yellow-50 border-yellow-300"
-                        : "bg-white border-gray-200"
+                        ? "bg-white border-gray-200 border-l-yellow-500"
+                        : "bg-white border-gray-200 border-l-blue-400"
                     }
                   `}
                 >
@@ -361,9 +396,6 @@ export function Kanban() {
                               {servico.tipoServico?.nome}
                             </h3>
 
-                            <p className="text-sm text-gray-500">
-                              {statusAmigavel(servico.status)}
-                            </p>
                           </div>
 
                           <BadgeStatus status={servico.status} />
@@ -454,29 +486,35 @@ export function Kanban() {
                   )}
 
                   {podeTransferirOperador && servico.operador && (
-                    <button
+                    <Button
+                      size="sm"
+                      variant="warning"
                       onClick={() => abrirTransferencia(servico)}
-                      className="mt-2 bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-lg text-sm"
+                      className="mt-3"
                     >
                       Transferir operador
-                    </button>
+                    </Button>
                   )}
 
                   {podeAlterarKanban ? (
                     <div className="mt-3 flex flex-wrap gap-2">
                     {servico.status === "ABERTO" && (
-                      <button
+                      <Button
+                        size="sm"
+                        loading={alterandoId === servico.id}
                         onClick={() => alterarStatus(servico.id, "INICIADO")}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm inline-flex items-center gap-2"
                       >
                         <PlayCircle size={15} />
                         Iniciar
-                      </button>
+                      </Button>
                     )}
 
                     {servico.status === "INICIADO" && (
                       <>
-                        <button
+                        <Button
+                          size="sm"
+                          variant="success"
+                          loading={alterandoId === servico.id}
                           onClick={() =>
                             alterarStatus(
                               servico.id,
@@ -493,13 +531,15 @@ export function Kanban() {
                         Esta ação poderá ser revertida somente por um administrador.`
                             )
                           }
-                          className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm inline-flex items-center gap-2"
                         >
                           <CheckCircle2 size={15} />
                           Concluir
-                        </button>
+                        </Button>
 
-                        <button
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          loading={alterandoId === servico.id}
                           onClick={() =>
                             alterarStatus(
                               servico.id,
@@ -507,16 +547,18 @@ export function Kanban() {
                               "Deseja voltar este serviço para aguardando?"
                             )
                           }
-                          className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-lg text-sm inline-flex items-center gap-2"
                         >
                           <RotateCcw size={15} />
                           Voltar início
-                        </button>
+                        </Button>
                       </>
                     )}
 
                     {servico.status === "CONCLUIDO" && (
-                      <button
+                      <Button
+                        size="sm"
+                        variant="warning"
+                        loading={alterandoId === servico.id}
                         onClick={() =>
                           alterarStatus(
                             servico.id,
@@ -524,11 +566,10 @@ export function Kanban() {
                             "Deseja reabrir este serviço concluído?"
                           )
                         }
-                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-lg text-sm inline-flex items-center gap-2"
                       >
                         <RotateCcw size={15} />
                         Reabrir
-                      </button>
+                      </Button>
                     )}
                     </div>
                     ) : (
@@ -542,9 +583,7 @@ export function Kanban() {
               ))}
 
               {kanban[coluna.key]?.length === 0 && (
-                <div className="text-gray-500 text-sm">
-                  Nenhum serviço
-                </div>
+                <EmptyState titulo="Nenhum serviço" descricao="Não há itens nesta etapa." compact />
               )}
 
             </div>
@@ -554,14 +593,10 @@ export function Kanban() {
         ))}
 
       </div>
+      )}
 
       {modalTransferir && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg">
-            <h2 className="text-xl font-bold mb-4">
-              Transferir Operador
-            </h2>
-
+        <Modal open title="Transferir operador" width="max-w-lg" onClose={() => setModalTransferir(false)}>
             <p className="text-sm text-gray-600 mb-4">
               Serviço: <strong>{servicoSelecionado?.tipoServico?.nome}</strong>
               <br />
@@ -572,10 +607,10 @@ export function Kanban() {
             </p>
 
             <div className="grid grid-cols-1 gap-4">
-              <select
+              <Select
+                aria-label="Novo operador"
                 value={novoOperadorId}
                 onChange={(e) => setNovoOperadorId(e.target.value)}
-                className="border border-gray-300 rounded-lg p-3"
               >
                 <option value="">Selecione o novo operador</option>
                 {operadores.map((operador) => (
@@ -583,7 +618,7 @@ export function Kanban() {
                     {operador.nome}
                   </option>
                 ))}
-              </select>
+              </Select>
 
               <textarea
                 placeholder="Motivo da transferência"
@@ -594,25 +629,34 @@ export function Kanban() {
             </div>
 
             <div className="flex justify-end gap-2 mt-6">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
                 onClick={() => setModalTransferir(false)}
-                className="px-4 py-2 rounded-lg border"
               >
                 Cancelar
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="button"
+                variant="warning"
                 onClick={transferirOperador}
-                className="px-4 py-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600"
               >
                 Transferir
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
+
+      <ConfirmModal
+        open={Boolean(confirmacao)}
+        title={confirmacao?.status === "CONCLUIDO" ? "Concluir serviço" : "Confirmar alteração"}
+        message={confirmacao?.mensagem}
+        confirmText={confirmacao?.status === "CONCLUIDO" ? "Concluir serviço" : "Confirmar"}
+        variant={confirmacao?.status === "CONCLUIDO" ? "success" : "warning"}
+        onCancel={() => setConfirmacao(null)}
+        onConfirm={() => executarAlteracaoStatus(confirmacao.id, confirmacao.status)}
+      />
 
     </div>
   )
