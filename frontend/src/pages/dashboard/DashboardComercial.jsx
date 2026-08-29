@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 
 import { api } from "../../services/api"
+import { Table, Td, Th } from "../../components/ui/Table"
 import { CardIndicador } from "./components/CardIndicador"
 import { DashboardFiltro } from "./components/DashboardFiltro"
 import { SecaoDashboard } from "./components/SecaoDashboard"
@@ -252,97 +253,97 @@ export function DashboardComercial() {
       </SecaoDashboard>
 
       <SecaoDashboard titulo="Ranking de Vendedores">
-        <div className="bg-white rounded-2xl shadow-md border overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-2xl bg-white shadow-sm">
+          <Table label="Ranking de vendedores">
             <thead className="bg-gray-100">
               <tr>
-                <th className="text-left p-3">#</th>
-                <th className="text-left p-3">Vendedor</th>
-                <th className="text-left p-3">Pedidos</th>
-                <th className="text-left p-3">Valor Vendido</th>
-                <th className="text-left p-3">Ticket Médio</th>
+                <Th>#</Th>
+                <Th>Vendedor</Th>
+                <Th>Pedidos</Th>
+                <Th>Valor Vendido</Th>
+                <Th>Ticket Médio</Th>
               </tr>
             </thead>
 
             <tbody>
               {(dados.comercial?.rankingVendedores || []).map((item, index) => (
                 <tr key={item.vendedorId} className="border-t">
-                  <td className="p-3 font-bold">
+                  <Td className="font-bold">
                     {index + 1}º
-                  </td>
+                  </Td>
 
-                  <td className="p-3">
+                  <Td>
                     {item.nome}
-                  </td>
+                  </Td>
 
-                  <td className="p-3">
+                  <Td>
                     {item.pedidos}
-                  </td>
+                  </Td>
 
-                  <td className="p-3 font-semibold">
+                  <Td className="font-semibold">
                     {formatarMoeda(item.valorTotal)}
-                  </td>
+                  </Td>
 
-                  <td className="p-3">
+                  <Td>
                     {formatarMoeda(item.ticketMedio)}
-                  </td>
+                  </Td>
                 </tr>
               ))}
 
               {(dados.comercial?.rankingVendedores || []).length === 0 && (
                 <tr>
-                  <td colSpan="5" className="p-4 text-center text-gray-500">
+                  <Td colSpan="5" className="p-6 text-center text-gray-500">
                     Nenhum vendedor encontrado no período.
-                  </td>
+                  </Td>
                 </tr>
               )}
             </tbody>
-          </table>
+          </Table>
         </div>
       </SecaoDashboard>
 
       <SecaoDashboard titulo="Top Clientes">
-        <div className="bg-white rounded-2xl shadow-md border overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-2xl bg-white shadow-sm">
+          <Table label="Ranking de clientes">
             <thead className="bg-gray-100">
               <tr>
-                <th className="text-left p-3">#</th>
-                <th className="text-left p-3">Cliente</th>
-                <th className="text-left p-3">Pedidos</th>
-                <th className="text-left p-3">Valor Total</th>
+                <Th>#</Th>
+                <Th>Cliente</Th>
+                <Th>Pedidos</Th>
+                <Th>Valor Total</Th>
               </tr>
             </thead>
 
             <tbody>
               {(dados.comercial?.rankingClientes || []).map((item, index) => (
                 <tr key={item.clienteId} className="border-t">
-                  <td className="p-3 font-bold">
+                  <Td className="font-bold">
                     {index + 1}º
-                  </td>
+                  </Td>
 
-                  <td className="p-3">
+                  <Td>
                     {item.nome}
-                  </td>
+                  </Td>
 
-                  <td className="p-3">
+                  <Td>
                     {item.pedidos}
-                  </td>
+                  </Td>
 
-                  <td className="p-3 font-semibold">
+                  <Td className="font-semibold">
                     {formatarMoeda(item.valorTotal)}
-                  </td>
+                  </Td>
                 </tr>
               ))}
 
               {(dados.comercial?.rankingClientes || []).length === 0 && (
                 <tr>
-                  <td colSpan="4" className="p-4 text-center text-gray-500">
+                  <Td colSpan="4" className="p-6 text-center text-gray-500">
                     Nenhum cliente encontrado no período.
-                  </td>
+                  </Td>
                 </tr>
               )}
             </tbody>
-          </table>
+          </Table>
         </div>
       </SecaoDashboard>
     </div>

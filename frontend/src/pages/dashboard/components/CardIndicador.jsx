@@ -33,14 +33,14 @@ export function CardIndicador({
   const estilo = classes[tipo] || classes.normal
 
   const conteudo = (
-    <div className="flex items-center justify-between gap-3">
-      <div>
-        <p className="text-sm text-gray-600 truncate">{titulo}</p>
-        <strong className="text-2xl font-bold block mt-1">{valor}</strong>
+    <div className="flex min-w-0 items-center justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-sm font-medium leading-snug text-gray-600">{titulo}</p>
+        <strong className="mt-1 block break-words text-xl font-bold text-gray-900 sm:text-2xl">{valor}</strong>
       </div>
 
       {Icon && (
-        <div className={`p-3 rounded-xl ${estilo.icon}`}>
+        <div className={`shrink-0 rounded-xl p-2.5 sm:p-3 ${estilo.icon}`}>
           <Icon size={24} />
         </div>
       )}
@@ -48,8 +48,9 @@ export function CardIndicador({
   )
 
   const className = `
-    rounded-xl shadow-sm border p-4 block
-    hover:scale-[1.02] transition
+    block min-w-0 rounded-xl border p-4 shadow-sm
+    transition duration-150 hover:-translate-y-0.5 hover:shadow-md
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2
     ${estilo.card}
   `
 

@@ -98,18 +98,25 @@ export function Dashboard() {
   }, [dataInicio, dataFim, baseData])
 
   if (!dados) {
-    return <div>Carregando...</div>
+    return (
+      <div className="flex min-h-64 items-center justify-center rounded-2xl border border-gray-200 bg-white shadow-sm" role="status">
+        <div className="text-center">
+          <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" aria-hidden="true" />
+          <p className="font-medium text-gray-700">Carregando indicadores...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-xl font-semibold">
           Operação em Tempo Real
         </h2>
 
-        <span className="text-sm text-gray-500">
-          🔄 Atualizado às {ultimaAtualizacao?.toLocaleTimeString("pt-BR")}
+        <span className="text-sm text-gray-500" aria-live="polite">
+          Atualizado às {ultimaAtualizacao?.toLocaleTimeString("pt-BR")}
         </span>
       </div>
 

@@ -9,94 +9,105 @@ export function DashboardFiltro({
   ultimaAtualizacao
 }) {
   return (
-    <div className="bg-white rounded-2xl shadow-md border p-4 mb-6">
-      <p className="text-sm text-gray-500 mb-3">
+    <section className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5" aria-labelledby="titulo-filtros-dashboard">
+      <div className="mb-4">
+        <h2 id="titulo-filtros-dashboard" className="font-semibold text-gray-900">
+          Período dos indicadores
+        </h2>
+        <p className="mt-1 text-sm text-gray-500">
         Indicadores filtrados por:{" "}
         <strong>
           {baseData === "entrega"
             ? "Data prevista de entrega"
             : "Data do pedido"}
         </strong>
-      </p>
+        </p>
+      </div>
 
-      <div className="flex flex-wrap gap-3 items-center">
-        <select
-          className="border p-3 rounded-lg"
-          value={baseData}
-          onChange={(e) => setBaseData(e.target.value)}
-        >
-          <option value="entrega">Data prevista de entrega</option>
-          <option value="pedido">Data do pedido</option>
-        </select>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <label className="text-sm font-medium text-gray-700">
+          Data considerada
+          <Select className="mt-1" value={baseData} onChange={(e) => setBaseData(e.target.value)}>
+            <option value="entrega">Data prevista de entrega</option>
+            <option value="pedido">Data do pedido</option>
+          </Select>
+        </label>
 
-        <input
-          type="date"
-          className="border p-3 rounded-lg"
-          value={dataInicio}
-          onChange={(e) => setDataInicio(e.target.value)}
-        />
+        <label className="text-sm font-medium text-gray-700">
+          Data inicial
+          <Input className="mt-1" type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
+        </label>
 
-        <input
-          type="date"
-          className="border p-3 rounded-lg"
-          value={dataFim}
-          onChange={(e) => setDataFim(e.target.value)}
-        />
+        <label className="text-sm font-medium text-gray-700">
+          Data final
+          <Input className="mt-1" type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
+        </label>
+      </div>
 
-        <button
+      <div className="mt-4 flex flex-wrap gap-2" aria-label="Períodos rápidos">
+        <Button
           type="button"
           onClick={() => aplicarPeriodo("hoje")}
-          className="bg-gray-700 text-white px-4 py-3 rounded-lg"
+          variant="dark"
+          size="sm"
         >
           Hoje
-        </button>
+        </Button>
 
-        <button
+        <Button
           type="button"
           onClick={() => aplicarPeriodo("semana")}
-          className="bg-gray-700 text-white px-4 py-3 rounded-lg"
+          variant="dark"
+          size="sm"
         >
           {baseData === "entrega" ? "Próx. 7 dias" : "Últimos 7 dias"}
-        </button>
+        </Button>
 
-        <button
+        <Button
           type="button"
           onClick={() => aplicarPeriodo("15dias")}
-          className="bg-gray-700 text-white px-4 py-3 rounded-lg"
+          variant="dark"
+          size="sm"
         >
           {baseData === "entrega" ? "Próx. 15 dias" : "Últimos 15 dias"}
-        </button>
+        </Button>
 
-        <button
+        <Button
           type="button"
           onClick={() => aplicarPeriodo("30dias")}
-          className="bg-gray-700 text-white px-4 py-3 rounded-lg"
+          variant="dark"
+          size="sm"
         >
           {baseData === "entrega" ? "Próx. 30 dias" : "Últimos 30 dias"}
-        </button>
+        </Button>
 
-        <button
+        <Button
           type="button"
           onClick={() => aplicarPeriodo("mes")}
-          className="bg-gray-700 text-white px-4 py-3 rounded-lg"
+          variant="dark"
+          size="sm"
         >
           Mês atual
-        </button>
+        </Button>
 
-        <button
+        <Button
           type="button"
           onClick={() => aplicarPeriodo("ano")}
-          className="bg-gray-700 text-white px-4 py-3 rounded-lg"
+          variant="dark"
+          size="sm"
         >
           Ano atual
-        </button>
+        </Button>
 
         {ultimaAtualizacao && (
-          <p className="text-sm text-gray-500 ml-auto">
+          <p className="flex w-full items-center text-sm text-gray-500 sm:ml-auto sm:w-auto" aria-live="polite">
             Atualizado às {ultimaAtualizacao.toLocaleTimeString("pt-BR")}
           </p>
         )}
       </div>
-    </div>
+    </section>
   )
 }
+import { Button } from "../../../components/ui/Button"
+import { Input } from "../../../components/ui/Input"
+import { Select } from "../../../components/ui/Select"
