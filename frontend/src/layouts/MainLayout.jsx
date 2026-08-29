@@ -212,7 +212,8 @@ export function MainLayout() {
       "/relatorio-servicos": "Relatório de Serviços",
       "/relatorio-pendencias": "Relatório de Pendências",
       "/relatorio-programacao-chapas": "Relatório Programação de Chapas",
-      "/relatorios-novos/comercial-vendedores": "Comercial por Vendedor"
+      "/relatorios-novos/comercial-vendedores": "Comercial por Vendedor",
+      "/relatorios-novos/pontualidade-entregas": "Pontualidade das Entregas"
      }
 
     return titulos[path] || "Sistema"
@@ -405,6 +406,9 @@ export function MainLayout() {
             <MenuGrupo titulo="Relatórios Novos">
               <MenuLink to="/relatorios-novos/comercial-vendedores" icon={TrendingUp}>
                 Comercial por Vendedor
+              </MenuLink>
+              <MenuLink to="/relatorios-novos/pontualidade-entregas" icon={PackageCheck}>
+                Pontualidade das Entregas
               </MenuLink>
             </MenuGrupo>
           )}
