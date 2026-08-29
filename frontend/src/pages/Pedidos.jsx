@@ -1292,6 +1292,8 @@ function aplicarRotaSelecionada(id) {
 
               <Input
                 type="date"
+                aria-label="Data inicial da entrega"
+                title="Data inicial da entrega"
                 value={dataInicio}
                 onChange={(e) => {
                   setDataInicio(e.target.value)
@@ -1309,6 +1311,8 @@ function aplicarRotaSelecionada(id) {
 
               <Input
                 type="date"
+                aria-label="Data final da entrega"
+                title="Data final da entrega"
                 value={dataFim}
                 onChange={(e) => {
                   setDataFim(e.target.value)
@@ -1321,30 +1325,25 @@ function aplicarRotaSelecionada(id) {
             <div>
 
               <Select
+                aria-label="Pedidos por página"
+                title="Pedidos por página"
                 value={limit}
                 onChange={(e) => {
                   setLimit(Number(e.target.value))
                   setPage(1)
                 }}
               >
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
+                <option value={25}>25 por página</option>
+                <option value={50}>50 por página</option>
+                <option value={100}>100 por página</option>
               </Select>
             </div>
 
             <Button
               size="sm"
               type="button"
-              variant=""
-             className="
-              w-full flex items-center justify-center gap-2 py-3
-              bg-red-50
-              text-red-700
-              border
-              border-red-200
-              hover:bg-red-100
-                 "
+              variant="dangerSoft"
+              className="w-full py-3"
               title="Limpar filtros"
               onClick={() => {
                 setBusca("")
@@ -1420,6 +1419,7 @@ function aplicarRotaSelecionada(id) {
                         variant="secondary"
                         onClick={() => editarPedido(pedido)}
                         title="Editar pedido"
+                        aria-label={`Editar pedido ${pedido.numeroPedidoManual || pedido.numeroPedido}`}
                       >
                         <SquarePen size={16} />
                       </Button>
@@ -1434,6 +1434,8 @@ function aplicarRotaSelecionada(id) {
 
                     <Link
                       to={`/pedidos/${pedido.id}`}
+                      title="Visualizar pedido"
+                      aria-label={`Visualizar pedido ${pedido.numeroPedidoManual || pedido.numeroPedido}`}
                       className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
                     >
                       <Eye size={16} />
@@ -1442,6 +1444,8 @@ function aplicarRotaSelecionada(id) {
                     {pedido.tipoPedido !== "DIRETO_ENTREGA" && (
                       <Link
                         to={`/plano-corte-servico?pedidoId=${pedido.id}`}
+                        title="Abrir planos e serviços"
+                        aria-label={`Abrir planos e serviços do pedido ${pedido.numeroPedidoManual || pedido.numeroPedido}`}
                         className="inline-flex items-center justify-center rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white hover:bg-purple-700"
                       >
                         <ClipboardList size={16} /> Planos

@@ -14,6 +14,7 @@ export function Button({
     primary: "bg-blue-600 hover:bg-blue-700 text-white",
     secondary: "bg-gray-500 hover:bg-gray-600 text-white",
     danger: "bg-red-600 hover:bg-red-700 text-white",
+    dangersoft: "border border-red-200 bg-red-50 text-red-700 hover:bg-red-100",
     success: "bg-green-600 hover:bg-green-700 text-white",
     warning: "bg-yellow-500 hover:bg-yellow-600 text-white",
     dark: "bg-gray-800 hover:bg-gray-900 text-white"
