@@ -37,7 +37,9 @@ import {
   TriangleAlert,
   DollarSign,
   PackageCheck,
-  Package
+  Package,
+  Menu,
+  X
 } from "lucide-react"
 
 import { AuthContext } from "../contexts/AuthContext"
@@ -56,6 +58,7 @@ export function MainLayout() {
   const isVendedorOperador = funcao === "VENDEDOR_OPERADOR"
 
   const [menuAberto, setMenuAberto] = useState(false)
+  const [menuLateralAberto, setMenuLateralAberto] = useState(false)
   const [gruposAbertos, setGruposAbertos] = useState({
     Principal: true,
     Dashboards: false,
@@ -84,6 +87,31 @@ export function MainLayout() {
       document.removeEventListener("mousedown", fecharMenu)
     }
   }, [])
+
+  useEffect(() => {
+    setMenuLateralAberto(false)
+    setMenuAberto(false)
+  }, [location.pathname])
+
+  useEffect(() => {
+    if (!menuLateralAberto) return undefined
+
+    const overflowAnterior = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+
+    function fecharComEscape(event) {
+      if (event.key === "Escape") {
+        setMenuLateralAberto(false)
+      }
+    }
+
+    document.addEventListener("keydown", fecharComEscape)
+
+    return () => {
+      document.body.style.overflow = overflowAnterior
+      document.removeEventListener("keydown", fecharComEscape)
+    }
+  }, [menuLateralAberto])
 
   function alternarGrupo(titulo) {
     setGruposAbertos((atual) => ({
@@ -128,6 +156,7 @@ export function MainLayout() {
     return (
       <NavLink
         to={to}
+        onClick={() => setMenuLateralAberto(false)}
         className={({ isActive }) =>
           `
           text-sm px-3 py-2 rounded-lg transition
@@ -192,11 +221,40 @@ export function MainLayout() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <aside className="w-64 bg-gray-900 text-white p-4 min-h-screen overflow-y-auto sticky top-0 no-print">
-        <h1 className="text-2xl font-bold mb-6">
-          Produção
-        </h1>
+    <div className="flex min-h-screen bg-gray-100 overflow-x-hidden">
+      {menuLateralAberto && (
+        <button
+          type="button"
+          aria-label="Fechar menu de navegação"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden no-print"
+          onClick={() => setMenuLateralAberto(false)}
+        />
+      )}
+
+      <aside
+        id="menu-principal"
+        aria-label="Navegação principal"
+        className={`
+          fixed inset-y-0 left-0 z-50 w-72 bg-gray-900 text-white p-4
+          h-screen overflow-y-auto transition-transform duration-200 no-print
+          lg:sticky lg:top-0 lg:z-20 lg:w-64 lg:translate-x-0 lg:shrink-0
+          ${menuLateralAberto ? "translate-x-0" : "-translate-x-full"}
+        `}
+      >
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="text-2xl font-bold">
+            Produção
+          </h1>
+
+          <button
+            type="button"
+            aria-label="Fechar menu"
+            className="rounded-lg p-2 text-gray-300 hover:bg-gray-800 hover:text-white lg:hidden"
+            onClick={() => setMenuLateralAberto(false)}
+          >
+            <X size={22} />
+          </button>
+        </div>
 
         <nav className="flex flex-col">
           <MenuGrupo titulo="Principal">
@@ -381,6 +439,7 @@ export function MainLayout() {
           <div className="flex flex-col gap-2">
             <NavLink
               to="/minha-senha"
+              onClick={() => setMenuLateralAberto(false)}
               className={({ isActive }) =>
                 `
                 text-sm px-3 py-2 rounded-lg transition
@@ -409,15 +468,26 @@ export function MainLayout() {
         </div>
       </aside>
 
-      <main className="flex-1 p-6">
-        <div className="bg-white rounded-2xl shadow-sm border px-4 py-3 mb-6 flex items-center gap-4 no-print">
-          <h1 className="text-2xl font-bold whitespace-nowrap">
+      <main className="min-w-0 flex-1 p-3 sm:p-4 lg:p-6">
+        <div className="bg-white rounded-2xl shadow-sm border px-3 py-3 sm:px-4 mb-4 lg:mb-6 flex flex-wrap items-center gap-3 sm:gap-4 no-print">
+          <button
+            type="button"
+            aria-label="Abrir menu de navegação"
+            aria-controls="menu-principal"
+            aria-expanded={menuLateralAberto}
+            className="rounded-xl border border-gray-200 p-2 text-gray-700 hover:bg-gray-100 lg:hidden"
+            onClick={() => setMenuLateralAberto(true)}
+          >
+            <Menu size={22} />
+          </button>
+
+          <h1 className="min-w-0 flex-1 truncate text-xl font-bold sm:text-2xl lg:flex-none lg:whitespace-nowrap">
             {tituloPagina()}
           </h1>
 
-          <div className="flex-1" />
+          <div className="hidden flex-1 lg:block" />
 
-          <div className="w-[380px]">
+          <div className="order-3 w-full lg:order-none lg:w-[380px]">
             <BuscaGlobal />
           </div>
 
@@ -425,7 +495,7 @@ export function MainLayout() {
             <button
               type="button"
               onClick={() => setMenuAberto(!menuAberto)}
-              className="px-4 py-2 rounded-xl bg-gray-900 text-white text-sm hover:bg-gray-800 transition flex items-center gap-2"
+              className="px-3 py-2 sm:px-4 rounded-xl bg-gray-900 text-white text-sm hover:bg-gray-800 transition flex items-center gap-2"
             >
               <Zap size={16} />
               Ações
