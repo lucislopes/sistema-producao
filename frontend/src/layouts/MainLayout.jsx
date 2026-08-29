@@ -40,7 +40,8 @@ import {
   Package,
   TrendingUp,
   Menu,
-  X
+  X,
+  ContactRound
 } from "lucide-react"
 
 import { AuthContext } from "../contexts/AuthContext"
@@ -214,7 +215,8 @@ export function MainLayout() {
       "/relatorio-programacao-chapas": "Relatório Programação de Chapas",
       "/relatorios-novos/comercial-vendedores": "Comercial por Vendedor",
       "/relatorios-novos/pontualidade-entregas": "Pontualidade das Entregas",
-      "/relatorios-novos/pedidos-parados": "Pedidos Parados"
+      "/relatorios-novos/pedidos-parados": "Pedidos Parados",
+      "/relatorios-novos/clientes": "Gerencial de Clientes"
      }
 
     return titulos[path] || "Sistema"
@@ -413,6 +415,9 @@ export function MainLayout() {
               </MenuLink>
               <MenuLink to="/relatorios-novos/pedidos-parados" icon={TriangleAlert}>
                 Pedidos Parados
+              </MenuLink>
+              <MenuLink to="/relatorios-novos/clientes" icon={ContactRound}>
+                Gerencial de Clientes
               </MenuLink>
             </MenuGrupo>
           )}
