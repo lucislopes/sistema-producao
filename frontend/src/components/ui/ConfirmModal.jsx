@@ -22,10 +22,11 @@ export function ConfirmModal({
         {message}
       </p>
 
-      <div className="flex justify-end gap-3">
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <Button
           variant="secondary"
           onClick={onCancel}
+          className="w-full sm:w-auto"
         >
           {cancelText}
         </Button>
@@ -33,6 +34,7 @@ export function ConfirmModal({
         <Button
           variant={variant}
           onClick={onConfirm}
+          className="w-full sm:w-auto"
         >
           {confirmText}
         </Button>

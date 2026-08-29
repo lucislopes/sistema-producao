@@ -5,7 +5,9 @@ export function Button({
   size = "md",
   onClick,
   disabled = false,
-  className = ""
+  loading = false,
+  className = "",
+  ...props
 }) {
 
   const variants = {
@@ -23,21 +25,32 @@ export function Button({
     lg: "px-6 py-3"
   }
 
+  const variantClass = variants[String(variant).toLowerCase()] || variants.primary
+
   return (
     <button
       type={type}
       onClick={onClick}
-      disabled={disabled}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
       className={`
-        rounded-lg font-medium
-        transition
+        inline-flex min-h-10 items-center justify-center gap-2 rounded-lg font-medium
+        transition-colors duration-150
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2
         disabled:opacity-50
         disabled:cursor-not-allowed
-        ${variants[variant]}
+        ${variantClass}
         ${sizes[size]}
         ${className}
       `}
+      {...props}
     >
+      {loading && (
+        <span
+          className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent"
+          aria-hidden="true"
+        />
+      )}
       {children}
     </button>
   )

@@ -10,20 +10,25 @@ export function Login() {
   const navigate = useNavigate()
   const [email, setEmail] = useState("")
   const [senha, setSenha] = useState("")
+  const [erro, setErro] = useState("")
+  const [entrando, setEntrando] = useState(false)
 
   async function handleLogin(e) {
 
     e.preventDefault()
+    setErro("")
+    setEntrando(true)
 
     try {
 
       await login(email, senha)
-      alert("Login realizado")
       navigate("/dashboard")
 
     } catch (error) {
       console.log(error)
-      alert(error.response?.data?.error || "Não foi possível realizar o login")
+      setErro(error.response?.data?.error || "Não foi possível realizar o login")
+    } finally {
+      setEntrando(false)
     }
   }
 
@@ -50,6 +55,10 @@ export function Login() {
           <Input
             type="email"
             placeholder="Email"
+            aria-label="Email"
+            autoComplete="username"
+            required
+            aria-invalid={Boolean(erro)}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -57,15 +66,29 @@ export function Login() {
           <Input
             type="password"
             placeholder="Senha"
+            aria-label="Senha"
+            autoComplete="current-password"
+            required
+            aria-invalid={Boolean(erro)}
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
           />
 
+          {erro && (
+            <p
+              className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+              role="alert"
+            >
+              {erro}
+            </p>
+          )}
+
           <Button
             type="submit"
             className="w-full"
+            loading={entrando}
           >
-            Entrar
+            {entrando ? "Entrando..." : "Entrar"}
           </Button>
         </div>
 

@@ -23,9 +23,13 @@ export function Input({
         w-full
         bg-white
         text-sm
-        focus:outline-none
-        focus:ring-2
-        focus:ring-blue-500
+        transition-colors
+        focus-visible:outline-none
+        focus-visible:ring-2
+        focus-visible:ring-blue-500
+        focus-visible:border-blue-500
+        aria-invalid:border-red-500
+        aria-invalid:ring-red-200
         disabled:bg-gray-100
         disabled:cursor-not-allowed
         ${className}
