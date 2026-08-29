@@ -42,7 +42,7 @@ export function Th({
         text-left
         px-3
         py-2
-        border-b
+        border-b border-gray-200
         bg-gray-100
         uppercase
         text-xs
@@ -70,7 +70,7 @@ export function Td({
       className={`
         px-3
         py-2
-        border-b
+        border-b border-gray-200
         align-top
         ${className}
       `}

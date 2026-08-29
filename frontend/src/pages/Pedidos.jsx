@@ -1379,8 +1379,9 @@ function aplicarRotaSelecionada(id) {
             {pedidosFiltrados.map((pedido) => (
               <tr
                 key={pedido.id}
-                className={`border-t ${
-                  pedidoAtrasado(pedido) ? "bg-red-50" : ""
+                title={pedidoAtrasado(pedido) ? "Pedido com entrega atrasada" : undefined}
+                className={`border-t border-gray-200 ${
+                  pedidoAtrasado(pedido) ? "bg-red-50/70" : ""
                 }`}
               >
                 <Td >
@@ -1412,7 +1413,7 @@ function aplicarRotaSelecionada(id) {
                 </Td>
 
                 <Td>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2 whitespace-nowrap">
                     {podeEditarPedido(pedido) ? (
                       <Button
                         size="sm"
@@ -1422,6 +1423,7 @@ function aplicarRotaSelecionada(id) {
                         aria-label={`Editar pedido ${pedido.numeroPedidoManual || pedido.numeroPedido}`}
                       >
                         <SquarePen size={16} />
+                        Editar
                       </Button>
                     ) : (
                       <span
@@ -1436,9 +1438,10 @@ function aplicarRotaSelecionada(id) {
                       to={`/pedidos/${pedido.id}`}
                       title="Visualizar pedido"
                       aria-label={`Visualizar pedido ${pedido.numeroPedidoManual || pedido.numeroPedido}`}
-                      className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                     >
                       <Eye size={16} />
+                      Ver
                     </Link>
 
                     {pedido.tipoPedido !== "DIRETO_ENTREGA" && (
@@ -1446,7 +1449,7 @@ function aplicarRotaSelecionada(id) {
                         to={`/plano-corte-servico?pedidoId=${pedido.id}`}
                         title="Abrir planos e serviços"
                         aria-label={`Abrir planos e serviços do pedido ${pedido.numeroPedidoManual || pedido.numeroPedido}`}
-                        className="inline-flex items-center justify-center rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white hover:bg-purple-700"
+                        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
                       >
                         <ClipboardList size={16} /> Planos
                       </Link>
