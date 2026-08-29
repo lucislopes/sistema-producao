@@ -7,6 +7,7 @@ import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
 import { Table, Th, Td } from "../components/ui/Table"
+import { useUnsavedChanges } from "../hooks/useUnsavedChanges"
 
 
 import {
@@ -209,6 +210,10 @@ export function Pedidos() {
 
   const [tipoPedido, setTipoPedido] = useState("COM_PRODUCAO")
   const [modoTela, setModoTela] = useState("LISTA")
+  const [formAlterado, setFormAlterado] = useState(false)
+  const confirmarDescarte = useUnsavedChanges(
+    modoTela === "FORMULARIO" && formAlterado
+  )
 
   const navigate = useNavigate()
 
@@ -599,11 +604,13 @@ export function Pedidos() {
     setEnderecoEntrega(pedido.enderecoEntrega || "")
     setStatus(pedido.status)
     setObservacoes(pedido.observacoes || "")
+    setFormAlterado(false)
     setModoTela("FORMULARIO")
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   function limparFormulario() {
+    setFormAlterado(false)
     setOrigemPedido("EXTERNO")
     setNumeroPedidoManual("")
     setTipoPedido("COM_PRODUCAO")
@@ -638,6 +645,7 @@ export function Pedidos() {
   }
 
   function voltarParaLista() {
+    if (!confirmarDescarte()) return
     limparFormulario()
     setModoTela("LISTA")
     window.scrollTo({ top: 0, behavior: "smooth" })
@@ -808,6 +816,7 @@ function aplicarRotaSelecionada(id) {
       {modoTela === "FORMULARIO" && (
       <form
         onSubmit={handleSubmit}
+        onChangeCapture={() => setFormAlterado(true)}
         className="bg-white p-4 sm:p-6 rounded-2xl shadow-md mb-8"
       >
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4 mb-6">
@@ -816,9 +825,14 @@ function aplicarRotaSelecionada(id) {
             {editandoId ? "Editar Pedido" : "Novo Pedido"}
           </h2>
 
-          <span className="text-sm text-gray-500">
-            Campos com * são obrigatórios
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            {formAlterado && (
+              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800" role="status">
+                Alterações não salvas
+              </span>
+            )}
+            <span className="text-sm text-gray-500">Campos com * são obrigatórios</span>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">

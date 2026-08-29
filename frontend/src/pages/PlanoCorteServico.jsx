@@ -5,6 +5,7 @@ import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
 import { Button } from "../components/ui/Button"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
+import { useUnsavedChanges } from "../hooks/useUnsavedChanges"
 
 import {
   Save,
@@ -39,6 +40,8 @@ export function PlanoCorteServico() {
   const [excluindoPlano, setExcluindoPlano] = useState(false)
 
   const [editandoId, setEditandoId] = useState(null)
+  const [formAlterado, setFormAlterado] = useState(false)
+  useUnsavedChanges(formAlterado)
 
   const [searchParams] = useSearchParams()
   const pedidoIdUrl = searchParams.get("pedidoId")
@@ -144,6 +147,7 @@ export function PlanoCorteServico() {
   }
 
     function limparFormulario() {
+        setFormAlterado(false)
         setEditandoId(null)
         setNumeroPlano("")
         setQuantidadeChapas("")
@@ -226,6 +230,7 @@ export function PlanoCorteServico() {
     })
 
     setServicosSelecionados(servicosMapeados)
+    setFormAlterado(false)
 
     window.scrollTo({
         top: 0,
@@ -423,7 +428,12 @@ async function confirmarExclusaoPlano() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} onChangeCapture={() => setFormAlterado(true)}>
+          {formAlterado && (
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800" role="status">
+              Alterações não salvas — salve antes de sair desta tela.
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-semibold text-gray-700 mb-1">
