@@ -4,6 +4,7 @@ import { consolidarPontualidade } from "../utils/relatorioPontualidade.js"
 import { consolidarPedidosParados } from "../utils/relatorioPedidosParados.js"
 import { consolidarRelatorioClientes } from "../utils/relatorioClientes.js"
 import { consolidarCarteiraPedidos } from "../utils/relatorioCarteiraPedidos.js"
+import { consolidarAuditoriaCadastro } from "../utils/relatorioAuditoriaCadastro.js"
 
 function criarDataLocal(data, fimDoDia = false) {
   if (!data) return null
@@ -256,5 +257,49 @@ export async function relatorioCarteiraPedidos(req, res) {
   } catch (error) {
     console.log(error)
     return res.status(500).json({ error: "Erro ao gerar relatório da carteira de pedidos" })
+  }
+}
+
+export async function relatorioAuditoriaCadastro(req, res) {
+  try {
+    const { tipo, vendedorId, busca } = req.query
+    const statusAtivos = ["ABERTO", "EM_SEPARACAO", "EM_PRODUCAO", "PRONTO_ENTREGA", "SAIU_ENTREGA"]
+    const where = { status: { in: statusAtivos } }
+
+    if (vendedorId) where.vendedorId = vendedorId
+    if (busca) {
+      where.OR = [
+        { cliente: { nome: { contains: busca, mode: "insensitive" } } },
+        { numeroPedidoManual: { contains: busca, mode: "insensitive" } },
+        ...(Number(busca) ? [{ numeroPedido: Number(busca) }] : [])
+      ]
+    }
+
+    const pedidos = await prisma.pedido.findMany({
+      where,
+      select: {
+        id: true,
+        numeroPedido: true,
+        numeroPedidoManual: true,
+        origemPedido: true,
+        status: true,
+        valorTotal: true,
+        dataEntrega: true,
+        tipoEntrega: true,
+        rotaId: true,
+        enderecoEntrega: true,
+        nomeRecebedor: true,
+        contatoRecebedor: true,
+        cliente: { select: { nome: true, telefone: true } },
+        vendedor: { select: { id: true, nome: true } },
+        rota: { select: { nome: true } }
+      },
+      orderBy: { dataEntrega: "asc" }
+    })
+
+    return res.json(consolidarAuditoriaCadastro(pedidos, { tipo }))
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({ error: "Erro ao gerar auditoria de cadastro dos pedidos" })
   }
 }

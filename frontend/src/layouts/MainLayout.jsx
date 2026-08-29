@@ -41,7 +41,8 @@ import {
   TrendingUp,
   Menu,
   X,
-  ContactRound
+  ContactRound,
+  ClipboardCheck
 } from "lucide-react"
 
 import { AuthContext } from "../contexts/AuthContext"
@@ -217,7 +218,8 @@ export function MainLayout() {
       "/relatorios-novos/pontualidade-entregas": "Pontualidade das Entregas",
       "/relatorios-novos/pedidos-parados": "Pedidos Parados",
       "/relatorios-novos/clientes": "Gerencial de Clientes",
-      "/relatorios-novos/carteira-pedidos": "Carteira de Pedidos"
+      "/relatorios-novos/carteira-pedidos": "Carteira de Pedidos",
+      "/relatorios-novos/auditoria-cadastro": "Auditoria de Cadastro"
      }
 
     return titulos[path] || "Sistema"
@@ -422,6 +424,9 @@ export function MainLayout() {
               </MenuLink>
               <MenuLink to="/relatorios-novos/carteira-pedidos" icon={ShoppingCart}>
                 Carteira de Pedidos
+              </MenuLink>
+              <MenuLink to="/relatorios-novos/auditoria-cadastro" icon={ClipboardCheck}>
+                Auditoria de Cadastro
               </MenuLink>
             </MenuGrupo>
           )}
