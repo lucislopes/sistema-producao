@@ -208,6 +208,7 @@ export function Pedidos() {
   const [novaRotaValorFrete, setNovaRotaValorFrete] = useState("")
 
   const [tipoPedido, setTipoPedido] = useState("COM_PRODUCAO")
+  const [modoTela, setModoTela] = useState("LISTA")
 
   const navigate = useNavigate()
 
@@ -484,6 +485,8 @@ export function Pedidos() {
 
       if (tipoPedido === "COM_PRODUCAO" && pedidoSalvo?.id) {
         navigate(`/plano-corte-servico?pedidoId=${pedidoSalvo.id}`)
+      } else {
+        setModoTela("LISTA")
       }
     } catch (error) {
       console.log(error)
@@ -596,6 +599,8 @@ export function Pedidos() {
     setEnderecoEntrega(pedido.enderecoEntrega || "")
     setStatus(pedido.status)
     setObservacoes(pedido.observacoes || "")
+    setModoTela("FORMULARIO")
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   function limparFormulario() {
@@ -624,6 +629,18 @@ export function Pedidos() {
     setEnderecoEntrega("")
     setStatus("ABERTO")
     setObservacoes("")
+  }
+
+  function abrirNovoPedido() {
+    limparFormulario()
+    setModoTela("FORMULARIO")
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  function voltarParaLista() {
+    limparFormulario()
+    setModoTela("LISTA")
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
 function aplicarRotaSelecionada(id) {
@@ -743,11 +760,57 @@ function aplicarRotaSelecionada(id) {
         />
       </div>
 
+      <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="font-bold text-gray-900">
+            {modoTela === "LISTA" ? "Consultar pedidos" : editandoId ? "Editar pedido" : "Cadastrar pedido"}
+          </h2>
+          <p className="text-sm text-gray-500">
+            {modoTela === "LISTA"
+              ? "Pesquise, filtre e acompanhe os pedidos cadastrados."
+              : "Preencha os dados do pedido. A listagem permanece preservada."}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 sm:flex" role="tablist" aria-label="Visualização de pedidos">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={modoTela === "LISTA"}
+            onClick={voltarParaLista}
+            className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+              modoTela === "LISTA"
+                ? "bg-gray-900 text-white"
+                : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            <Search size={17} />
+            Consultar
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={modoTela === "FORMULARIO"}
+            onClick={abrirNovoPedido}
+            className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+              modoTela === "FORMULARIO" && !editandoId
+                ? "bg-blue-600 text-white"
+                : "border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+            }`}
+          >
+            <FileText size={17} />
+            Novo pedido
+          </button>
+        </div>
+      </div>
+
+      {modoTela === "FORMULARIO" && (
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-6 rounded-2xl shadow-md mb-8"
+        className="bg-white p-4 sm:p-6 rounded-2xl shadow-md mb-8"
       >
-        <div className="flex items-center justify-between gap-4 mb-6">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4 mb-6">
           <h2 className="text-xl font-bold flex items-center gap-2">
             <FileText size={22} />
             {editandoId ? "Editar Pedido" : "Novo Pedido"}
@@ -1109,18 +1172,16 @@ function aplicarRotaSelecionada(id) {
         </div>
 
         <div className="mt-6 pt-4 border-t flex justify-end gap-2">
-          {editandoId && (
-            <Button
-              size="sm"
-              type="button"
-              variant="secondary"
-              className="flex items-center gap-2 px-3 py-3"
-              onClick={limparFormulario}
-            >
-              <X size={16} />
-              Cancelar
-            </Button>
-          )}
+          <Button
+            size="sm"
+            type="button"
+            variant="secondary"
+            className="flex items-center gap-2 px-3 py-3"
+            onClick={voltarParaLista}
+          >
+            <X size={16} />
+            Cancelar
+          </Button>
 
           <Button
             size="sm"
@@ -1142,7 +1203,10 @@ function aplicarRotaSelecionada(id) {
           </Button>
         </div>
       </form>
+      )}
 
+      {modoTela === "LISTA" && (
+        <>
         <div className="bg-white p-4 rounded-2xl shadow-md mb-4">
           <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-7 gap-4 items-end">
 
@@ -1412,6 +1476,8 @@ function aplicarRotaSelecionada(id) {
 
 
       </div>
+        </>
+      )}
 
       {modalClienteAberto && (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
