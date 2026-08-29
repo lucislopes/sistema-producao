@@ -412,20 +412,7 @@ export async function criarPedido(req, res) {
       freteAlterado,
       motivoAlteracaoFrete
     })
-
-
-      console.log("====================================")
-  console.log("dataEntrega recebida:", dataEntrega)
-  console.log("tipo:", typeof dataEntrega)
-
-  const dataConvertida = criarDataEntrega(dataEntrega)
-
-  console.log("Date:", dataConvertida)
-  console.log("ISO:", dataConvertida?.toISOString())
-
-  console.log("====================================")
-
-
+    const dataConvertida = criarDataEntrega(dataEntrega)
 
     const pedido = await prisma.pedido.create({
       data: {

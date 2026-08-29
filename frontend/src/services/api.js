@@ -33,13 +33,21 @@ api.interceptors.response.use(
   },
 
   (error) => {
+    finalizarLoading()
     console.log("ERRO API:", error)
 
     //
     // SEM RESPOSTA
     //
 
+    const requisicaoDeLogin = error.config?.url?.includes("/auth/login")
+    const validacaoDeSessao = error.config?.url?.includes("/auth/me")
+
     if (!error.response) {
+      if (validacaoDeSessao) {
+        return Promise.reject(error)
+      }
+
       alert("Servidor não respondeu.")
       return Promise.reject(error)
     }
@@ -50,9 +58,7 @@ api.interceptors.response.use(
     // 401
     //
 
-    const requisicaoDeLogin = error.config?.url?.includes("/auth/login")
-
-    if (status === 401 && !requisicaoDeLogin) {
+    if (status === 401 && !requisicaoDeLogin && !validacaoDeSessao) {
       localStorage.removeItem("@token")
       localStorage.removeItem("@usuario")
 
@@ -60,6 +66,11 @@ api.interceptors.response.use(
 
       window.location.href = "/"
 
+      return Promise.reject(error)
+    }
+
+    if (status === 429 && !requisicaoDeLogin) {
+      alert(error.response?.data?.error || "Muitas solicitações. Tente novamente mais tarde.")
       return Promise.reject(error)
     }
 

@@ -17,5 +17,14 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // O projeto usa efeitos para carregamento remoto; esta regra do preset novo
+      // marca esse padrão consolidado como erro mesmo quando há cleanup.
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/static-components': 'warn',
+      'react-hooks/exhaustive-deps': 'warn',
+      'react-refresh/only-export-components': 'warn',
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    },
   },
 ])

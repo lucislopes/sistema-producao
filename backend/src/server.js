@@ -28,14 +28,38 @@ import relatorioFreteRoutes from "./routes/relatorioFrete.routes.js"
 import planoCorteServicoRoutes from "./routes/planoCorteServico.routes.js"
 import relatorioConsumoChapasRoutes from "./routes/relatorioConsumoChapas.routes.js"
 import relatorioProgramacaoChapasRoutes from "./routes/relatorioProgramacaoChapas.routes.js"
+import { securityHeaders } from "./middlewares/security.middleware.js"
+import { errorMiddleware, rotaNaoEncontrada } from "./middlewares/error.middleware.js"
 
 
 
 
 dotenv.config()
+
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET não configurado")
+}
+
 const app = express()
 
-app.use(cors())
+app.set("trust proxy", 1)
+app.disable("x-powered-by")
+app.use(securityHeaders)
+
+const origensPermitidas = (process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((origem) => origem.trim())
+  .filter(Boolean)
+
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || origensPermitidas.length === 0 || origensPermitidas.includes(origin)) {
+      return callback(null, true)
+    }
+
+    return callback(new Error("Origem não permitida pelo CORS"))
+  }
+}))
 app.use(express.json({ limit: "10mb" }))
 app.use(express.urlencoded({ extended: true, limit: "10mb" }))
 app.use("/auth", authRoutes)
@@ -77,3 +101,10 @@ const port = Number(process.env.PORT) || 3333
 app.listen(port, () => {
   console.log(`Servidor rodando na porta ${port}`)
 })
+
+app.get("/health", (req, res) => {
+  return res.json({ status: "ok" })
+})
+
+app.use(rotaNaoEncontrada)
+app.use(errorMiddleware)

@@ -391,20 +391,6 @@ async function gerarPorDataProducao({
   const porTipoServico = montarResumoPorTipoServico(servicosResumo)
   const porOperador = montarPorOperador(servicosResumo)
 
-  console.log("DEBUG PRODUÇÃO - TOTAL SERVIÇOS:", servicosResumo.length)
-  console.log(
-    "DEBUG PRODUÇÃO - OPERADORES:",
-    servicosResumo.map((s) => ({
-      servicoId: s.id,
-      operadorId: s.operadorId,
-      operador: s.operador?.nome,
-      tipoServico: s.tipoServico?.nome,
-      dataFim: s.dataFim,
-      status: s.status
-    }))
-  )
-  console.log("DEBUG PRODUÇÃO - POR OPERADOR:", porOperador)
-
   return {
     dados,
     resumo: montarResumoGeral(dadosResumo, porTipoServico),

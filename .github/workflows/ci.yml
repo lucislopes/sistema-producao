@@ -1,0 +1,49 @@
+name: Validacao
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Instalar backend
+        run: npm ci
+        working-directory: backend
+
+      - name: Testar backend
+        run: npm test
+        working-directory: backend
+
+      - name: Validar sintaxe do backend
+        run: node --check src/server.js
+        working-directory: backend
+
+      - name: Instalar frontend
+        run: npm ci
+        working-directory: frontend
+
+      - name: Verificar frontend
+        run: npm run lint
+        working-directory: frontend
+
+      - name: Compilar frontend
+        run: npm run build
+        working-directory: frontend
+
+      - name: Validar Docker Compose
+        env:
+          JWT_SECRET: validacao-automatica-sem-uso-em-producao
+        run: docker compose config --quiet

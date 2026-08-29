@@ -9,16 +9,38 @@ import { api } from "../services/api"
 export const AuthContext = createContext({})
 
 export function AuthProvider({ children }) {
-  const [usuario, setUsuario] = useState(null)
+  const [usuario, setUsuario] = useState(() => {
+    try {
+      const user = localStorage.getItem("@usuario")
+      return user ? JSON.parse(user) : null
+    } catch {
+      return null
+    }
+  })
+  const [carregandoSessao, setCarregandoSessao] = useState(true)
 
   useEffect(() => {
     const token = localStorage.getItem("@token")
-    const user = localStorage.getItem("@usuario")
-
-    if (token && user) {
-      api.defaults.headers.common["Authorization"] = `Bearer ${token}`
-      setUsuario(JSON.parse(user))
+    if (!token) {
+      setCarregandoSessao(false)
+      return
     }
+
+    api.defaults.headers.common["Authorization"] = `Bearer ${token}`
+
+    api.get("/auth/me")
+      .then((response) => {
+        const usuarioAtual = response.data.usuario
+        localStorage.setItem("@usuario", JSON.stringify(usuarioAtual))
+        setUsuario(usuarioAtual)
+      })
+      .catch(() => {
+        localStorage.removeItem("@token")
+        localStorage.removeItem("@usuario")
+        delete api.defaults.headers.common["Authorization"]
+        setUsuario(null)
+      })
+      .finally(() => setCarregandoSessao(false))
   }, [])
 
   async function login(email, senha) {
@@ -35,6 +57,7 @@ export function AuthProvider({ children }) {
     api.defaults.headers.common["Authorization"] = `Bearer ${token}`
 
     setUsuario(usuario)
+    setCarregandoSessao(false)
   }
 
   function logout() {
@@ -52,7 +75,8 @@ export function AuthProvider({ children }) {
         usuario,
         login,
         logout,
-        autenticado: !!usuario
+        autenticado: !!usuario,
+        carregandoSessao
       }}
     >
       {children}

@@ -2,21 +2,17 @@ import { Router } from "express"
 
 import {
   login,
-  alterarMinhaSenha
+  alterarMinhaSenha,
+  usuarioAtual
 } from "../controllers/auth.controller.js"
 
 import { authMiddleware } from "../middlewares/auth.middleware.js"
+import { limitarLogin } from "../middlewares/security.middleware.js"
 
 const router = Router()
 
-router.post("/login", login)
-
-router.get("/teste-minha-senha", (req, res) => {
-  return res.json({
-    ok: true,
-    rota: "/auth/teste-minha-senha"
-  })
-})
+router.post("/login", limitarLogin, login)
+router.get("/me", authMiddleware, usuarioAtual)
 
 router.patch(
   "/minha-senha",

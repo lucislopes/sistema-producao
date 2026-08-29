@@ -3,40 +3,46 @@ import {
   Routes,
   Route
 } from "react-router-dom"
+import { lazy, Suspense } from "react"
 
 import { Login } from "./pages/Login"
-import { Dashboard } from "./pages/Dashboard"
-import { Clientes } from "./pages/Clientes"
-import { Funcionarios } from "./pages/Funcionarios"
-import { Pedidos } from "./pages/Pedidos"
 import { MainLayout } from "./layouts/MainLayout"
 import { PrivateRoute } from "./routes/PrivateRoute"
-import { RotasEntrega } from "./pages/RotasEntrega"
-import { TiposServico } from "./pages/TiposServico"
-import { PlanosCorte } from "./pages/PlanosCorte"
-import { ServicosPlano } from "./pages/ServicosPlano"
-import { PainelOperador } from "./pages/PainelOperador"
-import { Kanban } from "./pages/Kanban"
-import { Expedicao } from "./pages/Expedicao"
-import { RelatorioExpedicao } from "./pages/RelatorioExpedicao"
-import { RelatorioPedidos } from "./pages/RelatorioPedidos"
-import { DetalhePedido } from "./pages/DetalhePedido"
-import { RelatorioProducao } from "./pages/RelatorioProducao"
-import { Alertas } from "./pages/Alertas"
-import { ProdutividadeOperadores } from "./pages/ProdutividadeOperadores"
-import { ConfiguracaoEmpresa } from "./pages/ConfiguracaoEmpresa"
-import { MinhaSenha } from "./pages/MinhaSenha"
-import { DashboardProducao } from "./pages/dashboard/DashboardProducao"
-import { DashboardExpedicao } from "./pages/dashboard/DashboardExpedicao"
-import { DashboardComercial } from "./pages/dashboard/DashboardComercial"
-import { RelatorioServicos } from "./pages/RelatorioServicos"
-import { RelatorioPendencias } from "./pages/RelatorioPendencias"
-import { RomaneioEntrega } from "./pages/RomaneioEntrega"
-import { RelatorioAuditoriaFrete } from "./pages/RelatorioAuditoriaFrete"
-import { PlanoCorteServico } from "./pages/PlanoCorteServico"
-import { RelatorioPedidosEntregues } from "./pages/RelatorioPedidosEntregues.jsx"
-import { RelatorioConsumoChapas } from "./pages/RelatorioConsumoChapas"
-import { RelatorioProgramacaoChapas } from "./pages/RelatorioProgramacaoChapas"
+
+function lazyNamed(importer, nome) {
+  return lazy(() => importer().then((modulo) => ({ default: modulo[nome] })))
+}
+
+const Dashboard = lazyNamed(() => import("./pages/Dashboard"), "Dashboard")
+const Clientes = lazyNamed(() => import("./pages/Clientes"), "Clientes")
+const Funcionarios = lazyNamed(() => import("./pages/Funcionarios"), "Funcionarios")
+const Pedidos = lazyNamed(() => import("./pages/Pedidos"), "Pedidos")
+const RotasEntrega = lazyNamed(() => import("./pages/RotasEntrega"), "RotasEntrega")
+const TiposServico = lazyNamed(() => import("./pages/TiposServico"), "TiposServico")
+const PlanosCorte = lazyNamed(() => import("./pages/PlanosCorte"), "PlanosCorte")
+const ServicosPlano = lazyNamed(() => import("./pages/ServicosPlano"), "ServicosPlano")
+const PainelOperador = lazyNamed(() => import("./pages/PainelOperador"), "PainelOperador")
+const Kanban = lazyNamed(() => import("./pages/Kanban"), "Kanban")
+const Expedicao = lazyNamed(() => import("./pages/Expedicao"), "Expedicao")
+const RelatorioExpedicao = lazyNamed(() => import("./pages/RelatorioExpedicao"), "RelatorioExpedicao")
+const RelatorioPedidos = lazyNamed(() => import("./pages/RelatorioPedidos"), "RelatorioPedidos")
+const DetalhePedido = lazyNamed(() => import("./pages/DetalhePedido"), "DetalhePedido")
+const RelatorioProducao = lazyNamed(() => import("./pages/RelatorioProducao"), "RelatorioProducao")
+const Alertas = lazyNamed(() => import("./pages/Alertas"), "Alertas")
+const ProdutividadeOperadores = lazyNamed(() => import("./pages/ProdutividadeOperadores"), "ProdutividadeOperadores")
+const ConfiguracaoEmpresa = lazyNamed(() => import("./pages/ConfiguracaoEmpresa"), "ConfiguracaoEmpresa")
+const MinhaSenha = lazyNamed(() => import("./pages/MinhaSenha"), "MinhaSenha")
+const DashboardProducao = lazyNamed(() => import("./pages/dashboard/DashboardProducao"), "DashboardProducao")
+const DashboardExpedicao = lazyNamed(() => import("./pages/dashboard/DashboardExpedicao"), "DashboardExpedicao")
+const DashboardComercial = lazyNamed(() => import("./pages/dashboard/DashboardComercial"), "DashboardComercial")
+const RelatorioServicos = lazyNamed(() => import("./pages/RelatorioServicos"), "RelatorioServicos")
+const RelatorioPendencias = lazyNamed(() => import("./pages/RelatorioPendencias"), "RelatorioPendencias")
+const RomaneioEntrega = lazyNamed(() => import("./pages/RomaneioEntrega"), "RomaneioEntrega")
+const RelatorioAuditoriaFrete = lazyNamed(() => import("./pages/RelatorioAuditoriaFrete"), "RelatorioAuditoriaFrete")
+const PlanoCorteServico = lazyNamed(() => import("./pages/PlanoCorteServico"), "PlanoCorteServico")
+const RelatorioPedidosEntregues = lazyNamed(() => import("./pages/RelatorioPedidosEntregues.jsx"), "RelatorioPedidosEntregues")
+const RelatorioConsumoChapas = lazyNamed(() => import("./pages/RelatorioConsumoChapas"), "RelatorioConsumoChapas")
+const RelatorioProgramacaoChapas = lazyNamed(() => import("./pages/RelatorioProgramacaoChapas"), "RelatorioProgramacaoChapas")
 
 
 export default function App() {
@@ -44,6 +50,7 @@ export default function App() {
   return (
 
     <BrowserRouter>
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-600">Carregando...</div>}>
 
       <Routes>
 
@@ -145,11 +152,6 @@ export default function App() {
           />
 
           <Route
-            path="/alertas"
-            element={<Alertas />}
-          />
-
-          <Route
             path="/produtividade-operadores"
             element={<ProdutividadeOperadores />}
           />
@@ -195,6 +197,7 @@ export default function App() {
         </Route>
 
       </Routes>
+      </Suspense>
 
     </BrowserRouter>
   )

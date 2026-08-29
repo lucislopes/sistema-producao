@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 import { prisma } from "../lib/prisma.js"
+import { limparTentativasLogin } from "../middlewares/security.middleware.js"
 
 export async function login(req, res) {
   try {
@@ -39,6 +40,8 @@ export async function login(req, res) {
         error: "Usuário inativo"
       })
     }
+
+    limparTentativasLogin(req)
 
     const token = jwt.sign(
       {
@@ -135,5 +138,31 @@ export async function alterarMinhaSenha(req, res) {
     return res.status(500).json({
       error: "Erro ao alterar senha"
     })
+  }
+}
+
+export async function usuarioAtual(req, res) {
+  try {
+    const usuario = await prisma.usuario.findUnique({
+      where: { id: req.user.id },
+      include: { funcionario: true }
+    })
+
+    if (!usuario || !usuario.funcionario?.ativo) {
+      return res.status(401).json({ error: "Usuário inativo ou não encontrado" })
+    }
+
+    return res.json({
+      usuario: {
+        id: usuario.id,
+        funcionarioId: usuario.funcionario.id,
+        nome: usuario.funcionario.nome,
+        email: usuario.email,
+        funcao: usuario.funcionario.funcao
+      }
+    })
+  } catch (error) {
+    console.error("Erro ao consultar usuário atual", error)
+    return res.status(500).json({ error: "Erro interno" })
   }
 }
