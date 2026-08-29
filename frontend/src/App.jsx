@@ -49,6 +49,7 @@ const RelatorioPedidosParados = lazyNamed(() => import("./pages/relatoriosNovos/
 const RelatorioGerencialClientes = lazyNamed(() => import("./pages/relatoriosNovos/RelatorioGerencialClientes"), "RelatorioGerencialClientes")
 const RelatorioCarteiraPedidos = lazyNamed(() => import("./pages/relatoriosNovos/RelatorioCarteiraPedidos"), "RelatorioCarteiraPedidos")
 const RelatorioAuditoriaCadastro = lazyNamed(() => import("./pages/relatoriosNovos/RelatorioAuditoriaCadastro"), "RelatorioAuditoriaCadastro")
+const ModoTV = lazyNamed(() => import("./pages/ModoTV"), "ModoTV")
 
 
 export default function App() {
@@ -63,6 +64,11 @@ export default function App() {
         <Route
           path="/"
           element={<Login />}
+        />
+
+        <Route
+          path="/modo-tv"
+          element={<PrivateRoute><ModoTV /></PrivateRoute>}
         />
 
         <Route

@@ -42,7 +42,8 @@ import {
   Menu,
   X,
   ContactRound,
-  ClipboardCheck
+  ClipboardCheck,
+  MonitorPlay
 } from "lucide-react"
 
 import { AuthContext } from "../contexts/AuthContext"
@@ -333,6 +334,9 @@ export function MainLayout() {
 
               <MenuLink to="/kanban" icon={Columns3}>
                 Kanban
+              </MenuLink>
+              <MenuLink to="/modo-tv" icon={MonitorPlay}>
+                Modo TV
               </MenuLink>
             </MenuGrupo>
           )}

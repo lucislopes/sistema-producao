@@ -29,6 +29,7 @@ import planoCorteServicoRoutes from "./routes/planoCorteServico.routes.js"
 import relatorioConsumoChapasRoutes from "./routes/relatorioConsumoChapas.routes.js"
 import relatorioProgramacaoChapasRoutes from "./routes/relatorioProgramacaoChapas.routes.js"
 import relatoriosNovosRoutes from "./routes/relatoriosNovos.routes.js"
+import modoTVRoutes from "./routes/modoTV.routes.js"
 import { securityHeaders } from "./middlewares/security.middleware.js"
 import { errorMiddleware, rotaNaoEncontrada } from "./middlewares/error.middleware.js"
 
@@ -91,6 +92,7 @@ app.use("/relatorios", relatoriosRoutes)
 app.use("/relatorio-consumo-chapas", relatorioConsumoChapasRoutes)
 app.use("/relatorio-programacao-chapas", relatorioProgramacaoChapasRoutes)
 app.use("/relatorios-novos", relatoriosNovosRoutes)
+app.use("/modo-tv", modoTVRoutes)
 
 app.get("/", (req, res) => {
   return res.json({
