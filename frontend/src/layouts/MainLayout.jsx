@@ -213,7 +213,8 @@ export function MainLayout() {
       "/relatorio-pendencias": "Relatório de Pendências",
       "/relatorio-programacao-chapas": "Relatório Programação de Chapas",
       "/relatorios-novos/comercial-vendedores": "Comercial por Vendedor",
-      "/relatorios-novos/pontualidade-entregas": "Pontualidade das Entregas"
+      "/relatorios-novos/pontualidade-entregas": "Pontualidade das Entregas",
+      "/relatorios-novos/pedidos-parados": "Pedidos Parados"
      }
 
     return titulos[path] || "Sistema"
@@ -409,6 +410,9 @@ export function MainLayout() {
               </MenuLink>
               <MenuLink to="/relatorios-novos/pontualidade-entregas" icon={PackageCheck}>
                 Pontualidade das Entregas
+              </MenuLink>
+              <MenuLink to="/relatorios-novos/pedidos-parados" icon={TriangleAlert}>
+                Pedidos Parados
               </MenuLink>
             </MenuGrupo>
           )}

@@ -45,6 +45,7 @@ const RelatorioConsumoChapas = lazyNamed(() => import("./pages/RelatorioConsumoC
 const RelatorioProgramacaoChapas = lazyNamed(() => import("./pages/RelatorioProgramacaoChapas"), "RelatorioProgramacaoChapas")
 const RelatorioComercialVendedores = lazyNamed(() => import("./pages/relatoriosNovos/RelatorioComercialVendedores"), "RelatorioComercialVendedores")
 const RelatorioPontualidadeEntregas = lazyNamed(() => import("./pages/relatoriosNovos/RelatorioPontualidadeEntregas"), "RelatorioPontualidadeEntregas")
+const RelatorioPedidosParados = lazyNamed(() => import("./pages/relatoriosNovos/RelatorioPedidosParados"), "RelatorioPedidosParados")
 
 
 export default function App() {
@@ -202,6 +203,10 @@ export default function App() {
           <Route
             path="/relatorios-novos/pontualidade-entregas"
             element={<RelatorioPontualidadeEntregas />}
+          />
+          <Route
+            path="/relatorios-novos/pedidos-parados"
+            element={<RelatorioPedidosParados />}
           />
           
 

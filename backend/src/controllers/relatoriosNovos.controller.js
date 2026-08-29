@@ -1,6 +1,7 @@
 import { prisma } from "../lib/prisma.js"
 import { consolidarRelatorioComercial } from "../utils/relatorioComercial.js"
 import { consolidarPontualidade } from "../utils/relatorioPontualidade.js"
+import { consolidarPedidosParados } from "../utils/relatorioPedidosParados.js"
 
 function criarDataLocal(data, fimDoDia = false) {
   if (!data) return null
@@ -104,5 +105,58 @@ export async function relatorioPontualidadeEntregas(req, res) {
   } catch (error) {
     console.log(error)
     return res.status(500).json({ error: "Erro ao gerar relatório de pontualidade" })
+  }
+}
+
+export async function relatorioPedidosParados(req, res) {
+  try {
+    const { status, vendedorId, busca, minimoDias = 3 } = req.query
+    const statusAtivos = ["ABERTO", "EM_SEPARACAO", "EM_PRODUCAO", "PRONTO_ENTREGA", "SAIU_ENTREGA"]
+    const where = { status: status ? status : { in: statusAtivos } }
+
+    if (status && !statusAtivos.includes(status)) {
+      return res.status(400).json({ error: "Status inválido para pedidos ativos" })
+    }
+    if (vendedorId) where.vendedorId = vendedorId
+    if (busca) {
+      where.OR = [
+        { cliente: { nome: { contains: busca, mode: "insensitive" } } },
+        { numeroPedidoManual: { contains: busca, mode: "insensitive" } },
+        ...(Number(busca) ? [{ numeroPedido: Number(busca) }] : [])
+      ]
+    }
+
+    const pedidos = await prisma.pedido.findMany({
+      where,
+      select: {
+        id: true,
+        numeroPedido: true,
+        numeroPedidoManual: true,
+        origemPedido: true,
+        status: true,
+        dataPedido: true,
+        dataEntrega: true,
+        createdAt: true,
+        cliente: { select: { nome: true } },
+        vendedor: { select: { id: true, nome: true } },
+        historicos: {
+          where: { tipo: { in: ["STATUS_PEDIDO_ALTERADO", "EXPEDICAO_ATUALIZADA"] } },
+          select: { createdAt: true },
+          orderBy: { createdAt: "desc" },
+          take: 1
+        }
+      }
+    })
+
+    const normalizados = pedidos.map(({ historicos, ...pedido }) => ({
+      ...pedido,
+      dataUltimaMudancaStatus: historicos[0]?.createdAt || pedido.createdAt,
+      fonteUltimaMudanca: historicos.length ? "HISTORICO" : "CADASTRO"
+    }))
+
+    return res.json(consolidarPedidosParados(normalizados, { minimoDias: Number(minimoDias) || 0 }))
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({ error: "Erro ao gerar relatório de pedidos parados" })
   }
 }
