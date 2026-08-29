@@ -1,11 +1,16 @@
 import { Router } from "express"
-import { relatorioComercialVendedores, relatorioGerencialClientes, relatorioPedidosParados, relatorioPontualidadeEntregas } from "../controllers/relatoriosNovos.controller.js"
+import { relatorioCarteiraPedidos, relatorioComercialVendedores, relatorioGerencialClientes, relatorioPedidosParados, relatorioPontualidadeEntregas } from "../controllers/relatoriosNovos.controller.js"
 import { authMiddleware } from "../middlewares/auth.middleware.js"
 import { roleMiddleware } from "../middlewares/role.middleware.js"
 
 const router = Router()
 
 router.use(authMiddleware)
+router.get(
+  "/carteira-pedidos",
+  roleMiddleware("ADMIN", "VENDEDOR", "VENDEDOR_OPERADOR"),
+  relatorioCarteiraPedidos
+)
 router.get(
   "/clientes",
   roleMiddleware("ADMIN", "VENDEDOR", "VENDEDOR_OPERADOR"),

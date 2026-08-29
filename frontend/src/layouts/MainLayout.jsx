@@ -216,7 +216,8 @@ export function MainLayout() {
       "/relatorios-novos/comercial-vendedores": "Comercial por Vendedor",
       "/relatorios-novos/pontualidade-entregas": "Pontualidade das Entregas",
       "/relatorios-novos/pedidos-parados": "Pedidos Parados",
-      "/relatorios-novos/clientes": "Gerencial de Clientes"
+      "/relatorios-novos/clientes": "Gerencial de Clientes",
+      "/relatorios-novos/carteira-pedidos": "Carteira de Pedidos"
      }
 
     return titulos[path] || "Sistema"
@@ -418,6 +419,9 @@ export function MainLayout() {
               </MenuLink>
               <MenuLink to="/relatorios-novos/clientes" icon={ContactRound}>
                 Gerencial de Clientes
+              </MenuLink>
+              <MenuLink to="/relatorios-novos/carteira-pedidos" icon={ShoppingCart}>
+                Carteira de Pedidos
               </MenuLink>
             </MenuGrupo>
           )}

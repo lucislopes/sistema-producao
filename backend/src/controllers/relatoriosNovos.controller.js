@@ -3,6 +3,7 @@ import { consolidarRelatorioComercial } from "../utils/relatorioComercial.js"
 import { consolidarPontualidade } from "../utils/relatorioPontualidade.js"
 import { consolidarPedidosParados } from "../utils/relatorioPedidosParados.js"
 import { consolidarRelatorioClientes } from "../utils/relatorioClientes.js"
+import { consolidarCarteiraPedidos } from "../utils/relatorioCarteiraPedidos.js"
 
 function criarDataLocal(data, fimDoDia = false) {
   if (!data) return null
@@ -205,5 +206,55 @@ export async function relatorioGerencialClientes(req, res) {
   } catch (error) {
     console.log(error)
     return res.status(500).json({ error: "Erro ao gerar relatório gerencial de clientes" })
+  }
+}
+
+export async function relatorioCarteiraPedidos(req, res) {
+  try {
+    const { dataInicio, dataFim, status, vendedorId, busca } = req.query
+    const statusAtivos = ["ABERTO", "EM_SEPARACAO", "EM_PRODUCAO", "PRONTO_ENTREGA", "SAIU_ENTREGA"]
+    const where = { status: status ? status : { in: statusAtivos } }
+
+    if (status && !statusAtivos.includes(status)) {
+      return res.status(400).json({ error: "Status inválido para a carteira ativa" })
+    }
+    if (dataInicio || dataFim) {
+      where.dataEntrega = {}
+      if (dataInicio) where.dataEntrega.gte = criarDataLocal(dataInicio)
+      if (dataFim) where.dataEntrega.lte = criarDataLocal(dataFim, true)
+    }
+    if (vendedorId) where.vendedorId = vendedorId
+    if (busca) {
+      where.OR = [
+        { cliente: { nome: { contains: busca, mode: "insensitive" } } },
+        { numeroPedidoManual: { contains: busca, mode: "insensitive" } },
+        ...(Number(busca) ? [{ numeroPedido: Number(busca) }] : [])
+      ]
+    }
+
+    const pedidos = await prisma.pedido.findMany({
+      where,
+      select: {
+        id: true,
+        numeroPedido: true,
+        numeroPedidoManual: true,
+        origemPedido: true,
+        status: true,
+        dataPedido: true,
+        dataEntrega: true,
+        valorTotal: true,
+        tipoEntrega: true,
+        cliente: { select: { nome: true } },
+        vendedor: { select: { id: true, nome: true } }
+      }
+    })
+
+    return res.json({
+      ...consolidarCarteiraPedidos(pedidos),
+      periodo: { dataInicio: dataInicio || null, dataFim: dataFim || null }
+    })
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({ error: "Erro ao gerar relatório da carteira de pedidos" })
   }
 }
