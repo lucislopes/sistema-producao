@@ -15,11 +15,13 @@ import { api } from "../../services/api"
 import { CardIndicador } from "./components/CardIndicador"
 import { DashboardFiltro } from "./components/DashboardFiltro"
 import { SecaoDashboard } from "./components/SecaoDashboard"
+import { ErrorState, LoadingState } from "../../components/ui/FeedbackState"
 
 export function DashboardExpedicao() {
   const [dados, setDados] = useState(null)
   const [baseData, setBaseData] = useState("entrega")
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null)
+  const [erroCarregamento, setErroCarregamento] = useState("")
 
   const hoje = new Date()
 
@@ -98,6 +100,7 @@ export function DashboardExpedicao() {
 }
 
   async function carregarDashboard() {
+    setErroCarregamento("")
     try {
       const response = await api.get("/dashboard", {
         params: { dataInicio, dataFim, baseData }
@@ -107,6 +110,7 @@ export function DashboardExpedicao() {
       setUltimaAtualizacao(new Date())
     } catch (error) {
       console.log(error)
+      setErroCarregamento("Não foi possível carregar os indicadores de expedição.")
       alert("Erro ao carregar dashboard de expedição")
     }
   }
@@ -117,7 +121,8 @@ export function DashboardExpedicao() {
     return () => clearInterval(interval)
   }, [dataInicio, dataFim, baseData])
 
-  if (!dados) return <div>Carregando...</div>
+  if (erroCarregamento && !dados) return <ErrorState descricao={erroCarregamento} onRetry={carregarDashboard} />
+  if (!dados) return <LoadingState mensagem="Carregando indicadores de expedição..." />
 
   return (
     <div>

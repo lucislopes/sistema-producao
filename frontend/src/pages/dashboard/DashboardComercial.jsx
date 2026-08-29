@@ -18,11 +18,13 @@ import { Table, Td, Th } from "../../components/ui/Table"
 import { CardIndicador } from "./components/CardIndicador"
 import { DashboardFiltro } from "./components/DashboardFiltro"
 import { SecaoDashboard } from "./components/SecaoDashboard"
+import { EmptyState, ErrorState, LoadingState } from "../../components/ui/FeedbackState"
 
 export function DashboardComercial() {
   const [dados, setDados] = useState(null)
   const [baseData, setBaseData] = useState("pedido")
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null)
+  const [erroCarregamento, setErroCarregamento] = useState("")
 
   const hoje = new Date()
 
@@ -101,6 +103,7 @@ export function DashboardComercial() {
 }
 
   async function carregarDashboard() {
+    setErroCarregamento("")
     try {
       const response = await api.get("/dashboard", {
         params: { dataInicio, dataFim, baseData }
@@ -110,6 +113,7 @@ export function DashboardComercial() {
       setUltimaAtualizacao(new Date())
     } catch (error) {
       console.log(error)
+      setErroCarregamento("Não foi possível carregar os indicadores comerciais.")
       alert("Erro ao carregar dashboard comercial")
     }
   }
@@ -127,7 +131,8 @@ export function DashboardComercial() {
     return () => clearInterval(interval)
   }, [dataInicio, dataFim, baseData])
 
-  if (!dados) return <div>Carregando...</div>
+  if (erroCarregamento && !dados) return <ErrorState descricao={erroCarregamento} onRetry={carregarDashboard} />
+  if (!dados) return <LoadingState mensagem="Carregando indicadores comerciais..." />
 
   return (
     <div>
@@ -293,7 +298,11 @@ export function DashboardComercial() {
               {(dados.comercial?.rankingVendedores || []).length === 0 && (
                 <tr>
                   <Td colSpan="5" className="p-6 text-center text-gray-500">
-                    Nenhum vendedor encontrado no período.
+                    <EmptyState
+                      compact
+                      titulo="Nenhum vendedor encontrado no período"
+                      descricao="Altere o período acima para consultar outros resultados."
+                    />
                   </Td>
                 </tr>
               )}
@@ -338,7 +347,11 @@ export function DashboardComercial() {
               {(dados.comercial?.rankingClientes || []).length === 0 && (
                 <tr>
                   <Td colSpan="4" className="p-6 text-center text-gray-500">
-                    Nenhum cliente encontrado no período.
+                    <EmptyState
+                      compact
+                      titulo="Nenhum cliente encontrado no período"
+                      descricao="Altere o período acima para consultar outros resultados."
+                    />
                   </Td>
                 </tr>
               )}

@@ -15,6 +15,7 @@ import {
 import { api } from "../services/api"
 import { CardIndicador } from "./dashboard/components/CardIndicador"
 import { SecaoDashboard } from "./dashboard/components/SecaoDashboard"
+import { ErrorState, LoadingState } from "../components/ui/FeedbackState"
 
 function CardRestrito({ titulo, descricao, icon: Icon }) {
   return (
@@ -42,6 +43,7 @@ export function Dashboard() {
   const [dados, setDados] = useState(null)
   const [baseData, setBaseData] = useState("pedido")
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null)
+  const [erroCarregamento, setErroCarregamento] = useState("")
 
   const usuario = JSON.parse(localStorage.getItem("@usuario") || "{}")
 
@@ -70,6 +72,7 @@ export function Dashboard() {
   const [dataFim, setDataFim] = useState(hojeFormatado)
 
   async function carregarDashboard() {
+    setErroCarregamento("")
     try {
       const response = await api.get("/dashboard", {
         params: {
@@ -83,6 +86,7 @@ export function Dashboard() {
       setUltimaAtualizacao(new Date())
     } catch (error) {
       console.log(error)
+      setErroCarregamento("Não foi possível atualizar os indicadores do dashboard.")
       alert("Erro ao carregar dashboard")
     }
   }
@@ -97,16 +101,8 @@ export function Dashboard() {
     return () => clearInterval(interval)
   }, [dataInicio, dataFim, baseData])
 
-  if (!dados) {
-    return (
-      <div className="flex min-h-64 items-center justify-center rounded-2xl border border-gray-200 bg-white shadow-sm" role="status">
-        <div className="text-center">
-          <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" aria-hidden="true" />
-          <p className="font-medium text-gray-700">Carregando indicadores...</p>
-        </div>
-      </div>
-    )
-  }
+  if (erroCarregamento && !dados) return <ErrorState descricao={erroCarregamento} onRetry={carregarDashboard} />
+  if (!dados) return <LoadingState mensagem="Carregando indicadores..." />
 
   return (
     <div>

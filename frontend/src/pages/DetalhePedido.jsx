@@ -4,6 +4,7 @@ import { api } from "../services/api"
 import { CabecalhoImpressao } from "../components/CabecalhoImpressao"
 import { Button } from "../components/ui/Button"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
+import { ErrorState, LoadingState } from "../components/ui/FeedbackState"
 
 function obterNumeroPedido(pedido) {
   if (
@@ -20,6 +21,7 @@ export function DetalhePedido() {
   const { id } = useParams()
   const [pedido, setPedido] = useState(null)
   const [empresa, setEmpresa] = useState(null)
+  const [erroCarregamento, setErroCarregamento] = useState("")
 
   const usuarioLogado = JSON.parse(localStorage.getItem("@usuario") || "{}")
 
@@ -28,6 +30,7 @@ export function DetalhePedido() {
     usuarioLogado.funcao === "VENDEDOR_OPERADOR"
 
   async function carregarDetalhe() {
+    setErroCarregamento("")
     try {
       const pedidoResponse = await api.get(`/detalhe-pedido/${id}`)
       setPedido(pedidoResponse.data)
@@ -40,6 +43,7 @@ export function DetalhePedido() {
       }
     } catch (error) {
       console.log(error)
+      setErroCarregamento("Não foi possível carregar os dados deste pedido.")
       alert("Erro ao carregar detalhe do pedido")
     }
   }
@@ -106,9 +110,8 @@ export function DetalhePedido() {
     return "bg-gray-100 text-gray-700 border-gray-300"
   }
 
-  if (!pedido) {
-    return <div>Carregando...</div>
-  }
+  if (erroCarregamento && !pedido) return <ErrorState descricao={erroCarregamento} onRetry={carregarDetalhe} />
+  if (!pedido) return <LoadingState mensagem="Carregando detalhes do pedido..." />
 
   return (
     <div>

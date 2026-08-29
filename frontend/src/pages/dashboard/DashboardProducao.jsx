@@ -14,11 +14,13 @@ import { CardIndicador } from "./components/CardIndicador"
 import { DashboardFiltro } from "./components/DashboardFiltro"
 import { BarraResumo } from "./components/BarraResumo"
 import { SecaoDashboard } from "./components/SecaoDashboard"
+import { EmptyState, ErrorState, LoadingState } from "../../components/ui/FeedbackState"
 
 export function DashboardProducao() {
   const [dados, setDados] = useState(null)
   const [baseData, setBaseData] = useState("pedido")
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null)
+  const [erroCarregamento, setErroCarregamento] = useState("")
 
   const hoje = new Date()
   const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
@@ -96,6 +98,7 @@ export function DashboardProducao() {
 }
 
   async function carregarDashboard() {
+    setErroCarregamento("")
     try {
       const response = await api.get("/dashboard", {
         params: { dataInicio, dataFim, baseData }
@@ -105,6 +108,7 @@ export function DashboardProducao() {
       setUltimaAtualizacao(new Date())
     } catch (error) {
       console.log(error)
+      setErroCarregamento("Não foi possível carregar os indicadores de produção.")
       alert("Erro ao carregar dashboard de produção")
     }
   }
@@ -115,7 +119,8 @@ export function DashboardProducao() {
     return () => clearInterval(interval)
   }, [dataInicio, dataFim, baseData])
 
-  if (!dados) return <div>Carregando...</div>
+  if (erroCarregamento && !dados) return <ErrorState descricao={erroCarregamento} onRetry={carregarDashboard} />
+  if (!dados) return <LoadingState mensagem="Carregando indicadores de produção..." />
 
   const totalServicos =
     dados.servicos.abertos +
@@ -230,7 +235,11 @@ export function DashboardProducao() {
               {dados.leaderboard?.length === 0 && (
                 <tr>
                   <td className="p-4" colSpan="3">
-                    Nenhum serviço concluído ainda.
+                    <EmptyState
+                      compact
+                      titulo="Nenhum serviço concluído no período"
+                      descricao="Altere o período acima para consultar outros resultados."
+                    />
                   </td>
                 </tr>
               )}

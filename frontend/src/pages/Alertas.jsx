@@ -3,6 +3,7 @@ import { Link } from "react-router-dom"
 import { api } from "../services/api"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
 import { Table, Th, Td } from "../components/ui/Table"
+import { ErrorState, LoadingState } from "../components/ui/FeedbackState"
 import {
   Bell,
   TriangleAlert,
@@ -25,13 +26,16 @@ function obterNumeroPedido(pedido) {
 
 export function Alertas() {
   const [alertas, setAlertas] = useState(null)
+  const [erroCarregamento, setErroCarregamento] = useState("")
 
   async function carregarAlertas() {
+    setErroCarregamento("")
     try {
       const response = await api.get("/alertas")
       setAlertas(response.data)
     } catch (error) {
       console.log(error)
+      setErroCarregamento("Não foi possível carregar os alertas operacionais.")
       alert("Erro ao carregar alertas")
     }
   }
@@ -55,9 +59,8 @@ export function Alertas() {
     return `${dia}/${mes}/${ano}`
   }
 
-  if (!alertas) {
-    return <div>Carregando...</div>
-  }
+  if (erroCarregamento && !alertas) return <ErrorState descricao={erroCarregamento} onRetry={carregarAlertas} />
+  if (!alertas) return <LoadingState mensagem="Carregando alertas operacionais..." />
 
     const totalAlertas =
       alertas.pedidosAtrasados.length +
