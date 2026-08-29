@@ -34,6 +34,11 @@ api.interceptors.response.use(
 
   (error) => {
     finalizarLoading()
+
+    if (error.code === "ERR_CANCELED") {
+      return Promise.reject(error)
+    }
+
     console.log("ERRO API:", error)
 
     //
