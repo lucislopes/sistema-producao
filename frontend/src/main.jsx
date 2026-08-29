@@ -5,6 +5,7 @@ import App from "./App"
 
 import { LoadingProvider } from "./contexts/LoadingContext"
 import { AuthProvider } from "./contexts/AuthContext"
+import { NotificationProvider } from "./contexts/NotificationContext"
 
 import "./index.css"
 import "./App.css"
@@ -14,9 +15,11 @@ ReactDOM.createRoot(
 ).render(
   <StrictMode>
     <AuthProvider>
-      <LoadingProvider>
-        <App />
-      </LoadingProvider>
+      <NotificationProvider>
+        <LoadingProvider>
+          <App />
+        </LoadingProvider>
+      </NotificationProvider>
     </AuthProvider>
   </StrictMode>
 )
