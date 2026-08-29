@@ -13,6 +13,8 @@ export function BuscaGlobal() {
   const estaNoKanban = location.pathname === "/kanban"
 
   useEffect(() => {
+    const controller = new AbortController()
+
     async function buscar() {
       try {
         if (!busca.trim()) {
@@ -36,11 +38,13 @@ export function BuscaGlobal() {
         const response = await api.get("/busca-global", {
           params: {
             busca
-          }
+          },
+          signal: controller.signal
         })
 
         setResultados(response.data)
       } catch (error) {
+        if (error.code === "ERR_CANCELED") return
         console.log(error)
       }
     }
@@ -49,7 +53,10 @@ export function BuscaGlobal() {
       buscar()
     }, 400)
 
-    return () => clearTimeout(timeout)
+    return () => {
+      clearTimeout(timeout)
+      controller.abort()
+    }
   }, [busca, estaNoKanban, navigate])
 
   return (

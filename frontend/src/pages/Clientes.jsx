@@ -27,20 +27,30 @@ export function Clientes() {
   const [modalExcluirAberto, setModalExcluirAberto] = useState(false)
   const [clienteParaExcluir, setClienteParaExcluir] = useState(null)
 
-  async function carregarClientes() {
+  async function carregarClientes(signal) {
     try {
       const response = await api.get("/clientes", {
-        params: { busca }
+        params: { busca },
+        signal
       })
 
       setClientes(response.data)
     } catch (error) {
+      if (error.code === "ERR_CANCELED") return
       console.log(error)
     }
   }
 
   useEffect(() => {
-    carregarClientes()
+    const controller = new AbortController()
+    const timeout = setTimeout(() => {
+      carregarClientes(controller.signal)
+    }, 350)
+
+    return () => {
+      clearTimeout(timeout)
+      controller.abort()
+    }
   }, [busca])
 
   async function handleSubmit(e) {

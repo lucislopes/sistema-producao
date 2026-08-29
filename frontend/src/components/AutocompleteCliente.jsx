@@ -71,6 +71,8 @@ export function AutocompleteCliente({ clienteId, clienteInicial, onSelecionar })
   }, [clienteId, clienteInicial])
 
   useEffect(() => {
+    const controller = new AbortController()
+
     async function buscarClientes() {
       if (clienteSelecionado) {
         setResultados([])
@@ -87,7 +89,8 @@ export function AutocompleteCliente({ clienteId, clienteInicial, onSelecionar })
           params: {
             busca: busca.trim(),
             incluirInativos: true
-          }
+          },
+          signal: controller.signal
         })
 
         const lista = Array.isArray(response.data)
@@ -96,6 +99,7 @@ export function AutocompleteCliente({ clienteId, clienteInicial, onSelecionar })
 
         setResultados(lista)
       } catch (error) {
+        if (error.code === "ERR_CANCELED") return
         console.log("Erro ao buscar clientes:", error)
         setResultados([])
       }
@@ -103,7 +107,10 @@ export function AutocompleteCliente({ clienteId, clienteInicial, onSelecionar })
 
     const timeout = setTimeout(buscarClientes, 400)
 
-    return () => clearTimeout(timeout)
+    return () => {
+      clearTimeout(timeout)
+      controller.abort()
+    }
   }, [busca, clienteSelecionado])
 
   function selecionarCliente(cliente) {
