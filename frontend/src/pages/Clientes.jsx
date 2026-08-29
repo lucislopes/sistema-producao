@@ -23,6 +23,7 @@ export function Clientes() {
   const [telefone, setTelefone] = useState("")
   const [endereco, setEndereco] = useState("")
   const [editandoId, setEditandoId] = useState(null)
+  const [salvando, setSalvando] = useState(false)
 
   const [modalExcluirAberto, setModalExcluirAberto] = useState(false)
   const [clienteParaExcluir, setClienteParaExcluir] = useState(null)
@@ -55,6 +56,9 @@ export function Clientes() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (salvando) return
+
+    setSalvando(true)
 
     try {
       const payload = {
@@ -74,7 +78,9 @@ export function Clientes() {
       carregarClientes()
     } catch (error) {
       console.log(error)
-      alert("Erro ao salvar cliente")
+      alert(error?.response?.data?.error || "Erro ao salvar cliente")
+    } finally {
+      setSalvando(false)
     }
   }
 
@@ -203,9 +209,9 @@ export function Clientes() {
         </div>
 
         <div className="mt-5 flex flex-wrap gap-2">
-          <Button type="submit" className="flex items-center gap-2">
+          <Button type="submit" loading={salvando} className="flex items-center gap-2">
             <Save size={16} />
-            {editandoId ? "Atualizar" : "Salvar"}
+            {salvando ? "Salvando..." : editandoId ? "Atualizar" : "Salvar"}
           </Button>
 
           {editandoId && (

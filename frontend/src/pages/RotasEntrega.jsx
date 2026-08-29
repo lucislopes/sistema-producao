@@ -17,6 +17,7 @@ export function RotasEntrega() {
   const [nome, setNome] = useState("")
   const [valorFrete, setValorFrete] = useState("")
   const [editandoId, setEditandoId] = useState(null)
+  const [salvando, setSalvando] = useState(false)
 
   async function carregarRotas() {
     try {
@@ -36,6 +37,9 @@ export function RotasEntrega() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (salvando) return
+
+    setSalvando(true)
 
     try {
       if (editandoId) {
@@ -54,7 +58,9 @@ export function RotasEntrega() {
       carregarRotas()
     } catch (error) {
       console.log(error)
-      alert("Erro ao salvar rota")
+      alert(error?.response?.data?.error || "Erro ao salvar rota")
+    } finally {
+      setSalvando(false)
     }
   }
 
@@ -133,6 +139,7 @@ export function RotasEntrega() {
           <Input
             type="text"
             placeholder="Nome da rota"
+            required
             value={nome}
             onChange={(e) => setNome(e.target.value)}
           />
@@ -140,7 +147,9 @@ export function RotasEntrega() {
           <Input
             type="number"
             step="0.01"
+            min="0"
             placeholder="Valor do frete"
+            required
             value={valorFrete}
             onChange={(e) => setValorFrete(e.target.value)}
           />
@@ -149,10 +158,11 @@ export function RotasEntrega() {
         <div className="mt-5 flex flex-wrap gap-2">
           <Button
             type="submit"
+            loading={salvando}
             className="h-11 px-6 flex items-center gap-2"
           >
             <Save size={16} />
-            {editandoId ? "Atualizar" : "Salvar"}
+            {salvando ? "Salvando..." : editandoId ? "Atualizar" : "Salvar"}
           </Button>
 
           {editandoId && (
