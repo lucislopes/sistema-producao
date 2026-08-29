@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useId, useState } from "react"
 import { api } from "../services/api"
 import { Input } from "./ui/Input"
 
@@ -6,6 +6,8 @@ export function AutocompleteCliente({ clienteId, clienteInicial, onSelecionar })
   const [busca, setBusca] = useState("")
   const [resultados, setResultados] = useState([])
   const [clienteSelecionado, setClienteSelecionado] = useState(null)
+  const [indiceAtivo, setIndiceAtivo] = useState(-1)
+  const listaId = useId()
 
   useEffect(() => {
     if (!clienteId) {
@@ -108,6 +110,7 @@ export function AutocompleteCliente({ clienteId, clienteInicial, onSelecionar })
     setClienteSelecionado(cliente)
     setBusca(cliente.nome || "")
     setResultados([])
+    setIndiceAtivo(-1)
 
     if (onSelecionar) {
       onSelecionar(cliente)
@@ -118,9 +121,28 @@ export function AutocompleteCliente({ clienteId, clienteInicial, onSelecionar })
     setClienteSelecionado(null)
     setBusca(e.target.value)
     setResultados([])
+    setIndiceAtivo(-1)
 
     if (onSelecionar) {
       onSelecionar(null)
+    }
+  }
+
+  function navegarResultados(event) {
+    if (resultados.length === 0) return
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault()
+      setIndiceAtivo((atual) => (atual + 1) % resultados.length)
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault()
+      setIndiceAtivo((atual) => (atual <= 0 ? resultados.length - 1 : atual - 1))
+    } else if (event.key === "Enter" && indiceAtivo >= 0) {
+      event.preventDefault()
+      selecionarCliente(resultados[indiceAtivo])
+    } else if (event.key === "Escape") {
+      setResultados([])
+      setIndiceAtivo(-1)
     }
   }
 
@@ -131,17 +153,27 @@ export function AutocompleteCliente({ clienteId, clienteInicial, onSelecionar })
         placeholder="Digite para buscar o cliente..."
         value={busca}
         onChange={alterarBusca}
+        onKeyDown={navegarResultados}
         autoComplete="off"
+        role="combobox"
+        aria-label="Buscar cliente"
+        aria-autocomplete="list"
+        aria-expanded={resultados.length > 0}
+        aria-controls={resultados.length > 0 ? listaId : undefined}
+        aria-activedescendant={indiceAtivo >= 0 ? `${listaId}-${indiceAtivo}` : undefined}
       />
 
       {resultados.length > 0 && (
-        <div className="absolute z-50 mt-2 w-full bg-white border border-gray-200 rounded-2xl shadow-xl max-h-72 overflow-auto">
-          {resultados.map((cliente) => (
+        <div id={listaId} role="listbox" className="absolute z-50 mt-2 w-full bg-white border border-gray-200 rounded-2xl shadow-xl max-h-72 overflow-auto">
+          {resultados.map((cliente, index) => (
             <button
               key={cliente.id}
+              id={`${listaId}-${index}`}
               type="button"
+              role="option"
+              aria-selected={index === indiceAtivo}
               onClick={() => selecionarCliente(cliente)}
-              className="block w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50"
+              className={`block w-full border-b border-gray-100 px-4 py-3 text-left hover:bg-gray-50 ${index === indiceAtivo ? "bg-blue-50" : ""}`}
             >
               <p className="font-semibold text-sm">
                 {cliente.nome || "Cliente sem nome"}

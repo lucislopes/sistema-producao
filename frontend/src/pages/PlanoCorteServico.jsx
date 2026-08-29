@@ -5,6 +5,8 @@ import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
 import { Button } from "../components/ui/Button"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
+import { Table, Td, Th } from "../components/ui/Table"
+import { Modal } from "../components/ui/Modal"
 import { useUnsavedChanges } from "../hooks/useUnsavedChanges"
 
 import {
@@ -592,22 +594,21 @@ async function confirmarExclusaoPlano() {
                 Serviços do Plano
             </h2>
 
-            <div className="overflow-hidden rounded-xl border border-gray-200">
-                <table className="w-full text-sm">
+            <Table label="Serviços disponíveis para o plano">
                 <thead className="bg-gray-50">
                     <tr>
-                    <th className="w-[260px] px-4 py-3 text-left font-semibold text-gray-700">
+                    <Th className="w-[260px]">
                         Serviço
-                    </th>
+                    </Th>
 
-                    <th className="px-4 py-3 text-left font-semibold text-gray-700">
+                    <Th>
                       Observação
-                    </th>
+                    </Th>
 
                     {isAdmin && (
-                      <th className="w-[260px] px-4 py-3 text-left font-semibold text-gray-700">
+                      <Th className="w-[260px]">
                         Operador
-                      </th>
+                      </Th>
                     )}
                     </tr>
                 </thead>
@@ -621,7 +622,7 @@ async function confirmarExclusaoPlano() {
                         key={tipo.id}
                         className="border-t border-gray-100"
                         >
-                        <td className="px-4 py-3 align-top">
+                        <Td>
                             <label className="flex items-center gap-3 font-medium text-gray-800">
                             <input
                                 type="checkbox"
@@ -636,9 +637,9 @@ async function confirmarExclusaoPlano() {
                             {tipo.nome}
                             </div>
                             </label>
-                        </td>
+                        </Td>
 
-                        <td className="px-4 py-3">
+                        <Td>
                             <textarea
                             disabled={!podeCadastrarNovoPlano || !selecionado}
                             rows={1}
@@ -659,10 +660,10 @@ async function confirmarExclusaoPlano() {
                                 )
                             }
                             />
-                        </td>
+                        </Td>
 
                         {isAdmin && (
-                          <td className="px-4 py-3">
+                          <Td>
                             <Select
                               value={selecionado?.operadorId || ""}
                               disabled={
@@ -681,7 +682,7 @@ async function confirmarExclusaoPlano() {
                                 </option>
                               ))}
                             </Select>
-                          </td>
+                          </Td>
                         )}
                         </tr>
                     )
@@ -689,17 +690,16 @@ async function confirmarExclusaoPlano() {
 
                     {tiposServico.length === 0 && (
                     <tr>
-                        <td
-                        colSpan="2"
+                        <Td
+                        colSpan={isAdmin ? 3 : 2}
                         className="px-4 py-6 text-center text-gray-500"
                         >
                         Nenhum tipo de serviço cadastrado.
-                        </td>
+                        </Td>
                     </tr>
                     )}
                 </tbody>
-                </table>
-            </div>
+            </Table>
             </div>
 
           <div className="mt-6 flex justify-end">
@@ -782,32 +782,31 @@ async function confirmarExclusaoPlano() {
                   )}
                 </div>
 
-                <div className="overflow-hidden rounded-lg border border-gray-200">
-                    <table className="w-full text-sm">
+                <Table label={`Serviços cadastrados no plano ${plano.numeroPlano}`}>
                     <thead className="bg-gray-50">
                         <tr>
-                        <th className="px-3 py-2 text-left font-semibold text-gray-700">
+                        <Th>
                             Serviço
-                        </th>
+                        </Th>
 
-                        <th className="w-[130px] px-3 py-2 text-left font-semibold text-gray-700">
+                        <Th className="w-[130px]">
                             Status
-                        </th>
+                        </Th>
 
-                        <th className="px-3 py-2 text-left font-semibold text-gray-700">
+                        <Th>
                             Observação
-                        </th>
+                        </Th>
 
-                        <th className="w-[180px] px-3 py-2 text-left font-semibold text-gray-700">
+                        <Th className="w-[180px]">
                             Operador
-                            </th>
-                        </tr>
+                        </Th>
 
                         {isAdmin && (
-                          <th className="w-[100px] px-3 py-2 text-left font-semibold text-gray-700">
+                          <Th className="w-[100px]">
                             Ações
-                          </th>
+                          </Th>
                         )}
+                        </tr>
                     </thead>
 
                     <tbody>
@@ -816,32 +815,34 @@ async function confirmarExclusaoPlano() {
                             key={servico.id}
                             className="border-t border-gray-100"
                         >
-                            <td className="px-3 py-2 font-medium">
+                            <Td className="font-medium">
                             {servico.tipoServico?.nome}
-                            </td>
+                            </Td>
 
-                            <td className="px-3 py-2">
+                            <Td>
                                 <BadgeStatus status={servico.status} />
-                            </td>
+                            </Td>
 
-                            <td className="px-3 py-2 text-gray-600">
+                            <Td className="text-gray-600">
                             {servico.observacoes || "-"}
-                            </td>
+                            </Td>
 
-                            <td className="px-3 py-2 text-gray-600">
+                            <Td className="text-gray-600">
                             {servico.operador?.nome || "-"}
-                            </td>
+                            </Td>
 
                             {isAdmin && (
-                              <td className="px-3 py-2">
+                              <Td>
                                 <Button
                                   type="button"
                                   variant="danger"
                                   onClick={() => excluirServico(servico)}
+                                  aria-label={`Excluir serviço ${servico.tipoServico?.nome || "selecionado"}`}
+                                  title="Excluir serviço"
                                 >
                                   <Trash2 size={16} />
                                 </Button>
-                              </td>
+                              </Td>
                             )}
 
                         </tr>
@@ -849,17 +850,16 @@ async function confirmarExclusaoPlano() {
 
                         {plano.servicos.length === 0 && (
                         <tr>
-                            <td
-                            colSpan="4"
+                            <Td
+                            colSpan={isAdmin ? 5 : 4}
                             className="px-3 py-4 text-center text-gray-500"
                             >
                             Nenhum serviço neste plano.
-                            </td>
+                            </Td>
                         </tr>
                         )}
                     </tbody>
-                    </table>
-                </div>
+                </Table>
                 </div>
             ))}
           </div>
@@ -867,12 +867,16 @@ async function confirmarExclusaoPlano() {
       )}
 
       {modalExcluirPlano && planoParaExcluir && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-    <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
-      <h2 className="text-xl font-bold text-red-700 mb-3">
-        Excluir Plano de Corte
-      </h2>
-
+  <Modal
+    open={modalExcluirPlano}
+    title="Excluir Plano de Corte"
+    width="max-w-lg"
+    onClose={() => {
+      if (excluindoPlano) return
+      setModalExcluirPlano(false)
+      setPlanoParaExcluir(null)
+    }}
+  >
       <p className="text-sm text-gray-700 mb-4">
         Tem certeza que deseja excluir este plano de corte?
       </p>
@@ -896,7 +900,7 @@ async function confirmarExclusaoPlano() {
         </p>
       </div>
 
-        <div className="mt-6 flex justify-end gap-2">
+        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button
             type="button"
             variant="secondary"
@@ -905,6 +909,7 @@ async function confirmarExclusaoPlano() {
               setPlanoParaExcluir(null)
             }}
             disabled={excluindoPlano}
+            className="w-full sm:w-auto"
           >
             Cancelar
           </Button>
@@ -914,14 +919,14 @@ async function confirmarExclusaoPlano() {
             variant="danger"
             onClick={confirmarExclusaoPlano}
             disabled={excluindoPlano}
-            className="flex items-center gap-2"
+            loading={excluindoPlano}
+            className="w-full sm:w-auto"
           >
-            <Trash2 size={16} />
+            {!excluindoPlano && <Trash2 size={16} />}
             {excluindoPlano ? "Excluindo..." : "Excluir Plano"}
           </Button>
         </div>
-      </div>
-    </div>
+  </Modal>
   )}
     </div>
   )

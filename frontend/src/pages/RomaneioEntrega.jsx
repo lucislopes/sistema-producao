@@ -3,6 +3,7 @@ import { api } from "../services/api"
 import { CabecalhoImpressao } from "../components/CabecalhoImpressao"
 import { Input } from "../components/ui/Input"
 import { Button } from "../components/ui/Button"
+import { Table, Td, Th } from "../components/ui/Table"
 import {
   Printer,
   Search,
@@ -496,50 +497,50 @@ export function RomaneioEntrega() {
                   </span>
                 </div>
 
-                <div className="border border-gray-300 rounded-b-xl overflow-hidden">
-                  <table className="w-full text-sm">
+                <div className="rounded-b-xl">
+                  <Table label={`Pedidos da rota ${nomeRota}`}>
                     <thead>
                       <tr className="bg-gray-100">
-                        <th className="p-2 border text-left">OK</th>
-                        <th className="p-2 border text-left">Pedido</th>
-                        <th className="p-2 border text-left">Cliente</th>
-                        <th className="p-2 border text-left">Chapas</th>
-                        <th className="p-2 border text-left">Prev. Entrega</th>
-                        <th className="p-2 border text-left">Recebedor</th>
-                        <th className="p-2 border text-left">Contato</th>
-                        <th className="p-2 border text-left">Endereço</th>
+                        <Th>OK</Th>
+                        <Th>Pedido</Th>
+                        <Th>Cliente</Th>
+                        <Th>Chapas</Th>
+                        <Th>Prev. Entrega</Th>
+                        <Th>Recebedor</Th>
+                        <Th>Contato</Th>
+                        <Th>Endereço</Th>
                       </tr>
                     </thead>
 
                     <tbody>
                       {pedidosDaRota.map((pedido) => (
                         <tr key={pedido.id}>
-                          <td className="p-2 border text-center text-lg">□</td>
-                          <td className="p-2 border font-bold">
+                          <Td className="text-center text-lg">□</Td>
+                          <Td className="font-bold">
                             {obterNumeroPedido(pedido)}
-                          </td>
-                          <td className="p-2 border">
+                          </Td>
+                          <Td>
                             {pedido.cliente?.nome || "-"}
-                          </td>
-                          <td className="p-2 border">
+                          </Td>
+                          <Td>
                             {obterQuantidadeChapas(pedido)}
-                          </td>
-                          <td className="p-2 border">
+                          </Td>
+                          <Td>
                             {formatarData(pedido.dataEntrega)}
-                          </td>
-                          <td className="p-2 border">
+                          </Td>
+                          <Td>
                             {pedido.nomeRecebedor || "-"}
-                          </td>
-                          <td className="p-2 border">
+                          </Td>
+                          <Td>
                             {pedido.contatoRecebedor || "-"}
-                          </td>
-                          <td className="p-2 border">
+                          </Td>
+                          <Td>
                             {pedido.enderecoEntrega || "-"}
-                          </td>
+                          </Td>
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </Table>
                 </div>
 
                 <div className="mt-2 text-sm flex gap-6">
