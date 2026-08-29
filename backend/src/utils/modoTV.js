@@ -24,6 +24,30 @@ export function consolidarModoTV(servicos, { dataReferencia = new Date(), pedido
 
   const pedidosLista = [...pedidos.values()]
   const pedidosResumo = pedidosAtivos.length ? pedidosAtivos : pedidosLista
+  const expedicao = pedidosResumo
+    .filter((pedido) => ["PRONTO_ENTREGA", "SAIU_ENTREGA"].includes(pedido.status))
+    .map((pedido) => {
+      const diasPrazo = pedido.dataEntrega
+        ? Math.round((inicioDoDia(pedido.dataEntrega) - hoje) / 86400000)
+        : null
+      return {
+        id: pedido.id,
+        pedido: numeroPedido(pedido),
+        cliente: pedido.cliente?.nome || "Cliente não informado",
+        status: pedido.status,
+        tipoEntrega: pedido.tipoEntrega,
+        rota: pedido.rota?.nome || null,
+        dataEntrega: pedido.dataEntrega,
+        diasPrazo,
+        atrasado: diasPrazo !== null && diasPrazo < 0
+      }
+    })
+    .sort((a, b) => {
+      if (a.diasPrazo === null && b.diasPrazo !== null) return 1
+      if (a.diasPrazo !== null && b.diasPrazo === null) return -1
+      if (a.diasPrazo !== b.diasPrazo) return a.diasPrazo - b.diasPrazo
+      return a.pedido.localeCompare(b.pedido)
+    })
   const fila = servicos
     .filter((servico) => ["ABERTO", "INICIADO"].includes(servico.status))
     .map((servico) => {
@@ -66,6 +90,15 @@ export function consolidarModoTV(servicos, { dataReferencia = new Date(), pedido
       chapasAtivas: [...planos.values()].reduce((total, plano) => total + Number(plano.quantidadeChapas || 0), 0),
       operadoresAtivos: new Set(servicos.filter((servico) => servico.status === "INICIADO" && servico.operadorId).map((servico) => servico.operadorId)).size
     },
-    fila
+    expedicaoResumo: {
+      total: expedicao.length,
+      retiradasProntas: expedicao.filter((pedido) => pedido.status === "PRONTO_ENTREGA" && pedido.tipoEntrega === "CLIENTE_RETIRA").length,
+      entregasProntas: expedicao.filter((pedido) => pedido.status === "PRONTO_ENTREGA" && pedido.tipoEntrega === "ENTREGA_EMPRESA").length,
+      saiuEntrega: expedicao.filter((pedido) => pedido.status === "SAIU_ENTREGA").length,
+      entregaHoje: expedicao.filter((pedido) => pedido.diasPrazo === 0).length,
+      atrasados: expedicao.filter((pedido) => pedido.atrasado).length
+    },
+    fila,
+    expedicao
   }
 }

@@ -37,7 +37,17 @@ export async function obterModoTV(req, res) {
       }
     }), prisma.pedido.findMany({
       where: { status: { in: statusAtivos } },
-      select: { id: true, status: true, dataEntrega: true }
+      select: {
+        id: true,
+        numeroPedido: true,
+        numeroPedidoManual: true,
+        origemPedido: true,
+        status: true,
+        dataEntrega: true,
+        tipoEntrega: true,
+        cliente: { select: { nome: true } },
+        rota: { select: { nome: true } }
+      }
     })])
 
     return res.json({ ...consolidarModoTV(servicos, { pedidosAtivos }), atualizadoEm: new Date() })

@@ -57,3 +57,21 @@ test("resume todos os pedidos ativos mesmo quando não possuem serviços", () =>
   assert.equal(resultado.resumo.pedidosSeparacao, 1)
   assert.equal(resultado.resumo.pedidosAtrasados, 1)
 })
+
+test("monta a fila de expedição sem expor dados de contato", () => {
+  const resultado = consolidarModoTV([], {
+    dataReferencia: new Date("2026-08-29"),
+    pedidosAtivos: [
+      { id: "retira", numeroPedido: 10, origemPedido: "INTERNO", status: "PRONTO_ENTREGA", tipoEntrega: "CLIENTE_RETIRA", dataEntrega: "2026-08-29", cliente: { nome: "Cliente A" }, rota: null },
+      { id: "rota", numeroPedido: 11, origemPedido: "INTERNO", status: "SAIU_ENTREGA", tipoEntrega: "ENTREGA_EMPRESA", dataEntrega: "2026-08-28", cliente: { nome: "Cliente B" }, rota: { nome: "Rota Norte" } }
+    ]
+  })
+
+  assert.equal(resultado.expedicaoResumo.total, 2)
+  assert.equal(resultado.expedicaoResumo.retiradasProntas, 1)
+  assert.equal(resultado.expedicaoResumo.saiuEntrega, 1)
+  assert.equal(resultado.expedicaoResumo.entregaHoje, 1)
+  assert.equal(resultado.expedicaoResumo.atrasados, 1)
+  assert.deepEqual(resultado.expedicao.map((item) => item.id), ["rota", "retira"])
+  assert.equal("contato" in resultado.expedicao[0], false)
+})
