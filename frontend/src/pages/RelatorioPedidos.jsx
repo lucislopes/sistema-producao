@@ -7,6 +7,7 @@ import { Select } from "../components/ui/Select"
 import { Table, Th, Td } from "../components/ui/Table"
 import { BadgePrazo } from "../components/ui/BadgePrazo"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
+import { EmptyState, ErrorState, LoadingState } from "../components/ui/FeedbackState"
 import { Link } from "react-router-dom"
 
 import {
@@ -18,10 +19,8 @@ import {
   ClipboardList,
   Package,
   Factory,
-  PackageCheck,
   TriangleAlert,
-  DollarSign,
-  Filter
+  DollarSign
 } from "lucide-react"
 
 export function RelatorioPedidos() {
@@ -32,15 +31,24 @@ export function RelatorioPedidos() {
   const [dataInicio, setDataInicio] = useState("")
   const [dataFim, setDataFim] = useState("")
   const [baseData, setBaseData] = useState("entrega")
-  const [pedido, setPedido] = useState("")
-  const [cliente, setCliente] = useState("")
   const [vendedorId, setVendedorId] = useState("")
   const [status, setStatus] = useState("")
+  const [prazo, setPrazo] = useState("")
 
   const [busca, setBusca] = useState("")
 
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(50)
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState(false)
+  const [resumo, setResumo] = useState({
+    total: 0,
+    abertos: 0,
+    emSeparacao: 0,
+    emProducao: 0,
+    atrasados: 0,
+    valorTotal: 0
+  })
 
   const [paginacao, setPaginacao] = useState({
     total: 0,
@@ -167,15 +175,15 @@ export function RelatorioPedidos() {
 }
 
   async function carregarRelatorio(pagina = page, filtros = {}) {
+    setCarregando(true)
     try {
       const params = {
         dataInicio,
         dataFim,
         baseData,
-        pedido,
-        cliente,
         vendedorId,
         status,
+        prazo,
         busca,
         page: pagina,
         limit,
@@ -188,30 +196,37 @@ export function RelatorioPedidos() {
 
       setPedidos(relatorioResponse.data.dados)
       setPaginacao(relatorioResponse.data.paginacao)
-
-      if (podeExportarImprimir) {
-        const empresaResponse = await api.get("/configuracao-empresa")
-        setEmpresa(empresaResponse.data)
-      } else {
-        setEmpresa(null)
-      }
+      setResumo(relatorioResponse.data.resumo || {})
+      setErro(false)
     } catch (error) {
       console.log(error)
+      setErro(true)
+    } finally {
+      setCarregando(false)
+    }
+  }
 
-      alert(
-        error.response?.data?.error ||
-        "Não foi possível carregar o relatório de pedidos no momento."
-      )
+  async function carregarEmpresa() {
+    if (!podeExportarImprimir) return setEmpresa(null)
+    try {
+      const response = await api.get("/configuracao-empresa")
+      setEmpresa(response.data)
+    } catch (error) {
+      console.log(error)
     }
   }
 
   useEffect(() => {
     carregarVendedores()
-    carregarRelatorio(1)
+    carregarEmpresa()
+    // Dados auxiliares são carregados uma única vez.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
     carregarRelatorio(page)
+    // A paginação reaplica os filtros atualmente selecionados.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, limit])
 
   function buscar() {
@@ -223,10 +238,9 @@ export function RelatorioPedidos() {
     setDataInicio("")
     setDataFim("")
     setBaseData("entrega")
-    setPedido("")
-    setCliente("")
     setVendedorId("")
     setStatus("")
+    setPrazo("")
     setPage(1)
     setBusca("")
 
@@ -234,10 +248,9 @@ export function RelatorioPedidos() {
       dataInicio: "",
       dataFim: "",
       baseData: "entrega",
-      pedido: "",
-      cliente: "",
       vendedorId: "",
       status: "",
+      prazo: "",
       busca: ""
     })
   }
@@ -251,11 +264,13 @@ export function RelatorioPedidos() {
 
     setDataInicio(hoje)
     setDataFim(hoje)
+    setPrazo("")
     setPage(1)
 
     carregarRelatorio(1, {
       dataInicio: hoje,
-      dataFim: hoje
+      dataFim: hoje,
+      prazo: ""
     })
   }
 
@@ -270,11 +285,13 @@ export function RelatorioPedidos() {
 
     setDataInicio(dataInicioFiltro)
     setDataFim(dataFimFiltro)
+    setPrazo("")
     setPage(1)
 
     carregarRelatorio(1, {
       dataInicio: dataInicioFiltro,
-      dataFim: dataFimFiltro
+      dataFim: dataFimFiltro,
+      prazo: ""
     })
   }
 
@@ -292,11 +309,13 @@ export function RelatorioPedidos() {
 
     setDataInicio(dataInicioFiltro)
     setDataFim(dataFimFiltro)
+    setPrazo("")
     setPage(1)
 
     carregarRelatorio(1, {
       dataInicio: dataInicioFiltro,
-      dataFim: dataFimFiltro
+      dataFim: dataFimFiltro,
+      prazo: ""
     })
   }
 
@@ -320,75 +339,55 @@ export function RelatorioPedidos() {
 
     setDataInicio(dataInicioFiltro)
     setDataFim(dataFimFiltro)
+    setPrazo("")
     setPage(1)
 
     carregarRelatorio(1, {
       dataInicio: dataInicioFiltro,
-      dataFim: dataFimFiltro
+      dataFim: dataFimFiltro,
+      prazo: ""
     })
   }
 
   function filtroAtrasados() {
     setStatus("")
+    setPrazo("ATRASADO")
     setPage(1)
-
-    carregarRelatorio(1)
+    carregarRelatorio(1, { status: "", prazo: "ATRASADO" })
   }
 
-  function filtroStatusRapido(novoStatus) {
-    setStatus(novoStatus)
-    setPage(1)
-
-    carregarRelatorio(1, {
-      status: novoStatus
-    })
-  }
-
-  const totalPedidos = paginacao.total
-
-  const abertos = pedidos.filter(
-    (p) => p.status === "ABERTO"
-  ).length
-
-  const emSeparacao = pedidos.filter(
-    (p) => p.status === "EM_SEPARACAO"
-  ).length
-
-  const emProducao = pedidos.filter(
-      p => p.status === "EM_PRODUCAO"
-  ).length
-
-  const atrasado = pedidos.filter(
-    pedido => pedido.situacaoPrazo === "Atrasado"
-  ).length
-
-  const ultimoDia = pedidos.filter(
-    (p) => p.situacaoPrazo === "Último dia"
-  ).length
-
-  const valorTotalPedidos = pedidos.reduce(
-    (acc, item) => acc + Number(item.valorTotal || 0),
-    0
-  )
+  const totalPedidos = resumo.total ?? paginacao.total
+  const abertos = resumo.abertos || 0
+  const emSeparacao = resumo.emSeparacao || 0
+  const emProducao = resumo.emProducao || 0
+  const atrasado = resumo.atrasados || 0
+  const valorTotalPedidos = resumo.valorTotal || 0
 
   return (
-    <div>
+    <div className="space-y-5">
+      <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5 no-print">
+        <h1 className="text-xl font-bold text-blue-950">Pedidos em andamento</h1>
+        <p className="mt-1 text-sm text-blue-800">Acompanhe prazos, etapas e valores dos pedidos que ainda estão em operação.</p>
+      </div>
+
       {podeExportarImprimir && (
-      <div className="flex justify-between items-center mb-6 no-print">
+      <div className="flex flex-wrap justify-end gap-2 no-print">
         <div className="flex gap-2">
           <Button
             type="button"
             onClick={exportarCSV}
-            className="bg-green-700 text-white px-6 py-3 rounded-lg flex items-center gap-2"
+            variant="success"
+            disabled={!pedidos.length}
           >
             <Download size={18} />
-            Exportar CSV
+            Exportar página em CSV
           </Button>
 
           <Button
             type="button"
             onClick={imprimir}
-            className="bg-gray-800 text-white px-6 py-3 rounded-lg flex items-center gap-2"
+            variant="dark"
+            disabled={!pedidos.length}
           >
             <Printer size={18} />
             Imprimir
@@ -403,7 +402,7 @@ export function RelatorioPedidos() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-6 no-print">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 no-print">
 
       <div className="bg-white border border-gray-300 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
@@ -490,7 +489,7 @@ export function RelatorioPedidos() {
         )}
         </div>
 
-      <div className="flex flex-wrap gap-2 mb-4 no-print">
+      <div className="flex flex-wrap items-center gap-2 no-print" aria-label="Filtros rápidos">
         <Button
           type="button"
           onClick={filtroHoje}
@@ -532,7 +531,7 @@ export function RelatorioPedidos() {
         <Button
           type="button"
           onClick={filtroAtrasados}
-          className="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+          variant={prazo === "ATRASADO" ? "danger" : "dangerSoft"}
         >
           <TriangleAlert size={16} />
           Atrasados
@@ -540,9 +539,10 @@ export function RelatorioPedidos() {
 
       </div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-md mb-8 no-print">
+      <form onSubmit={(event) => { event.preventDefault(); buscar() }} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm no-print">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Select
+            aria-label="Base da data"
             value={baseData}
             onChange={(e) => setBaseData(e.target.value)}
           >
@@ -551,12 +551,14 @@ export function RelatorioPedidos() {
           </Select>
 
           <Input
+            aria-label="Data inicial"
             type="date"
             value={dataInicio}
             onChange={(e) => setDataInicio(e.target.value)}
           />
 
           <Input
+            aria-label="Data final"
             type="date"
             value={dataFim}
             onChange={(e) => setDataFim(e.target.value)}
@@ -570,6 +572,7 @@ export function RelatorioPedidos() {
           />
 
           <Select
+            aria-label="Vendedor"
             value={vendedorId}
             onChange={(e) => setVendedorId(e.target.value)}
           >
@@ -583,8 +586,9 @@ export function RelatorioPedidos() {
           </Select>
 
           <Select
+            aria-label="Status"
             value={status}
-            onChange={(e) => setStatus(e.target.value)}
+            onChange={(e) => { setStatus(e.target.value); setPrazo("") }}
           >
             <option value="">Todos em andamento</option>
             <option value="ABERTO">Aberto</option>
@@ -593,6 +597,7 @@ export function RelatorioPedidos() {
           </Select>
 
           <Select
+            aria-label="Registros por página"
             value={limit}
             onChange={(e) => {
               setLimit(Number(e.target.value))
@@ -606,25 +611,24 @@ export function RelatorioPedidos() {
 
           <div className="flex gap-4">
             <Button
-              variant="Primary"
-              onClick={buscar}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg flex items-center gap-2"
+              type="submit"
+              loading={carregando}
             >
               <Search size={18} />
               Buscar
             </Button>
 
             <Button
-              variant=""
+              variant="dangerSoft"
+              type="button"
               onClick={limparFiltros}
-              className="bg-red-50 text-red-700 border border-red-200 px-6 py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-red-100"
             >
               <Eraser size={18} />
               Limpar
             </Button>
           </div>
         </div>
-      </div>
+      </form>
 
       <div className="bg-white rounded-2xl shadow-md p-6 print-area">
         <CabecalhoImpressao
@@ -633,7 +637,9 @@ export function RelatorioPedidos() {
           periodoInicio={dataInicio}
           periodoFim={dataFim}
           extra={
-            status
+            prazo === "ATRASADO"
+              ? "Prazo filtrado: Atrasados"
+              : status
               ? `Status filtrado: ${status}`
               : baseData === "pedido"
                 ? "Base da data: Data do Pedido"
@@ -651,6 +657,14 @@ export function RelatorioPedidos() {
           </p>
         </div>
 
+        {carregando ? (
+          <LoadingState mensagem="Carregando pedidos em andamento..." />
+        ) : erro ? (
+          <ErrorState mensagem="Não foi possível carregar o relatório de pedidos." onRetry={() => carregarRelatorio(page)} />
+        ) : pedidos.length === 0 ? (
+          <EmptyState titulo="Nenhum pedido encontrado" descricao="Revise os filtros aplicados e tente novamente." />
+        ) : (
+          <>
         <Table>
           <thead>
             <tr>
@@ -712,17 +726,10 @@ export function RelatorioPedidos() {
               </tr>
             ))}
 
-            {pedidos.length === 0 && (
-              <tr>
-                <Td className="p-4 border" colSpan={podeVerValores ? "9" : "8"}>
-                  Nenhum pedido encontrado.
-                </Td>
-              </tr>
-            )}
           </tbody>
         </Table>
 
-        <div className="flex justify-between items-center mt-4 no-print">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 no-print">
           <p className="text-sm text-gray-600">
             Página {paginacao.page} de {paginacao.totalPages}
           </p>
@@ -731,7 +738,7 @@ export function RelatorioPedidos() {
             <Button
               variant="secondary"
               disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
+              onClick={() => setPage((paginaAtual) => paginaAtual - 1)}
             >
               Anterior
             </Button>
@@ -739,12 +746,14 @@ export function RelatorioPedidos() {
             <Button
               variant="secondary"
               disabled={page >= paginacao.totalPages}
-              onClick={() => setPage(page + 1)}
+              onClick={() => setPage((paginaAtual) => paginaAtual + 1)}
             >
               Próxima
             </Button>
           </div>
         </div>
+          </>
+        )}
       </div>
     </div>
   )

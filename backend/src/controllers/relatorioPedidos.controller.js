@@ -58,6 +58,7 @@ export async function relatorioPedidos(req, res) {
       cliente,
       vendedorId,
       status,
+      prazo,
       busca,
       page = 1,
       limit = 50
@@ -159,6 +160,16 @@ export async function relatorioPedidos(req, res) {
       }
     }
 
+    const hoje = new Date()
+    hoje.setHours(0, 0, 0, 0)
+
+    if (prazo === "ATRASADO") {
+      where.dataEntrega = {
+        ...(where.dataEntrega || {}),
+        lt: hoje
+      }
+    }
+
     const orderBy =
       campoData === "dataPedido"
         ? [
@@ -170,7 +181,7 @@ export async function relatorioPedidos(req, res) {
             { numeroPedido: "asc" }
           ]
 
-    const [pedidos, total] = await Promise.all([
+    const [pedidos, total, resumoStatus, resumoValores] = await Promise.all([
       prisma.pedido.findMany({
         where,
         include: {
@@ -185,11 +196,19 @@ export async function relatorioPedidos(req, res) {
 
       prisma.pedido.count({
         where
+      }),
+
+      prisma.pedido.groupBy({
+        by: ["status"],
+        where,
+        _count: { _all: true }
+      }),
+
+      prisma.pedido.aggregate({
+        where,
+        _sum: { valorTotal: true }
       })
     ])
-
-    const hoje = new Date()
-    hoje.setHours(0, 0, 0, 0)
 
     const pedidosComPrazo = pedidos.map((pedido) => ({
       ...pedido,
@@ -200,11 +219,29 @@ export async function relatorioPedidos(req, res) {
       baseData,
       campoData,
       dados: pedidosComPrazo,
+      resumo: {
+        total,
+        abertos: resumoStatus.find((item) => item.status === "ABERTO")?._count?._all || 0,
+        emSeparacao: resumoStatus.find((item) => item.status === "EM_SEPARACAO")?._count?._all || 0,
+        emProducao: resumoStatus.find((item) => item.status === "EM_PRODUCAO")?._count?._all || 0,
+        atrasados: prazo === "ATRASADO"
+          ? total
+          : await prisma.pedido.count({
+              where: {
+                ...where,
+                dataEntrega: {
+                  ...(where.dataEntrega || {}),
+                  lt: hoje
+                }
+              }
+            }),
+        valorTotal: resumoValores._sum.valorTotal || 0
+      },
       paginacao: {
         total,
         page: paginaAtual,
         limit: limite,
-        totalPages: Math.ceil(total / limite)
+        totalPages: Math.max(1, Math.ceil(total / limite))
       }
     })
   } catch (error) {
