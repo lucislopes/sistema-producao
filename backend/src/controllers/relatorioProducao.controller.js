@@ -111,7 +111,7 @@ export async function relatorioProducao(req, res) {
           ? [{ dataInicio: "desc" }]
           : [{ createdAt: "desc" }]
 
-    const [servicos, total] = await Promise.all([
+    const [servicos, total, servicosResumo] = await Promise.all([
       prisma.servicoPlano.findMany({
         where,
 
@@ -137,17 +137,29 @@ export async function relatorioProducao(req, res) {
 
       prisma.servicoPlano.count({
         where
+      }),
+
+      prisma.servicoPlano.findMany({
+        where,
+        select: {
+          status: true,
+          dataInicio: true,
+          dataFim: true,
+          tipoServico: { select: { id: true, nome: true } },
+          operador: { select: { id: true, nome: true } }
+        }
       })
     ])
 
     return res.json({
       campoData,
       dados: servicos,
+      resumo: montarResumo(servicosResumo),
       paginacao: {
         total,
         page: paginaAtual,
         limit: limite,
-        totalPages: Math.ceil(total / limite)
+        totalPages: Math.max(1, Math.ceil(total / limite))
       }
     })
   } catch (error) {
@@ -156,5 +168,90 @@ export async function relatorioProducao(req, res) {
     return res.status(500).json({
       error: "Erro ao gerar relatório de produção"
     })
+  }
+}
+
+function calcularDuracaoMinutos(inicio, fim) {
+  if (!inicio || !fim) return 0
+  const diferenca = new Date(fim) - new Date(inicio)
+  return diferenca > 0 ? Math.round(diferenca / 60000) : 0
+}
+
+function montarResumo(servicos) {
+  const hoje = new Date()
+  hoje.setHours(0, 0, 0, 0)
+  const amanha = new Date(hoje)
+  amanha.setDate(amanha.getDate() + 1)
+  const porServicoMap = new Map()
+  const porOperadorMap = new Map()
+  let tempoTotal = 0
+  let concluidosComTempo = 0
+
+  servicos.forEach((servico) => {
+    const tipoId = servico.tipoServico?.id || "sem-tipo"
+    const itemTipo = porServicoMap.get(tipoId) || {
+      id: tipoId,
+      nome: servico.tipoServico?.nome || "Sem tipo",
+      total: 0,
+      abertos: 0,
+      producao: 0,
+      concluidos: 0,
+      cancelados: 0,
+      tempoTotal: 0,
+      concluidosComTempo: 0
+    }
+    itemTipo.total += 1
+    if (servico.status === "ABERTO") itemTipo.abertos += 1
+    if (servico.status === "INICIADO") itemTipo.producao += 1
+    if (servico.status === "CONCLUIDO") itemTipo.concluidos += 1
+    if (servico.status === "CANCELADO") itemTipo.cancelados += 1
+
+    const duracao = servico.status === "CONCLUIDO"
+      ? calcularDuracaoMinutos(servico.dataInicio, servico.dataFim)
+      : 0
+    if (duracao > 0) {
+      itemTipo.tempoTotal += duracao
+      itemTipo.concluidosComTempo += 1
+      tempoTotal += duracao
+      concluidosComTempo += 1
+    }
+    porServicoMap.set(tipoId, itemTipo)
+
+    if (servico.operador?.id) {
+      const operador = porOperadorMap.get(servico.operador.id) || {
+        id: servico.operador.id,
+        nome: servico.operador.nome,
+        concluidos: 0
+      }
+      if (servico.status === "CONCLUIDO") operador.concluidos += 1
+      porOperadorMap.set(servico.operador.id, operador)
+    }
+  })
+
+  const porServico = [...porServicoMap.values()]
+    .map(({ tempoTotal: totalTempo, concluidosComTempo: totalComTempo, ...item }) => ({
+      ...item,
+      tempoMedio: totalComTempo > 0 ? Math.round(totalTempo / totalComTempo) : 0
+    }))
+    .sort((a, b) => b.total - a.total || a.nome.localeCompare(b.nome))
+  const operadores = [...porOperadorMap.values()]
+  const operadorDestaque = operadores
+    .filter((item) => item.concluidos > 0)
+    .sort((a, b) => b.concluidos - a.concluidos || a.nome.localeCompare(b.nome))[0] || null
+
+  return {
+    total: servicos.length,
+    abertos: servicos.filter((item) => item.status === "ABERTO").length,
+    iniciados: servicos.filter((item) => item.status === "INICIADO").length,
+    concluidos: servicos.filter((item) => item.status === "CONCLUIDO").length,
+    cancelados: servicos.filter((item) => item.status === "CANCELADO").length,
+    producaoHoje: servicos.filter((item) =>
+      item.status === "CONCLUIDO" && item.dataFim >= hoje && item.dataFim < amanha
+    ).length,
+    tempoMedio: concluidosComTempo > 0 ? Math.round(tempoTotal / concluidosComTempo) : 0,
+    operadoresEnvolvidos: operadores.length,
+    porServico,
+    servicoMaisExecutado: porServico[0] || null,
+    operadorDestaque
   }
 }

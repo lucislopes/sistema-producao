@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 import { api } from "../services/api"
 import { CabecalhoImpressao } from "../components/CabecalhoImpressao"
 import { Button } from "../components/ui/Button"
 import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
 import { Table, Th, Td } from "../components/ui/Table"
+import { EmptyState, ErrorState, LoadingState } from "../components/ui/FeedbackState"
 
 import {
   Download,
@@ -28,6 +30,9 @@ export function RelatorioProducao() {
   const [operadores, setOperadores] = useState([])
   const [tiposServico, setTiposServico] = useState([])
   const [empresa, setEmpresa] = useState(null)
+  const [resumo, setResumo] = useState(null)
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState(false)
 
   const [dataInicio, setDataInicio] = useState("")
   const [dataFim, setDataFim] = useState("")
@@ -69,6 +74,7 @@ export function RelatorioProducao() {
   }
 
   async function carregarRelatorio(pagina = page, filtros = {}) {
+    setCarregando(true)
     try {
       const params = {
         dataInicio,
@@ -88,30 +94,37 @@ export function RelatorioProducao() {
 
       setServicos(relatorioResponse.data.dados)
       setPaginacao(relatorioResponse.data.paginacao)
-
-      if (podeExportarImprimir) {
-        const empresaResponse = await api.get("/configuracao-empresa")
-        setEmpresa(empresaResponse.data)
-      } else {
-        setEmpresa(null)
-      }
+      setResumo(relatorioResponse.data.resumo || null)
+      setErro(false)
     } catch (error) {
       console.log(error)
+      setErro(true)
+    } finally {
+      setCarregando(false)
+    }
+  }
 
-      alert(
-        error.response?.data?.error ||
-        "Não foi possível carregar o relatório de produção no momento."
-      )
+  async function carregarEmpresa() {
+    if (!podeExportarImprimir) return setEmpresa(null)
+    try {
+      const response = await api.get("/configuracao-empresa")
+      setEmpresa(response.data)
+    } catch (error) {
+      console.log(error)
     }
   }
 
   useEffect(() => {
     carregarBase()
-    carregarRelatorio(1)
+    carregarEmpresa()
+    // Dados auxiliares são carregados uma única vez.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
     carregarRelatorio(page)
+    // A paginação reaplica os filtros selecionados.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, limit])
 
   function buscar() {
@@ -127,6 +140,14 @@ export function RelatorioProducao() {
     setStatus("")
     setBusca("")
     setPage(1)
+    carregarRelatorio(1, {
+      dataInicio: "",
+      dataFim: "",
+      operadorId: "",
+      tipoServicoId: "",
+      status: "",
+      busca: ""
+    })
   }
 
   function imprimir() {
@@ -310,7 +331,7 @@ export function RelatorioProducao() {
           </div>
 
           <div className="border-t pt-2 flex justify-between">
-            <span className="text-gray-500">Tempo médio</span>
+            <span className="text-gray-500">Tempo médio corrido</span>
             <strong>{formatarTempoMedio(item.tempoMedio)}</strong>
           </div>
         </div>
@@ -342,12 +363,6 @@ export function RelatorioProducao() {
         </div>
       </div>
     )
-  }
-
-  function ehHoje(data) {
-    if (!data) return false
-    const hoje = new Date().toISOString().substring(0, 10)
-    return String(data).substring(0, 10) === hoje
   }
 
   function iconeServico(nome) {
@@ -463,158 +478,51 @@ export function RelatorioProducao() {
     URL.revokeObjectURL(url)
   }
 
-  const totalServicos = servicos.length
-
-  const abertos = servicos.filter(
-    (item) => item.status === "ABERTO"
-  ).length
-
-  const iniciados = servicos.filter(
-    (item) => item.status === "INICIADO"
-  ).length
-
-  const concluidos = servicos.filter(
-    (item) => item.status === "CONCLUIDO"
-  ).length
-
-  function calcularDuracaoMinutos(inicio, fim) {
-    if (!inicio || !fim) return 0
-
-    const dataInicio = new Date(inicio)
-    const dataFim = new Date(fim)
-
-    const diff = dataFim - dataInicio
-
-    if (diff <= 0) return 0
-
-    return Math.round(diff / 60000)
+  function formatarTempoMedio(minutos) {
+    if (!minutos || minutos <= 0) return "-"
+    if (minutos < 60) return `${minutos} min`
+    const horas = Math.floor(minutos / 60)
+    const restoMinutos = minutos % 60
+    return `${horas}h ${restoMinutos}min`
   }
 
-    function formatarTempoMedio(minutos) {
-      if (!minutos || minutos <= 0) return "-"
-
-      if (minutos < 60) {
-        return `${minutos} min`
-      }
-
-      const horas = Math.floor(minutos / 60)
-      const restoMinutos = minutos % 60
-
-      return `${horas}h ${restoMinutos}min`
-    }
-
-    const servicosConcluidosComTempo = servicos.filter(
-      (item) =>
-        item.status === "CONCLUIDO" &&
-        item.dataInicio &&
-        item.dataFim
-    )
-
-    const tempoTotalMinutos = servicosConcluidosComTempo.reduce(
-      (acc, item) =>
-        acc + calcularDuracaoMinutos(item.dataInicio, item.dataFim),
-      0
-    )
-
-    const tempoMedioGeral =
-      servicosConcluidosComTempo.length > 0
-        ? Math.round(tempoTotalMinutos / servicosConcluidosComTempo.length)
-        : 0
-
-        const resumoPorServico = tiposServico
-          .map((tipo) => {
-            const itens = servicos.filter(
-              (item) => item.tipoServico?.nome === tipo.nome
-            )
-
-            const concluidosComTempo = itens.filter(
-              (item) =>
-                item.status === "CONCLUIDO" &&
-                item.dataInicio &&
-                item.dataFim
-            )
-
-            const tempoTotal = concluidosComTempo.reduce(
-              (acc, item) =>
-                acc + calcularDuracaoMinutos(item.dataInicio, item.dataFim),
-              0
-            )
-
-            const tempoMedio =
-              concluidosComTempo.length > 0
-                ? Math.round(tempoTotal / concluidosComTempo.length)
-                : 0
-
-            return {
-              nome: tipo.nome,
-              total: itens.length,
-              abertos: itens.filter((item) => item.status === "ABERTO").length,
-              producao: itens.filter((item) => item.status === "INICIADO").length,
-              concluidos: itens.filter((item) => item.status === "CONCLUIDO").length,
-              cancelados: itens.filter((item) => item.status === "CANCELADO").length,
-              tempoMedio
-            }
-          })
-          .filter((item) => item.total > 0)
-
-          const producaoHoje = servicos.filter(
-            (item) =>
-              item.status === "CONCLUIDO" &&
-              ehHoje(item.dataFim)
-          ).length
-
-          const operadoresEnvolvidos = new Set(
-            servicos
-              .filter((item) => item.operador?.id)
-              .map((item) => item.operador.id)
-          ).size
-
-          const servicoMaisExecutado =
-          resumoPorServico.length > 0
-            ? [...resumoPorServico].sort((a, b) => b.total - a.total)[0]
-            : null
-
-          const resumoOperadores = operadores.map((operador) => {
-            const concluidosOperador = servicos.filter(
-              (item) =>
-                item.operador?.id === operador.id &&
-                item.status === "CONCLUIDO"
-            )
-
-            return {
-              nome: operador.nome,
-              total: concluidosOperador.length
-            }
-          })
-
-          const operadorDestaque =
-            resumoOperadores.length > 0
-              ? [...resumoOperadores].sort((a, b) => b.total - a.total)[0]
-              : null
-
-
-
-
-  
+  const totalServicos = resumo?.total || 0
+  const iniciados = resumo?.iniciados || 0
+  const concluidos = resumo?.concluidos || 0
+  const producaoHoje = resumo?.producaoHoje || 0
+  const tempoMedioGeral = resumo?.tempoMedio || 0
+  const resumoPorServico = resumo?.porServico || []
+  const operadoresEnvolvidos = resumo?.operadoresEnvolvidos || 0
+  const servicoMaisExecutado = resumo?.servicoMaisExecutado || null
+  const operadorDestaque = resumo?.operadorDestaque
+    ? { nome: resumo.operadorDestaque.nome, total: resumo.operadorDestaque.concluidos }
+    : null
 
   return (
-    <div>
+    <div className="space-y-5">
+      <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5 no-print">
+        <h1 className="text-xl font-bold text-blue-950">Produção por serviço</h1>
+        <p className="mt-1 text-sm text-blue-800">Acompanhe serviços abertos, em execução e concluídos, com tempos e responsáveis.</p>
+      </div>
+
       {podeExportarImprimir && (
-        <div className="flex justify-between items-center mb-6 no-print">
+        <div className="flex flex-wrap justify-end gap-2 no-print">
           <div className="flex gap-2">
             <Button
               type="button"
               onClick={exportarCSV}
-              className="bg-green-700 text-white px-6 py-3 rounded-lg flex items-center gap-2"
+              variant="success"
+              disabled={!servicos.length}
             >
               <Download size={18} />
-              Exportar CSV
+              Exportar página em CSV
             </Button>
 
             <Button
               type="button"
               onClick={imprimir}
-              className="bg-gray-800 text-white px-6 py-3 rounded-lg flex items-center gap-2"
+              variant="dark"
+              disabled={!servicos.length}
             >
               <Printer size={18} />
               Imprimir
@@ -658,7 +566,7 @@ export function RelatorioProducao() {
         />
 
         <ResumoCard
-          titulo="Tempo Médio"
+          titulo="Tempo Médio Corrido"
           valor={formatarTempoMedio(tempoMedioGeral)}
           tipo="info"
           icon={Clock}
@@ -703,7 +611,7 @@ export function RelatorioProducao() {
         </div>
       </div>
       
-      <div className="flex flex-wrap items-center gap-2 mb-4 no-print">
+      <div className="flex flex-wrap items-center gap-2 no-print" aria-label="Filtros rápidos">
         <Button
           type="button"
           onClick={filtroHoje}
@@ -761,19 +669,22 @@ export function RelatorioProducao() {
         </Button>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-md mb-8 no-print">
+      <form onSubmit={(event) => { event.preventDefault(); buscar() }} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm no-print">
 
         <p className="text-sm text-gray-500 mb-4">
           A data filtrada muda conforme o status: Concluído usa Data Fim, Em Produção usa Data Início, e Aberto usa Data de Criação.
+          O tempo médio é corrido entre início e conclusão, incluindo períodos fora do expediente.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           <Input
+            aria-label="Data inicial"
             type="date"
             value={dataInicio}
             onChange={(e) => setDataInicio(e.target.value)}
           />
 
           <Input
+            aria-label="Data final"
             type="date"
             value={dataFim}
             onChange={(e) => setDataFim(e.target.value)}
@@ -787,6 +698,7 @@ export function RelatorioProducao() {
           />
 
         <Select
+            aria-label="Operador"
             value={operadorId}
             onChange={(e) => setOperadorId(e.target.value)}
           >
@@ -805,6 +717,7 @@ export function RelatorioProducao() {
           
 
           <Select
+            aria-label="Tipo de serviço"
             value={tipoServicoId}
             onChange={(e) => setTipoServicoId(e.target.value)}
           >
@@ -818,6 +731,7 @@ export function RelatorioProducao() {
           </Select>
 
           <Select
+            aria-label="Status"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
           >
@@ -830,6 +744,7 @@ export function RelatorioProducao() {
 
         
           <Select
+            aria-label="Registros por página"
             value={limit}
             onChange={(e) => {
               setLimit(Number(e.target.value))
@@ -843,9 +758,8 @@ export function RelatorioProducao() {
 
           <div className="flex gap-3">
             <Button
-              variant="Primary"
-              onClick={buscar}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg flex items-center justify-center gap-2"
+              type="submit"
+              loading={carregando}
             >
               <Search size={18} />
               Buscar
@@ -854,15 +768,14 @@ export function RelatorioProducao() {
             <Button
               type="button"
               onClick={limparFiltros}
-              variant=""
-              className="bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 px-6 py-3 rounded-lg flex items-center justify-center gap-2"
+              variant="dangerSoft"
             >
               <Eraser size={18} />
               Limpar
             </Button>
           </div>
         </div>
-      </div>
+      </form>
 
       <CabecalhoImpressao
         empresa={empresa}
@@ -882,6 +795,14 @@ export function RelatorioProducao() {
           </p>
         </div>
 
+        {carregando ? (
+          <LoadingState mensagem="Carregando o relatório de produção..." />
+        ) : erro ? (
+          <ErrorState descricao="Não foi possível carregar o relatório de produção." onRetry={() => carregarRelatorio(page)} />
+        ) : servicos.length === 0 ? (
+          <EmptyState titulo="Nenhum serviço encontrado" descricao="Revise o período e os filtros selecionados." />
+        ) : (
+          <>
         <Table>
           <thead>
             <tr>
@@ -900,7 +821,9 @@ export function RelatorioProducao() {
             {servicos.map((item) => (
               <tr key={item.id}>
                 <Td className="font-bold text-blue-700">
-                  {obterNumeroPedido(item.plano?.pedido)}
+                  <Link to={`/pedidos/${item.plano?.pedido?.id}`} className="hover:underline">
+                    {obterNumeroPedido(item.plano?.pedido)}
+                  </Link>
                 </Td>
 
                 <Td>
@@ -940,13 +863,6 @@ export function RelatorioProducao() {
               </tr>
             ))}
 
-            {servicos.length === 0 && (
-              <tr>
-                <Td className="p-4" colSpan="8">
-                  Nenhum serviço encontrado.
-                </Td>
-              </tr>
-            )}
           </tbody>
         </Table>
 
@@ -970,8 +886,7 @@ export function RelatorioProducao() {
               type="button"
               variant="secondary"
               disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-              className="bg-gray-500 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg"
+              onClick={() => setPage((paginaAtual) => paginaAtual - 1)}
             >
               Anterior
             </Button>
@@ -980,13 +895,14 @@ export function RelatorioProducao() {
               type="button"
               variant="secondary"
               disabled={page >= paginacao.totalPages}
-              onClick={() => setPage(page + 1)}
-              className="bg-gray-500 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg"
+              onClick={() => setPage((paginaAtual) => paginaAtual + 1)}
             >
               Próxima
             </Button>
           </div>
         </div>
+          </>
+        )}
       </div>
     </div>
   )
