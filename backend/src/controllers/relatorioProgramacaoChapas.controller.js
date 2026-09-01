@@ -87,7 +87,7 @@ export async function relatorioProgramacaoChapas(req, res) {
       },
       tipoPedido: "COM_PRODUCAO",
       status: {
-        not: "CANCELADO"
+        in: ["ABERTO", "EM_SEPARACAO", "EM_PRODUCAO"]
       }
     }
 
@@ -246,7 +246,7 @@ export async function relatorioProgramacaoChapas(req, res) {
         total: porDiaCompleto.length,
         page: paginaAtual,
         limit: limite,
-        totalPages: Math.ceil(porDiaCompleto.length / limite)
+        totalPages: Math.max(1, Math.ceil(porDiaCompleto.length / limite))
       }
     })
   } catch (error) {

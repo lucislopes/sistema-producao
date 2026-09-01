@@ -5,6 +5,7 @@ import { Button } from "../components/ui/Button"
 import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
 import { Table, Th, Td } from "../components/ui/Table"
+import { EmptyState, ErrorState, LoadingState } from "../components/ui/FeedbackState"
 
 import {
   CalendarDays,
@@ -21,7 +22,6 @@ import {
 export function RelatorioProgramacaoChapas() {
   const [dados, setDados] = useState([])
   const [resumo, setResumo] = useState(null)
-  const [porVendedor, setPorVendedor] = useState([])
   const [vendedores, setVendedores] = useState([])
 
   const [dataFim, setDataFim] = useState("")
@@ -31,6 +31,8 @@ export function RelatorioProgramacaoChapas() {
 
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(50)
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState(false)
 
   const [paginacao, setPaginacao] = useState({
     total: 0,
@@ -97,6 +99,7 @@ export function RelatorioProgramacaoChapas() {
   }
 
   async function carregarRelatorio(pagina = page, filtros = {}) {
+    setCarregando(true)
     try {
       const response = await api.get("/relatorio-programacao-chapas", {
         params: {
@@ -111,7 +114,6 @@ export function RelatorioProgramacaoChapas() {
 
       setDados(response.data.dados || [])
       setResumo(response.data.resumo || null)
-      setPorVendedor(response.data.porVendedor || [])
       setPaginacao(
         response.data.paginacao || {
           total: 0,
@@ -120,23 +122,23 @@ export function RelatorioProgramacaoChapas() {
           totalPages: 1
         }
       )
+      setErro(false)
     } catch (error) {
       console.log(error)
-
-      alert(
-        error.response?.data?.error ||
-          "Erro ao carregar programação de chapas."
-      )
+      setErro(true)
+    } finally {
+      setCarregando(false)
     }
   }
 
   useEffect(() => {
     carregarVendedores()
-    carregarRelatorio(1)
   }, [])
 
   useEffect(() => {
     carregarRelatorio(page)
+    // A paginação reaplica os filtros selecionados.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, limit])
 
   function buscar() {
@@ -245,10 +247,11 @@ export function RelatorioProgramacaoChapas() {
   }
 
   return (
-    <div>
-      <div className="mb-6 flex items-start justify-between gap-4">
+    <div className="space-y-5">
+      <div className="flex flex-col gap-4 rounded-2xl border border-blue-200 bg-blue-50 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm text-gray-600">
+          <h1 className="text-xl font-bold text-blue-950">Programação de chapas</h1>
+          <p className="mt-1 text-sm text-blue-800">
             Programação futura por data de entrega, começando de hoje em diante.
           </p>
         </div>
@@ -256,24 +259,28 @@ export function RelatorioProgramacaoChapas() {
         <Button
           type="button"
           onClick={exportarCSV}
-          className="bg-green-700 text-white px-5 py-3 rounded-lg flex items-center gap-2"
+          variant="success"
+          disabled={!dados.length}
         >
           <Download size={18} />
-          Exportar CSV
+          Exportar página em CSV
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
         <Card titulo="Chapas Programadas" valor={resumo?.totalChapas || 0} icon={Package} />
         <Card titulo="Pedidos" valor={resumo?.totalPedidos || 0} icon={ClipboardList} />
+        <Card titulo="Planos" valor={resumo?.totalPlanos || 0} icon={ClipboardList} />
+        <Card titulo="Metros" valor={resumo?.totalMetrosEncabecamento || 0} icon={Ruler} decimal />
         <Card titulo="Dias Programados" valor={resumo?.diasProgramados || 0} icon={CalendarDays} />
         <Card titulo="Média/Dia" valor={resumo?.mediaDia || 0} icon={TrendingUp} decimal />
         <Card titulo="Limite Atual" valor={limiteChapasDia} icon={TriangleAlert} />
       </div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-md mb-8">
+      <form onSubmit={(event) => { event.preventDefault(); buscar() }} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-7 gap-4">
           <Input
+            aria-label="Programar até"
             type="date"
             value={dataFim}
             onChange={(e) => setDataFim(e.target.value)}
@@ -281,6 +288,7 @@ export function RelatorioProgramacaoChapas() {
           />
 
           <Input
+            aria-label="Cliente"
             type="text"
             placeholder="Cliente..."
             value={cliente}
@@ -288,6 +296,7 @@ export function RelatorioProgramacaoChapas() {
           />
 
           <Select
+            aria-label="Vendedor"
             value={vendedorId}
             onChange={(e) => setVendedorId(e.target.value)}
           >
@@ -301,6 +310,7 @@ export function RelatorioProgramacaoChapas() {
           </Select>
 
           <Input
+            aria-label="Limite de chapas por dia"
             type="number"
             min={1}
             value={limiteChapasDia}
@@ -311,6 +321,7 @@ export function RelatorioProgramacaoChapas() {
           />
 
           <Select
+            aria-label="Dias por página"
             value={limit}
             onChange={(e) => {
               setLimit(Number(e.target.value))
@@ -323,9 +334,8 @@ export function RelatorioProgramacaoChapas() {
           </Select>
 
           <Button
-            type="button"
-            onClick={buscar}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg flex items-center justify-center gap-2"
+            type="submit"
+            loading={carregando}
           >
             <Search size={18} />
             Buscar
@@ -333,9 +343,8 @@ export function RelatorioProgramacaoChapas() {
 
           <Button
             type="button"
-            variant=""
+            variant="dangerSoft"
             onClick={limparFiltros}
-            className="bg-red-50 text-red-700 border border-red-200 px-6 py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-red-100"
           >
             <Eraser size={18} />
             Limpar
@@ -345,43 +354,21 @@ export function RelatorioProgramacaoChapas() {
         <p className="mt-3 text-xs text-gray-500">
           O período sempre começa em hoje. A data informada serve apenas como limite final.
         </p>
-      </div>
-
-      {/*
-
-      <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
-        <h2 className="text-xl font-bold mb-4">
-          Chapas por Vendedor
-        </h2>
-
-        <div className="space-y-2">
-          {porVendedor.map((item) => (
-            <div
-              key={item.nome}
-              className="flex justify-between border-b border-gray-100 py-2 text-sm"
-            >
-              <span>{item.nome}</span>
-
-              <strong>
-                {formatarNumero(item.chapas)} chapa(s) — {item.pedidos} pedido(s)
-              </strong>
-            </div>
-          ))}
-
-          {porVendedor.length === 0 && (
-            <p className="text-sm text-gray-500">
-              Nenhum dado por vendedor.
-            </p>
-          )}
-        </div>
-      </div>
-      */}
+      </form>
 
       <div className="bg-white rounded-2xl shadow-md p-6">
         <h2 className="text-xl font-bold mb-4">
           Programação por Dia
         </h2>
 
+        {carregando ? (
+          <LoadingState mensagem="Carregando a programação de chapas..." />
+        ) : erro ? (
+          <ErrorState mensagem="Não foi possível carregar a programação de chapas." onRetry={() => carregarRelatorio(page)} />
+        ) : dados.length === 0 ? (
+          <EmptyState titulo="Nenhuma programação encontrada" descricao="Não há produção pendente no período ou nos filtros informados." />
+        ) : (
+          <>
         <Table>
           <thead>
             <tr>
@@ -391,7 +378,7 @@ export function RelatorioProgramacaoChapas() {
               <Th>Chapas</Th>
               <Th>Encabeçamento</Th>
               <Th>Limite</Th>
-              <Th>Disponível</Th>
+              <Th>Saldo</Th>
               <Th>Situação</Th>
               <Th>Detalhes</Th>
             </tr>
@@ -431,7 +418,9 @@ export function RelatorioProgramacaoChapas() {
                         : "font-bold text-green-700"
                     }
                   >
-                    {disponivel}
+                    {disponivel < 0
+                      ? `${Math.abs(disponivel)} acima`
+                      : `${disponivel} disponível`}
                   </Td>
                   <Td>
                     <span
@@ -486,17 +475,10 @@ export function RelatorioProgramacaoChapas() {
               )
             })}
 
-            {dados.length === 0 && (
-              <tr>
-                <Td colSpan="9">
-                  Nenhuma programação encontrada.
-                </Td>
-              </tr>
-            )}
           </tbody>
         </Table>
 
-        <div className="flex justify-between items-center mt-4">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-gray-600">
             Página {paginacao.page} de {paginacao.totalPages} — Total: {paginacao.total} dia(s)
           </p>
@@ -505,7 +487,7 @@ export function RelatorioProgramacaoChapas() {
             <Button
               variant="secondary"
               disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
+              onClick={() => setPage((paginaAtual) => paginaAtual - 1)}
             >
               Anterior
             </Button>
@@ -513,12 +495,14 @@ export function RelatorioProgramacaoChapas() {
             <Button
               variant="secondary"
               disabled={page >= paginacao.totalPages}
-              onClick={() => setPage(page + 1)}
+              onClick={() => setPage((paginaAtual) => paginaAtual + 1)}
             >
               Próxima
             </Button>
           </div>
         </div>
+          </>
+        )}
       </div>
     </div>
   )
