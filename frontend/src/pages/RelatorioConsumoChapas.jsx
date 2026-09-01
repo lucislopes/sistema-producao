@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react"
+import { Link } from "react-router-dom"
 import { api } from "../services/api"
 import { Button } from "../components/ui/Button"
 import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
 import { Table, Th, Td } from "../components/ui/Table"
+import { EmptyState, ErrorState, LoadingState } from "../components/ui/FeedbackState"
 import {
   BarChart3,
   CalendarDays,
@@ -42,6 +44,7 @@ export function RelatorioConsumoChapas() {
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(50)
   const [loading, setLoading] = useState(false)
+  const [erro, setErro] = useState(false)
 
   const [paginacao, setPaginacao] = useState({
     total: 0,
@@ -121,7 +124,9 @@ export function RelatorioConsumoChapas() {
   function statusTexto(status) {
     const mapa = {
       ABERTO: "Aberto",
+      EM_SEPARACAO: "Em separação",
       EM_PRODUCAO: "Em produção",
+      CONCLUIDO: "Concluído",
       PRONTO_ENTREGA: "Pronto entrega",
       SAIU_ENTREGA: "Saiu entrega",
       ENTREGUE: "Entregue",
@@ -178,12 +183,10 @@ export function RelatorioConsumoChapas() {
           totalPages: 1
         }
       )
+      setErro(false)
     } catch (error) {
       console.log(error)
-      alert(
-        error.response?.data?.error ||
-          "Erro ao carregar relatório de consumo de chapas."
-      )
+      setErro(true)
     } finally {
       setLoading(false)
     }
@@ -191,11 +194,12 @@ export function RelatorioConsumoChapas() {
 
   useEffect(() => {
     carregarAuxiliares()
-    carregarRelatorio(1)
   }, [])
 
   useEffect(() => {
     carregarRelatorio(page)
+    // A paginação reaplica os filtros selecionados.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, limit])
 
   function buscar() {
@@ -275,7 +279,7 @@ export function RelatorioConsumoChapas() {
   }
 
   function exportarCSV() {
-    const cabecalho = [
+    const cabecalhoPedido = [
       "Pedido",
       "Cliente",
       "Vendedor",
@@ -286,7 +290,18 @@ export function RelatorioConsumoChapas() {
       "Chapas"
     ]
 
-    const linhas = dados.map((item) => [
+    const cabecalhoProducao = [
+      "Pedido",
+      "Plano",
+      "Servico",
+      "Operador",
+      "Data Producao",
+      "Cliente",
+      "Vendedor",
+      "Chapas Processadas"
+    ]
+
+    const linhasPedido = dados.map((item) => [
       obterNumeroPedido(item),
       item.cliente?.nome || "",
       item.vendedor?.nome || "",
@@ -296,6 +311,20 @@ export function RelatorioConsumoChapas() {
       statusTexto(item.status),
       item.totalChapas || 0
     ])
+
+    const linhasProducao = dados.map((item) => [
+      obterNumeroPedido(item),
+      item.numeroPlano || "",
+      item.tipoServico?.nome || "",
+      item.operador?.nome || "Sem operador",
+      formatarData(item.dataReferencia),
+      item.cliente?.nome || "",
+      item.vendedor?.nome || "",
+      item.totalChapas || 0
+    ])
+
+    const cabecalho = baseData === "producao" ? cabecalhoProducao : cabecalhoPedido
+    const linhas = baseData === "producao" ? linhasProducao : linhasPedido
 
     const csv = [cabecalho, ...linhas]
       .map((linha) =>
@@ -321,9 +350,10 @@ export function RelatorioConsumoChapas() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="flex flex-col gap-4 rounded-2xl border border-blue-200 bg-blue-50 p-5 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-sm text-gray-600 mt-1">
+          <h1 className="text-xl font-bold text-blue-950">Consumo de chapas</h1>
+          <p className="mt-1 text-sm text-blue-800">
             Relatório gerencial por venda, produção, vendedor, operador, dia e tipo de serviço.
           </p>
         </div>
@@ -332,15 +362,15 @@ export function RelatorioConsumoChapas() {
           type="button"
           onClick={exportarCSV}
           disabled={dados.length === 0}
-          className="bg-green-700 text-white px-5 py-3 rounded-xl flex items-center gap-2 disabled:opacity-50"
+          variant="success"
         >
           <Download size={18} />
-          Exportar CSV
+          Exportar página em CSV
         </Button>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4">
-        <div className="flex flex-wrap gap-2 mb-5">
+      <form onSubmit={(event) => { event.preventDefault(); buscar() }} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4">
+        <div className="flex flex-wrap gap-2 mb-5" aria-label="Filtros rápidos">
           <PeriodoButton label="Hoje" onClick={() => aplicarPeriodo("hoje")} />
           <PeriodoButton label="Semana" onClick={() => aplicarPeriodo("semana")} />
           <PeriodoButton label="Mês" onClick={() => aplicarPeriodo("mes")} />
@@ -350,6 +380,7 @@ export function RelatorioConsumoChapas() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-8 gap-3">
           <Select
+            aria-label="Base do relatório"
             value={baseData}
             onChange={(e) => alterarBaseData(e.target.value)}
           >
@@ -358,18 +389,20 @@ export function RelatorioConsumoChapas() {
           </Select>
 
           <Input
+            aria-label="Data inicial"
             type="date"
             value={dataInicio}
             onChange={(e) => setDataInicio(e.target.value)}
           />
 
           <Input
+            aria-label="Data final"
             type="date"
             value={dataFim}
             onChange={(e) => setDataFim(e.target.value)}
           />
 
-          <Select value={vendedorId} onChange={(e) => setVendedorId(e.target.value)}>
+          <Select aria-label="Vendedor" value={vendedorId} onChange={(e) => setVendedorId(e.target.value)}>
             <option value="">Todos os vendedores</option>
             {vendedores.map((vendedor) => (
               <option key={vendedor.id} value={vendedor.id}>
@@ -378,7 +411,7 @@ export function RelatorioConsumoChapas() {
             ))}
           </Select>
 
-          <Select value={clienteId} onChange={(e) => setClienteId(e.target.value)}>
+          <Select aria-label="Cliente" value={clienteId} onChange={(e) => setClienteId(e.target.value)}>
             <option value="">Todos os clientes</option>
             {clientes.map((cliente) => (
               <option key={cliente.id} value={cliente.id}>
@@ -387,13 +420,14 @@ export function RelatorioConsumoChapas() {
             ))}
           </Select>
 
-          <Select value={tipoPedido} onChange={(e) => setTipoPedido(e.target.value)}>
+          <Select aria-label="Tipo do pedido" value={tipoPedido} onChange={(e) => setTipoPedido(e.target.value)}>
             <option value="">Todos os tipos</option>
             <option value="COM_PRODUCAO">Produção</option>
             <option value="DIRETO_ENTREGA">Chapa Inteira</option>
           </Select>
 
           <Select
+            aria-label="Registros por página"
             value={limit}
             onChange={(e) => {
               setLimit(Number(e.target.value))
@@ -407,10 +441,9 @@ export function RelatorioConsumoChapas() {
 
           <div className="flex gap-2">
             <Button
-              type="button"
-              onClick={buscar}
-              disabled={loading}
-              className="bg-blue-600 text-white px-4 py-3 rounded-xl flex items-center justify-center gap-2 w-full"
+              type="submit"
+              loading={loading}
+              className="w-full"
             >
               <Search size={18} />
               Buscar
@@ -418,23 +451,44 @@ export function RelatorioConsumoChapas() {
 
             <Button
               type="button"
-              variant=""
+              variant="dangerSoft"
               onClick={limparFiltros}
-              className="bg-red-50 text-red-700 border border-red-200 px-4 py-3 rounded-xl flex items-center justify-center"
+              aria-label="Limpar filtros"
+              title="Limpar filtros"
             >
               <Eraser size={18} />
             </Button>
           </div>
         </div>
-      </div>
+      </form>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4">
-        <Card titulo="Total Chapas" valor={resumo?.totalChapas} icon={Package} destaque />
-        <Card titulo="Produção" valor={resumo?.totalProducao} icon={FileSpreadsheet} />
-        <Card titulo="Chapa Inteira" valor={resumo?.totalChapaInteira} icon={Package} />
-        <Card titulo="Pedidos" valor={resumo?.totalPedidos} icon={BarChart3} />
-        <Card titulo="Clientes" valor={resumo?.clientesAtendidos} icon={Users} />
-        <Card titulo="Média/Pedido" valor={resumo?.mediaPorPedido} icon={Trophy} decimal />
+        {baseData === "producao" ? (
+          <>
+            <Card titulo="Chapas processadas" valor={resumo?.totalChapas} icon={Package} destaque />
+            <Card titulo="Serviços concluídos" valor={resumo?.totalServicosConcluidos} icon={Cog} />
+            <Card titulo="Pedidos" valor={resumo?.totalPedidos} icon={BarChart3} />
+            <Card titulo="Clientes" valor={resumo?.clientesAtendidos} icon={Users} />
+            <Card
+              titulo="Média/Serviço"
+              valor={Number(resumo?.totalServicosConcluidos || 0) > 0
+                ? Number(resumo?.totalChapas || 0) / Number(resumo.totalServicosConcluidos)
+                : 0}
+              icon={Trophy}
+              decimal
+            />
+            <Card titulo="Metros" valor={resumo?.totalMetrosEncabecamento} icon={Ruler} decimal />
+          </>
+        ) : (
+          <>
+            <Card titulo="Total Chapas" valor={resumo?.totalChapas} icon={Package} destaque />
+            <Card titulo="Produção" valor={resumo?.totalProducao} icon={FileSpreadsheet} />
+            <Card titulo="Chapa Inteira" valor={resumo?.totalChapaInteira} icon={Package} />
+            <Card titulo="Pedidos" valor={resumo?.totalPedidos} icon={BarChart3} />
+            <Card titulo="Clientes" valor={resumo?.clientesAtendidos} icon={Users} />
+            <Card titulo="Média/Pedido com chapas" valor={resumo?.mediaPorPedido} icon={Trophy} decimal />
+          </>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -639,11 +693,19 @@ export function RelatorioConsumoChapas() {
             <p className="text-sm text-gray-500">
               {loading
                 ? "Carregando..."
-                : `${numero(paginacao.total)} registro(s) encontrado(s).`}
+                : `${numero(paginacao.total)} ${baseData === "producao" ? "serviço(s) concluído(s)" : "pedido(s)"} encontrado(s).`}
             </p>
           </div>
         </div>
 
+        {loading ? (
+          <LoadingState mensagem="Carregando o consumo de chapas..." />
+        ) : erro ? (
+          <ErrorState mensagem="Não foi possível carregar o relatório de consumo de chapas." onRetry={() => carregarRelatorio(page)} />
+        ) : dados.length === 0 ? (
+          <EmptyState titulo="Nenhum consumo encontrado" descricao="Revise o período e os filtros selecionados." />
+        ) : (
+          <>
         <div className="overflow-x-auto">
           <Table>
             <thead>
@@ -651,11 +713,22 @@ export function RelatorioConsumoChapas() {
                 <Th>Pedido</Th>
                 <Th>Cliente</Th>
                 <Th>Vendedor</Th>
-                <Th>Tipo</Th>
-                <Th>Data Pedido</Th>
-                <Th>Data Entrega</Th>
-                <Th>Status</Th>
-                <Th>Chapas</Th>
+                {baseData === "producao" ? (
+                  <>
+                    <Th>Plano</Th>
+                    <Th>Serviço</Th>
+                    <Th>Operador</Th>
+                    <Th>Data Produção</Th>
+                  </>
+                ) : (
+                  <>
+                    <Th>Tipo</Th>
+                    <Th>Data Pedido</Th>
+                    <Th>Data Entrega</Th>
+                    <Th>Status</Th>
+                  </>
+                )}
+                <Th>{baseData === "producao" ? "Chapas processadas" : "Chapas"}</Th>
               </tr>
             </thead>
 
@@ -663,28 +736,33 @@ export function RelatorioConsumoChapas() {
               {dados.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50">
                   <Td className="font-bold text-blue-700">
-                    {obterNumeroPedido(item)}
+                    <Link to={`/pedidos/${item.pedidoId || item.id}`} className="hover:underline">
+                      {obterNumeroPedido(item)}
+                    </Link>
                   </Td>
 
                   <Td>{item.cliente?.nome || "-"}</Td>
                   <Td>{item.vendedor?.nome || "-"}</Td>
 
-                  <Td>
-                    <TipoBadge
-                      tipo={item.tipoPedido}
-                      texto={tipoPedidoTexto(item.tipoPedido)}
-                    />
-                  </Td>
-
-                  <Td>{formatarData(item.dataPedido)}</Td>
-                  <Td>{formatarData(item.dataEntrega)}</Td>
-
-                  <Td>
-                    <StatusBadge
-                      status={item.status}
-                      texto={statusTexto(item.status)}
-                    />
-                  </Td>
+                  {baseData === "producao" ? (
+                    <>
+                      <Td>{item.numeroPlano || "-"}</Td>
+                      <Td>{item.tipoServico?.nome || "-"}</Td>
+                      <Td>{item.operador?.nome || "Sem operador"}</Td>
+                      <Td>{formatarData(item.dataReferencia)}</Td>
+                    </>
+                  ) : (
+                    <>
+                      <Td>
+                        <TipoBadge tipo={item.tipoPedido} texto={tipoPedidoTexto(item.tipoPedido)} />
+                      </Td>
+                      <Td>{formatarData(item.dataPedido)}</Td>
+                      <Td>{formatarData(item.dataEntrega)}</Td>
+                      <Td>
+                        <StatusBadge status={item.status} texto={statusTexto(item.status)} />
+                      </Td>
+                    </>
+                  )}
 
                   <Td className="font-bold text-gray-900">
                     {numero(item.totalChapas)}
@@ -692,15 +770,6 @@ export function RelatorioConsumoChapas() {
                 </tr>
               ))}
 
-              {dados.length === 0 && (
-                <tr>
-                  <Td colSpan="8">
-                    {loading
-                      ? "Carregando relatório..."
-                      : "Nenhum consumo encontrado para os filtros selecionados."}
-                  </Td>
-                </tr>
-              )}
             </tbody>
           </Table>
         </div>
@@ -715,8 +784,8 @@ export function RelatorioConsumoChapas() {
             <Button
               type="button"
               disabled={page <= 1 || loading}
-              onClick={() => setPage(page - 1)}
-              className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2 disabled:opacity-50"
+              onClick={() => setPage((paginaAtual) => paginaAtual - 1)}
+              variant="secondary"
             >
               <ChevronLeft size={16} />
               Anterior
@@ -725,14 +794,16 @@ export function RelatorioConsumoChapas() {
             <Button
               type="button"
               disabled={page >= paginacao.totalPages || loading}
-              onClick={() => setPage(page + 1)}
-              className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2 disabled:opacity-50"
+              onClick={() => setPage((paginaAtual) => paginaAtual + 1)}
+              variant="secondary"
             >
               Próxima
               <ChevronRight size={16} />
             </Button>
           </div>
         </div>
+          </>
+        )}
       </div>
     </div>
   )
@@ -907,7 +978,9 @@ function TipoBadge({ tipo, texto }) {
 function StatusBadge({ status, texto }) {
   const classes = {
     ABERTO: "bg-gray-50 text-gray-700 border-gray-200",
+    EM_SEPARACAO: "bg-orange-50 text-orange-700 border-orange-200",
     EM_PRODUCAO: "bg-yellow-50 text-yellow-700 border-yellow-200",
+    CONCLUIDO: "bg-cyan-50 text-cyan-700 border-cyan-200",
     PRONTO_ENTREGA: "bg-blue-50 text-blue-700 border-blue-200",
     SAIU_ENTREGA: "bg-purple-50 text-purple-700 border-purple-200",
     ENTREGUE: "bg-green-50 text-green-700 border-green-200",

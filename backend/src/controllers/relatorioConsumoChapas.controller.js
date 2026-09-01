@@ -142,6 +142,10 @@ function montarResumoGeral(dados, porTipoServico) {
     (item) => Number(item.totalChapas || 0) > 0
   )
 
+  const totalPedidos = new Set(
+    dados.map((item) => item.pedidoId || item.id).filter(Boolean)
+  ).size
+
   const mediaPorPedido =
     pedidosComChapas.length > 0
       ? totalChapas / pedidosComChapas.length
@@ -161,7 +165,7 @@ function montarResumoGeral(dados, porTipoServico) {
     totalChapas,
     totalProducao,
     totalChapaInteira,
-    totalPedidos: dados.length,
+    totalPedidos,
     clientesAtendidos,
     mediaPorPedido,
     totalServicosConcluidos,
@@ -271,7 +275,7 @@ async function gerarPorDataPedido({
       total: totalRegistros,
       page: paginaAtual,
       limit: limite,
-      totalPages: Math.ceil(totalRegistros / limite)
+      totalPages: Math.max(1, Math.ceil(totalRegistros / limite))
     }
   }
 }
@@ -402,7 +406,7 @@ async function gerarPorDataProducao({
       total: totalRegistros,
       page: paginaAtual,
       limit: limite,
-      totalPages: Math.ceil(totalRegistros / limite)
+      totalPages: Math.max(1, Math.ceil(totalRegistros / limite))
     }
   }
 }
