@@ -228,7 +228,9 @@ export function RelatorioProgramacaoChapas() {
       EM_SEPARACAO: "Em separação",
       EM_PRODUCAO: "Em produção",
       CONCLUIDO: "Produção concluída",
-      PRONTO_ENTREGA: "Pronto para expedição"
+      PRONTO_ENTREGA: "Pronto para expedição",
+      SAIU_ENTREGA: "Saiu para entrega",
+      ENTREGUE: "Entregue"
     }
 
     return mapa[status] || status || "-"
@@ -240,7 +242,9 @@ export function RelatorioProgramacaoChapas() {
       EM_SEPARACAO: "bg-orange-100 text-orange-700 border-orange-300",
       EM_PRODUCAO: "bg-yellow-100 text-yellow-800 border-yellow-300",
       CONCLUIDO: "bg-green-100 text-green-700 border-green-300",
-      PRONTO_ENTREGA: "bg-blue-100 text-blue-700 border-blue-300"
+      PRONTO_ENTREGA: "bg-blue-100 text-blue-700 border-blue-300",
+      SAIU_ENTREGA: "bg-purple-100 text-purple-700 border-purple-300",
+      ENTREGUE: "bg-emerald-100 text-emerald-700 border-emerald-300"
     }
 
     return mapa[status] || "bg-gray-100 text-gray-700 border-gray-300"
@@ -353,6 +357,9 @@ export function RelatorioProgramacaoChapas() {
 
         <p className="mt-3 text-xs text-gray-500">
           O período sempre começa em hoje. A data informada serve apenas como limite final.
+        </p>
+        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+          Pedidos concluídos continuam consumindo a capacidade programada do dia; somente cancelamentos liberam o saldo.
         </p>
       </form>
 
