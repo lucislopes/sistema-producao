@@ -4,13 +4,15 @@ import { api } from "../services/api"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
 import { Table, Th, Td } from "../components/ui/Table"
 import { ErrorState, LoadingState } from "../components/ui/FeedbackState"
+import { Button } from "../components/ui/Button"
 import {
   Bell,
   TriangleAlert,
   UserX,
   Package,
   PackageCheck,
-  Eye
+  Eye,
+  RefreshCw
 } from "lucide-react"
 
 function obterNumeroPedido(pedido) {
@@ -27,16 +29,21 @@ function obterNumeroPedido(pedido) {
 export function Alertas() {
   const [alertas, setAlertas] = useState(null)
   const [erroCarregamento, setErroCarregamento] = useState("")
+  const [atualizando, setAtualizando] = useState(false)
+  const [atualizadoEm, setAtualizadoEm] = useState(null)
 
   async function carregarAlertas() {
     setErroCarregamento("")
+    setAtualizando(true)
     try {
       const response = await api.get("/alertas")
       setAlertas(response.data)
+      setAtualizadoEm(new Date())
     } catch (error) {
       console.log(error)
       setErroCarregamento("Não foi possível carregar os alertas operacionais.")
-      alert("Erro ao carregar alertas")
+    } finally {
+      setAtualizando(false)
     }
   }
 
@@ -59,6 +66,15 @@ export function Alertas() {
     return `${dia}/${mes}/${ano}`
   }
 
+  function calcularDiasAtraso(data) {
+    if (!data) return 0
+    const hoje = new Date()
+    const hojeUtc = Date.UTC(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
+    const dataTexto = String(data).substring(0, 10)
+    const [ano, mes, dia] = dataTexto.split("-").map(Number)
+    return Math.max(0, Math.floor((hojeUtc - Date.UTC(ano, mes - 1, dia)) / 86400000))
+  }
+
   if (erroCarregamento && !alertas) return <ErrorState descricao={erroCarregamento} onRetry={carregarAlertas} />
   if (!alertas) return <LoadingState mensagem="Carregando alertas operacionais..." />
 
@@ -70,19 +86,35 @@ export function Alertas() {
 
     return (
       
-      <div>
-         <p className="text-sm text-gray-500 mb-4">
-          Monitoramento automático atualizado a cada 30 segundos.
-        </p> 
+      <div className="space-y-5">
+        <div className="flex flex-col gap-4 rounded-2xl border border-blue-200 bg-blue-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-blue-950">Central de alertas</h1>
+            <p className="mt-1 text-sm text-blue-800">
+              Monitoramento automático a cada 30 segundos.
+              {atualizadoEm && ` Última atualização: ${atualizadoEm.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}.`}
+            </p>
+          </div>
+          <Button type="button" variant="secondary" onClick={carregarAlertas} loading={atualizando}>
+            <RefreshCw size={17} />
+            Atualizar agora
+          </Button>
+        </div>
+
+        {erroCarregamento && alertas && (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">
+            {erroCarregamento} Os dados anteriores continuam visíveis.
+          </div>
+        )}
         {totalAlertas === 0 && (
           <div className="bg-green-50 border border-green-300 text-green-800 rounded-xl p-4 mb-6">
             ✅ Tudo certo. Nenhum alerta crítico no momento.
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-8">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <ResumoCard
-            titulo="Total Alertas"
+            titulo="Ocorrências"
             valor={totalAlertas}
             tipo={totalAlertas > 0 ? "perigo" : "normal"}
             icon={Bell}
@@ -93,6 +125,7 @@ export function Alertas() {
             valor={alertas.pedidosAtrasados.length}
             tipo={alertas.pedidosAtrasados.length > 0 ? "perigo" : "normal"}
             icon={TriangleAlert}
+            href="#pedidos-atrasados"
           />
 
           <ResumoCard
@@ -100,6 +133,7 @@ export function Alertas() {
             valor={alertas.servicosSemOperador.length}
             tipo={alertas.servicosSemOperador.length > 0 ? "info" : "normal"}
             icon={UserX}
+            href="#servicos-sem-operador"
           />
 
           <ResumoCard
@@ -107,6 +141,7 @@ export function Alertas() {
             valor={alertas.pedidosEmSeparacao.length}
             tipo={alertas.pedidosEmSeparacao.length > 0 ? "alerta" : "normal"}
             icon={Package}
+            href="#pedidos-separacao"
           />
 
           <ResumoCard
@@ -114,6 +149,7 @@ export function Alertas() {
             valor={alertas.pedidosProntoEntrega.length}
             tipo={alertas.pedidosProntoEntrega.length > 0 ? "sucesso" : "normal"}
             icon={PackageCheck}
+            href="#pedidos-prontos"
           />
         </div>
 
@@ -122,12 +158,17 @@ export function Alertas() {
             titulo="Pedidos Atrasados"
             pedidos={alertas.pedidosAtrasados}
             formatarData={formatarData}
+            calcularDiasAtraso={calcularDiasAtraso}
+            id="pedidos-atrasados"
+            exibirAtraso
           />
         )}
         {alertas.servicosSemOperador.length > 0 && (
           <SecaoServicos
             titulo="Serviços Sem Operador"
             servicos={alertas.servicosSemOperador}
+            formatarData={formatarData}
+            id="servicos-sem-operador"
           />
         )}
         {alertas.pedidosEmSeparacao.length > 0 && (
@@ -135,6 +176,7 @@ export function Alertas() {
             titulo="Pedidos em Separação para Produção"
             pedidos={alertas.pedidosEmSeparacao}
             formatarData={formatarData}
+            id="pedidos-separacao"
           />
         )}
         {alertas.pedidosProntoEntrega.length > 0 && (
@@ -142,13 +184,14 @@ export function Alertas() {
             titulo="Pedidos Prontos para Entrega"
             pedidos={alertas.pedidosProntoEntrega}
             formatarData={formatarData}
+            id="pedidos-prontos"
           />
         )}
       </div>
     )
   }
 
-  function ResumoCard({ titulo, valor, tipo = "normal", icon: Icon }) {
+  function ResumoCard({ titulo, valor, tipo = "normal", icon: Icon, href }) {
     const classes = {
       normal: {
         card: "bg-white border-gray-200",
@@ -174,8 +217,10 @@ export function Alertas() {
 
     const estilo = classes[tipo] || classes.normal
 
+    const Component = href ? "a" : "div"
+
     return (
-      <div className={`rounded-xl shadow-sm border p-4 ${estilo.card}`}>
+      <Component href={href} className={`rounded-xl shadow-sm border p-4 ${estilo.card} ${href ? "transition hover:-translate-y-0.5 hover:shadow-md" : ""}`}>
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm text-gray-600">{titulo}</p>
@@ -190,15 +235,15 @@ export function Alertas() {
             </div>
           )}
         </div>
-      </div>
+      </Component>
     )
   }
 
-function SecaoPedidos({ titulo, pedidos, formatarData }) {
+function SecaoPedidos({ titulo, pedidos, formatarData, calcularDiasAtraso, exibirAtraso = false, id }) {
   return (
-    <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
+    <section id={id} className="scroll-mt-24 bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
       <h2 className="text-xl font-bold mb-4">
-        {titulo}
+        {titulo} <span className="text-sm font-medium text-gray-500">({pedidos.length})</span>
       </h2>
 
       <Table>
@@ -207,6 +252,7 @@ function SecaoPedidos({ titulo, pedidos, formatarData }) {
             <Th>Pedido</Th>
             <Th>Cliente</Th>
             <Th>Entrega</Th>
+            {exibirAtraso && <Th>Atraso</Th>}
             <Th>Rota</Th>
             <Th>Status</Th>
             <Th>Ação</Th>
@@ -228,6 +274,12 @@ function SecaoPedidos({ titulo, pedidos, formatarData }) {
                 {formatarData(pedido.dataEntrega)}
               </Td>
 
+              {exibirAtraso && (
+                <Td className="font-semibold text-red-700">
+                  {calcularDiasAtraso(pedido.dataEntrega)} dia(s)
+                </Td>
+              )}
+
               <Td>
                 {pedido.rota?.nome || "-"}
               </Td>
@@ -239,7 +291,8 @@ function SecaoPedidos({ titulo, pedidos, formatarData }) {
               <Td>
                 <Link
                   to={`/pedidos/${pedido.id}`}
-                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm"
+                  aria-label={`Ver pedido ${obterNumeroPedido(pedido)}`}
+                  className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-blue-600 px-3 py-1 text-sm text-white transition hover:bg-blue-700"
                 >
                   <Eye size={15} />
                   Ver
@@ -250,22 +303,22 @@ function SecaoPedidos({ titulo, pedidos, formatarData }) {
 
           {pedidos.length === 0 && (
             <tr>
-              <Td colSpan="6">
+              <Td colSpan={exibirAtraso ? "7" : "6"}>
                 Nenhum item encontrado.
               </Td>
             </tr>
           )}
         </tbody>
       </Table>
-    </div>
+    </section>
   )
 }
 
-function SecaoServicos({ titulo, servicos }) {
+function SecaoServicos({ titulo, servicos, formatarData, id }) {
   return (
-    <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
+    <section id={id} className="scroll-mt-24 bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
       <h2 className="text-xl font-bold mb-4">
-        {titulo}
+        {titulo} <span className="text-sm font-medium text-gray-500">({servicos.length})</span>
       </h2>
 
       <Table>
@@ -275,7 +328,7 @@ function SecaoServicos({ titulo, servicos }) {
             <Th>Cliente</Th>
             <Th>Plano</Th>
             <Th>Serviço</Th>
-            <Th>Operador</Th>
+            <Th>Entrega</Th>
             <Th>Status</Th>
             <Th>Ação</Th>
           </tr>
@@ -301,7 +354,7 @@ function SecaoServicos({ titulo, servicos }) {
               </Td>
 
               <Td>
-                {servico.operador?.nome || "-"}
+                {formatarData(servico.plano?.pedido?.dataEntrega)}
               </Td>
 
               <Td>
@@ -311,7 +364,8 @@ function SecaoServicos({ titulo, servicos }) {
               <Td>
                 <Link
                   to={`/pedidos/${servico.plano?.pedido?.id}`}
-                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm"
+                  aria-label={`Ver pedido ${obterNumeroPedido(servico.plano?.pedido)}`}
+                  className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-blue-600 px-3 py-1 text-sm text-white transition hover:bg-blue-700"
                 >
                   <Eye size={15} />
                   Ver
@@ -329,6 +383,6 @@ function SecaoServicos({ titulo, servicos }) {
           )}
         </tbody>
       </Table>
-    </div>
+    </section>
   )
 }
