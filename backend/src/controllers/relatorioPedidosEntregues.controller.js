@@ -1,11 +1,29 @@
 import { prisma } from "../lib/prisma.js"
 
+const filtroHistoricoEntrega = {
+  tipo: "EXPEDICAO_ATUALIZADA",
+  descricao: { contains: "para ENTREGUE", mode: "insensitive" }
+}
+
+function somenteData(data) {
+  if (!data) return null
+  return Date.UTC(data.getUTCFullYear(), data.getUTCMonth(), data.getUTCDate())
+}
+
+function calcularSituacaoPrazo(dataPrevista, dataRealizada) {
+  if (!dataRealizada) return "Sem registro de entrega"
+  if (!dataPrevista) return "Sem data prevista"
+  return somenteData(dataRealizada) > somenteData(dataPrevista)
+    ? "Entregue com atraso"
+    : "Entregue no prazo"
+}
+
 export async function relatorioPedidosEntregues(req, res) {
   try {
     const {
       dataInicio,
       dataFim,
-      baseData = "entrega",
+      baseData = "realizada",
       vendedorId,
       busca,
       page = 1,
@@ -36,20 +54,22 @@ export async function relatorioPedidosEntregues(req, res) {
       )
     }
 
-    const campoData =
-      baseData === "pedido"
-        ? "dataPedido"
-        : "dataEntrega"
+    const campoData = baseData === "pedido" ? "dataPedido" : "dataEntrega"
 
     if (dataInicio || dataFim) {
-      where[campoData] = {}
+      const intervalo = {}
+      if (dataInicio) intervalo.gte = criarDataLocal(dataInicio, false)
+      if (dataFim) intervalo.lte = criarDataLocal(dataFim, true)
 
-      if (dataInicio) {
-        where[campoData].gte = criarDataLocal(dataInicio, false)
-      }
-
-      if (dataFim) {
-        where[campoData].lte = criarDataLocal(dataFim, true)
+      if (baseData === "realizada") {
+        where.historicos = {
+          some: {
+            ...filtroHistoricoEntrega,
+            createdAt: intervalo
+          }
+        }
+      } else {
+        where[campoData] = intervalo
       }
     }
 
@@ -102,14 +122,22 @@ export async function relatorioPedidosEntregues(req, res) {
             { numeroPedido: "desc" }
           ]
 
-    const [pedidos, total] = await Promise.all([
+    const incluirRelacionamentos = {
+      cliente: true,
+      vendedor: true,
+      rota: true,
+      historicos: {
+        where: filtroHistoricoEntrega,
+        select: { createdAt: true },
+        orderBy: { createdAt: "asc" },
+        take: 1
+      }
+    }
+
+    const [pedidos, total, pedidosResumo] = await Promise.all([
       prisma.pedido.findMany({
         where,
-        include: {
-          cliente: true,
-          vendedor: true,
-          rota: true
-        },
+        include: incluirRelacionamentos,
         orderBy,
         skip,
         take: limite
@@ -117,45 +145,55 @@ export async function relatorioPedidosEntregues(req, res) {
 
       prisma.pedido.count({
         where
+      }),
+
+      prisma.pedido.findMany({
+        where,
+        select: {
+          dataEntrega: true,
+          valorTotal: true,
+          historicos: {
+            where: filtroHistoricoEntrega,
+            select: { createdAt: true },
+            orderBy: { createdAt: "asc" },
+            take: 1
+          }
+        }
       })
     ])
 
-    const pedidosComPrazo = pedidos.map((pedido) => {
-      let situacaoPrazo = "Entregue no prazo"
-
-      if (!pedido.dataEntrega) {
-        situacaoPrazo = "Sem data"
-      } else {
-        const hoje = new Date()
-        hoje.setHours(0, 0, 0, 0)
-
-        const dataEntrega = new Date(
-          pedido.dataEntrega.getFullYear(),
-          pedido.dataEntrega.getMonth(),
-          pedido.dataEntrega.getDate()
-        )
-
-        situacaoPrazo =
-          dataEntrega < hoje
-            ? "Entregue com atraso"
-            : "Entregue no prazo"
-      }
-
+    const pedidosComPrazo = pedidos.map(({ historicos, ...pedido }) => {
+      const dataEntregaReal = historicos[0]?.createdAt || null
       return {
         ...pedido,
-        situacaoPrazo
+        dataEntregaReal,
+        situacaoPrazo: calcularSituacaoPrazo(pedido.dataEntrega, dataEntregaReal)
       }
     })
+
+    const resumo = pedidosResumo.reduce((acc, pedido) => {
+      const dataEntregaReal = pedido.historicos[0]?.createdAt || null
+      const situacao = calcularSituacaoPrazo(pedido.dataEntrega, dataEntregaReal)
+      if (situacao === "Entregue no prazo") acc.noPrazo += 1
+      if (situacao === "Entregue com atraso") acc.comAtraso += 1
+      if (!dataEntregaReal) acc.semRegistro += 1
+      if (!["Entregue no prazo", "Entregue com atraso"].includes(situacao)) {
+        acc.semClassificacao += 1
+      }
+      acc.valorTotal += Number(pedido.valorTotal || 0)
+      return acc
+    }, { total, noPrazo: 0, comAtraso: 0, semRegistro: 0, semClassificacao: 0, valorTotal: 0 })
 
     return res.json({
       baseData,
       campoData,
       dados: pedidosComPrazo,
+      resumo,
       paginacao: {
         total,
         page: paginaAtual,
         limit: limite,
-        totalPages: Math.ceil(total / limite)
+        totalPages: Math.max(1, Math.ceil(total / limite))
       }
     })
   } catch (error) {

@@ -8,6 +8,7 @@ import { Select } from "../components/ui/Select"
 import { Table, Th, Td } from "../components/ui/Table"
 import { BadgePrazo } from "../components/ui/BadgePrazo"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
+import { EmptyState, ErrorState, LoadingState } from "../components/ui/FeedbackState"
 
 import {
   Download,
@@ -15,10 +16,10 @@ import {
   CalendarDays,
   Search,
   Eraser,
-  ClipboardList,
   PackageCheck,
   DollarSign,
-  UserCheck
+  UserCheck,
+  CircleHelp
 } from "lucide-react"
 
 export function RelatorioPedidosEntregues() {
@@ -28,12 +29,22 @@ export function RelatorioPedidosEntregues() {
 
   const [dataInicio, setDataInicio] = useState("")
   const [dataFim, setDataFim] = useState("")
-  const [baseData, setBaseData] = useState("entrega")
+  const [baseData, setBaseData] = useState("realizada")
   const [vendedorId, setVendedorId] = useState("")
   const [busca, setBusca] = useState("")
 
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(50)
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState(false)
+  const [resumo, setResumo] = useState({
+    total: 0,
+    noPrazo: 0,
+    comAtraso: 0,
+    semRegistro: 0,
+    semClassificacao: 0,
+    valorTotal: 0
+  })
 
   const [paginacao, setPaginacao] = useState({
     total: 0,
@@ -104,6 +115,7 @@ export function RelatorioPedidosEntregues() {
   }
 
   async function carregarRelatorio(pagina = page, filtros = {}) {
+    setCarregando(true)
     try {
       const params = {
         dataInicio,
@@ -122,30 +134,37 @@ export function RelatorioPedidosEntregues() {
 
       setPedidos(relatorioResponse.data.dados)
       setPaginacao(relatorioResponse.data.paginacao)
-
-      if (podeExportarImprimir) {
-        const empresaResponse = await api.get("/configuracao-empresa")
-        setEmpresa(empresaResponse.data)
-      } else {
-        setEmpresa(null)
-      }
+      setResumo(relatorioResponse.data.resumo || {})
+      setErro(false)
     } catch (error) {
       console.log(error)
+      setErro(true)
+    } finally {
+      setCarregando(false)
+    }
+  }
 
-      alert(
-        error.response?.data?.error ||
-        "Não foi possível carregar o relatório de pedidos entregues no momento."
-      )
+  async function carregarEmpresa() {
+    if (!podeExportarImprimir) return setEmpresa(null)
+    try {
+      const response = await api.get("/configuracao-empresa")
+      setEmpresa(response.data)
+    } catch (error) {
+      console.log(error)
     }
   }
 
   useEffect(() => {
     carregarVendedores()
-    carregarRelatorio(1)
+    carregarEmpresa()
+    // Dados auxiliares são carregados uma única vez.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
     carregarRelatorio(page)
+    // A paginação reaplica os filtros selecionados.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, limit])
 
   function buscar() {
@@ -156,7 +175,7 @@ export function RelatorioPedidosEntregues() {
   function limparFiltros() {
     setDataInicio("")
     setDataFim("")
-    setBaseData("entrega")
+    setBaseData("realizada")
     setVendedorId("")
     setBusca("")
     setPage(1)
@@ -164,7 +183,7 @@ export function RelatorioPedidosEntregues() {
     carregarRelatorio(1, {
       dataInicio: "",
       dataFim: "",
-      baseData: "entrega",
+      baseData: "realizada",
       vendedorId: "",
       busca: ""
     })
@@ -243,7 +262,8 @@ export function RelatorioPedidosEntregues() {
       "Cliente",
       "Vendedor",
       "Data Pedido",
-      "Data Entrega",
+      "Previsao Entrega",
+      "Entrega Realizada",
       "Endereco",
       "Status",
       "Prazo",
@@ -256,6 +276,7 @@ export function RelatorioPedidosEntregues() {
       item.vendedor?.nome || "",
       formatarData(item.dataPedido),
       formatarData(item.dataEntrega),
+      formatarData(item.dataEntregaReal),
       item.enderecoEntrega || item.cliente?.endereco || "",
       item.status || "",
       item.situacaoPrazo || "",
@@ -284,39 +305,36 @@ export function RelatorioPedidosEntregues() {
     URL.revokeObjectURL(url)
   }
 
-  const totalPedidos = paginacao.total
-
-  const entreguesNoPrazo = pedidos.filter(
-    (p) => p.situacaoPrazo === "Entregue no prazo"
-  ).length
-
-  const entreguesComAtraso = pedidos.filter(
-    (p) => p.situacaoPrazo === "Entregue com atraso"
-  ).length
-
-  const valorTotalPedidos = pedidos.reduce(
-    (acc, item) => acc + Number(item.valorTotal || 0),
-    0
-  )
+  const totalPedidos = resumo.total ?? paginacao.total
+  const entreguesNoPrazo = resumo.noPrazo || 0
+  const entreguesComAtraso = resumo.comAtraso || 0
+  const valorTotalPedidos = resumo.valorTotal || 0
 
   return (
-    <div>
+    <div className="space-y-5">
+      <div className="rounded-2xl border border-green-200 bg-green-50 p-5 no-print">
+        <h1 className="text-xl font-bold text-green-950">Pedidos entregues</h1>
+        <p className="mt-1 text-sm text-green-800">Consulte o histórico de entregas realizadas e compare a data efetiva com a previsão.</p>
+      </div>
+
       {podeExportarImprimir && (
-        <div className="flex justify-between items-center mb-6 no-print">
+        <div className="flex flex-wrap justify-end gap-2 no-print">
           <div className="flex gap-2">
             <Button
               type="button"
               onClick={exportarCSV}
-              className="bg-green-700 text-white px-6 py-3 rounded-lg flex items-center gap-2"
+              variant="success"
+              disabled={!pedidos.length}
             >
               <Download size={18} />
-              Exportar CSV
+              Exportar página em CSV
             </Button>
 
             <Button
               type="button"
               onClick={imprimir}
-              className="bg-gray-800 text-white px-6 py-3 rounded-lg flex items-center gap-2"
+              variant="dark"
+              disabled={!pedidos.length}
             >
               <Printer size={18} />
               Imprimir
@@ -331,7 +349,7 @@ export function RelatorioPedidosEntregues() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-6 no-print">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 no-print">
         <div className="bg-white border border-gray-300 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
@@ -371,6 +389,16 @@ export function RelatorioPedidosEntregues() {
           </div>
         </div>
 
+        <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-amber-700">Sem classificação</p>
+              <strong className="text-3xl font-bold text-amber-800">{resumo.semClassificacao || 0}</strong>
+            </div>
+            <CircleHelp size={30} className="text-amber-500 shrink-0" />
+          </div>
+        </div>
+
         {podeVerValores && (
           <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-4 shadow-sm">
             <div className="flex items-center justify-between">
@@ -387,7 +415,7 @@ export function RelatorioPedidosEntregues() {
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-4 no-print">
+      <div className="flex flex-wrap gap-2 no-print" aria-label="Filtros rápidos">
         <Button
           type="button"
           onClick={filtroHoje}
@@ -416,23 +444,27 @@ export function RelatorioPedidosEntregues() {
         </Button>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-md mb-8 no-print">
+      <form onSubmit={(event) => { event.preventDefault(); buscar() }} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm no-print">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Select
+            aria-label="Base da data"
             value={baseData}
             onChange={(e) => setBaseData(e.target.value)}
           >
-            <option value="entrega">Filtrar por Data de Entrega</option>
+            <option value="realizada">Filtrar pela Entrega Realizada</option>
+            <option value="entrega">Filtrar pela Previsão de Entrega</option>
             <option value="pedido">Filtrar por Data do Pedido</option>
           </Select>
 
           <Input
+            aria-label="Data inicial"
             type="date"
             value={dataInicio}
             onChange={(e) => setDataInicio(e.target.value)}
           />
 
           <Input
+            aria-label="Data final"
             type="date"
             value={dataFim}
             onChange={(e) => setDataFim(e.target.value)}
@@ -446,6 +478,7 @@ export function RelatorioPedidosEntregues() {
           />
 
           <Select
+            aria-label="Vendedor"
             value={vendedorId}
             onChange={(e) => setVendedorId(e.target.value)}
           >
@@ -459,6 +492,7 @@ export function RelatorioPedidosEntregues() {
           </Select>
 
           <Select
+            aria-label="Registros por página"
             value={limit}
             onChange={(e) => {
               setLimit(Number(e.target.value))
@@ -472,26 +506,24 @@ export function RelatorioPedidosEntregues() {
 
           <div className="flex gap-4">
             <Button
-              type="button"
-              onClick={buscar}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg flex items-center gap-2"
+              type="submit"
+              loading={carregando}
             >
               <Search size={18} />
               Buscar
             </Button>
 
             <Button
-              variant=""
+              variant="dangerSoft"
               type="button"
               onClick={limparFiltros}
-              className="bg-red-50 text-red-700 border border-red-200 px-6 py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-red-100"
             >
               <Eraser size={18} />
               Limpar
             </Button>
           </div>
         </div>
-      </div>
+      </form>
 
       <div className="bg-white rounded-2xl shadow-md p-6 print-area">
         <CabecalhoImpressao
@@ -502,7 +534,9 @@ export function RelatorioPedidosEntregues() {
           extra={
             baseData === "pedido"
               ? "Base da data: Data do Pedido"
-              : "Base da data: Data de Entrega"
+              : baseData === "entrega"
+                ? "Base da data: Previsão de Entrega"
+                : "Base da data: Entrega Realizada"
           }
         />
 
@@ -516,6 +550,14 @@ export function RelatorioPedidosEntregues() {
           </p>
         </div>
 
+        {carregando ? (
+          <LoadingState mensagem="Carregando pedidos entregues..." />
+        ) : erro ? (
+          <ErrorState mensagem="Não foi possível carregar os pedidos entregues." onRetry={() => carregarRelatorio(page)} />
+        ) : pedidos.length === 0 ? (
+          <EmptyState titulo="Nenhum pedido entregue encontrado" descricao="Revise o período ou os demais filtros aplicados." />
+        ) : (
+          <>
         <Table>
           <thead>
             <tr>
@@ -523,7 +565,8 @@ export function RelatorioPedidosEntregues() {
               <Th>Cliente</Th>
               <Th>Vendedor</Th>
               <Th>Data Pedido</Th>
-              <Th>Data Entrega</Th>
+              <Th>Previsão</Th>
+              <Th>Entregue em</Th>
               <Th>Endereço</Th>
               <Th>Status</Th>
               <Th>Prazo</Th>
@@ -550,6 +593,7 @@ export function RelatorioPedidosEntregues() {
                 <Td>{item.vendedor?.nome}</Td>
                 <Td>{formatarData(item.dataPedido)}</Td>
                 <Td>{formatarData(item.dataEntrega)}</Td>
+                <Td>{formatarData(item.dataEntregaReal)}</Td>
 
                 <Td
                   className="max-w-[250px] truncate"
@@ -574,17 +618,10 @@ export function RelatorioPedidosEntregues() {
               </tr>
             ))}
 
-            {pedidos.length === 0 && (
-              <tr>
-                <Td className="p-4 border" colSpan={podeVerValores ? "9" : "8"}>
-                  Nenhum pedido entregue encontrado.
-                </Td>
-              </tr>
-            )}
           </tbody>
         </Table>
 
-        <div className="flex justify-between items-center mt-4 no-print">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 no-print">
           <p className="text-sm text-gray-600">
             Página {paginacao.page} de {paginacao.totalPages}
           </p>
@@ -593,7 +630,7 @@ export function RelatorioPedidosEntregues() {
             <Button
               variant="secondary"
               disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
+              onClick={() => setPage((paginaAtual) => paginaAtual - 1)}
             >
               Anterior
             </Button>
@@ -601,12 +638,14 @@ export function RelatorioPedidosEntregues() {
             <Button
               variant="secondary"
               disabled={page >= paginacao.totalPages}
-              onClick={() => setPage(page + 1)}
+              onClick={() => setPage((paginaAtual) => paginaAtual + 1)}
             >
               Próxima
             </Button>
           </div>
         </div>
+          </>
+        )}
       </div>
     </div>
   )
