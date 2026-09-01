@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from "react"
+import { Link } from "react-router-dom"
 import { api } from "../services/api"
 import { CabecalhoImpressao } from "../components/CabecalhoImpressao"
 import { Input } from "../components/ui/Input"
 import { Button } from "../components/ui/Button"
 import { Table, Td, Th } from "../components/ui/Table"
+import { BadgeStatus } from "../components/ui/BadgeStatus"
+import { EmptyState, ErrorState, LoadingState } from "../components/ui/FeedbackState"
 import {
   Printer,
   Search,
@@ -12,8 +15,19 @@ import {
   PackageCheck,
   CalendarDays,
   TriangleAlert,
-  ClipboardCheck
+  ClipboardCheck,
+  Eye,
+  MapPinned
 } from "lucide-react"
+
+const STATUS_PADRAO = ["ABERTO", "EM_SEPARACAO", "EM_PRODUCAO", "CONCLUIDO", "PRONTO_ENTREGA"]
+const STATUS_DISPONIVEIS = [
+  { valor: "ABERTO", nome: "Aberto" },
+  { valor: "EM_SEPARACAO", nome: "Em Separação" },
+  { valor: "EM_PRODUCAO", nome: "Em Produção" },
+  { valor: "CONCLUIDO", nome: "Concluído" },
+  { valor: "PRONTO_ENTREGA", nome: "Pronto Entrega" }
+]
 
 export function RomaneioEntrega() {
   const [pedidos, setPedidos] = useState([])
@@ -24,14 +38,10 @@ export function RomaneioEntrega() {
   const [dataFim, setDataFim] = useState("")
   const [rotasSelecionadas, setRotasSelecionadas] = useState([])
   const [busca, setBusca] = useState("")
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState(false)
 
-  const [statusSelecionados, setStatusSelecionados] = useState([
-    "ABERTO",
-    "EM_SEPARACAO",
-    "EM_PRODUCAO",
-    "CONCLUIDO",
-    "PRONTO_ENTREGA",
-  ])
+  const [statusSelecionados, setStatusSelecionados] = useState(STATUS_PADRAO)
 
   const usuarioLogado = JSON.parse(localStorage.getItem("@usuario") || "{}")
 
@@ -41,32 +51,27 @@ export function RomaneioEntrega() {
     usuarioLogado.funcao === "ADMIN" ||
     usuarioLogado.funcao === "VENDEDOR_OPERADOR"
 
-  const statusDisponiveis = [
-    {
-      valor: "ABERTO",
-      nome: "Aberto"
-    },
-    {
-      valor: "EM_SEPARACAO",
-      nome: "Em Separação"
-    },
-    {
-      valor: "EM_PRODUCAO",
-      nome: "Em Produção"
-    },
-
-    {
-      valor: "PRONTO_ENTREGA",
-      nome: "Pronto Entrega"
-    },
-  ]
-
   async function carregarRotas() {
-    const response = await api.get("/rotas-entrega")
-    setRotas(response.data)
+    try {
+      const response = await api.get("/rotas-entrega")
+      setRotas(response.data)
+    } catch (error) {
+      console.log(error)
+    }
   }
 
-  async function carregarRelatorio() {
+  async function carregarEmpresa() {
+    if (!podeImprimir) return setEmpresa(null)
+    try {
+      const response = await api.get("/configuracao-empresa")
+      setEmpresa(response.data)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  async function carregarRelatorio(filtros = {}) {
+    setCarregando(true)
     try {
       const relatorioResponse = await api.get("/romaneio-entrega", {
         params: {
@@ -74,31 +79,27 @@ export function RomaneioEntrega() {
           dataFim,
           rotas: rotasSelecionadas.join(","),
           status: statusSelecionados.join(","),
-          busca
+          busca,
+          ...filtros
         }
       })
 
       setPedidos(relatorioResponse.data)
-
-      if (podeImprimir) {
-        const empresaResponse = await api.get("/configuracao-empresa")
-        setEmpresa(empresaResponse.data)
-      } else {
-        setEmpresa(null)
-      }
+      setErro(false)
     } catch (error) {
       console.log(error)
-
-      alert(
-        error.response?.data?.error ||
-        "Não foi possível carregar o romaneio de entregas no momento."
-      )
+      setErro(true)
+    } finally {
+      setCarregando(false)
     }
   }
 
   useEffect(() => {
     carregarRotas()
+    carregarEmpresa()
     carregarRelatorio()
+    // A primeira consulta deve usar somente o estado inicial dos filtros.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function formatarData(data) {
@@ -163,23 +164,21 @@ export function RomaneioEntrega() {
     setDataFim("")
     setBusca("")
     setRotasSelecionadas([])
-    setStatusSelecionados([
-      "ABERTO",
-      "EM_SEPARACAO",
-      "EM_PRODUCAO",
-      "CONCLUIDO",
-      "PRONTO_ENTREGA",
-    ])
-
-    setTimeout(() => {
-      carregarRelatorio()
-    }, 100)
+    setStatusSelecionados(STATUS_PADRAO)
+    carregarRelatorio({
+      dataInicio: "",
+      dataFim: "",
+      busca: "",
+      rotas: "",
+      status: STATUS_PADRAO.join(",")
+    })
   }
 
   function filtroHoje() {
     const hoje = formatarDataFiltro(new Date())
     setDataInicio(hoje)
     setDataFim(hoje)
+    carregarRelatorio({ dataInicio: hoje, dataFim: hoje })
   }
 
   function filtroAmanha() {
@@ -189,6 +188,7 @@ export function RomaneioEntrega() {
     const data = formatarDataFiltro(amanha)
     setDataInicio(data)
     setDataFim(data)
+    carregarRelatorio({ dataInicio: data, dataFim: data })
   }
 
   function filtroProximos5Dias() {
@@ -197,8 +197,11 @@ export function RomaneioEntrega() {
 
     fim.setDate(fim.getDate() + 5)
 
-    setDataInicio(formatarDataFiltro(hoje))
-    setDataFim(formatarDataFiltro(fim))
+    const inicioTexto = formatarDataFiltro(hoje)
+    const fimTexto = formatarDataFiltro(fim)
+    setDataInicio(inicioTexto)
+    setDataFim(fimTexto)
+    carregarRelatorio({ dataInicio: inicioTexto, dataFim: fimTexto })
   }
 
   function imprimir() {
@@ -240,6 +243,7 @@ export function RomaneioEntrega() {
   function alternarStatus(status) {
     setStatusSelecionados((atual) => {
       if (atual.includes(status)) {
+        if (atual.length === 1) return atual
         return atual.filter((item) => item !== status)
       }
 
@@ -247,12 +251,22 @@ export function RomaneioEntrega() {
     })
   }
 
+  function aplicarFiltros(event) {
+    event.preventDefault()
+    carregarRelatorio()
+  }
+
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6 no-print">
+    <div className="space-y-5">
+      <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5 no-print">
+        <h1 className="text-xl font-bold text-blue-950">Romaneio de Entrega</h1>
+        <p className="mt-1 text-sm text-blue-800">Organize a separação e o carregamento dos pedidos por rota de entrega.</p>
+      </div>
+
+      <div className="flex justify-between items-center no-print">
         <div>
           <p className="text-gray-600">
-            Pedidos concluídos pendentes para entrega.
+            Use os filtros para preparar o documento que acompanhará cada rota.
           </p>
         </div>
 
@@ -260,7 +274,8 @@ export function RomaneioEntrega() {
           <Button
             type="button"
             onClick={imprimir}
-            className="bg-gray-800 text-white px-6 py-3 rounded-lg flex items-center gap-2"
+            variant="dark"
+            disabled={!pedidos.length}
           >
             <Printer size={18} />
             Imprimir
@@ -274,7 +289,7 @@ export function RomaneioEntrega() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 no-print">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 no-print">
         <div className="bg-white border rounded-xl p-4 shadow-sm">
           <div className="flex justify-between items-center">
             <div>
@@ -304,9 +319,19 @@ export function RomaneioEntrega() {
             <TriangleAlert size={28} />
           </div>
         </div>
+
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-blue-700">Rotas no romaneio</p>
+              <strong className="text-2xl">{Object.keys(pedidosPorRota).length}</strong>
+            </div>
+            <MapPinned size={28} className="text-blue-700" />
+          </div>
+        </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-4 no-print">
+      <div className="flex flex-wrap gap-2 no-print" aria-label="Filtros rápidos">
         <Button type="button" onClick={filtroHoje} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
           <CalendarDays size={16} />
           Hoje
@@ -323,15 +348,17 @@ export function RomaneioEntrega() {
         </Button>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-md mb-8 no-print">
+      <form onSubmit={aplicarFiltros} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm no-print">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
           <Input
+            aria-label="Data inicial"
             type="date"
             value={dataInicio}
             onChange={(e) => setDataInicio(e.target.value)}
           />
 
           <Input
+            aria-label="Data final"
             type="date"
             value={dataFim}
             onChange={(e) => setDataFim(e.target.value)}
@@ -346,19 +373,17 @@ export function RomaneioEntrega() {
 
           <div className="flex gap-2">
             <Button
-              type="button"
-              onClick={carregarRelatorio}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+              type="submit"
+              loading={carregando}
             >
               <Search size={18} />
               Buscar
             </Button>
 
             <Button
-              variant=""
+              variant="dangerSoft"
               type="button"
               onClick={limparFiltros}
-              className="bg-red-50 text-red-700 border border-red-200 px-4 py-2 rounded-lg flex items-center gap-2"
             >
               <Eraser size={18} />
               Limpar
@@ -377,7 +402,7 @@ export function RomaneioEntrega() {
     </h2>
 
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-      {statusDisponiveis.map((status) => (
+      {STATUS_DISPONIVEIS.map((status) => (
         <label
           key={status.valor}
           className={
@@ -395,6 +420,7 @@ export function RomaneioEntrega() {
         </label>
       ))}
     </div>
+    <p className="mt-2 text-xs text-gray-500">Pelo menos um status deve permanecer selecionado.</p>
   </div>
 
   <div className="border rounded-xl p-4 lg:col-span-2">
@@ -403,7 +429,7 @@ export function RomaneioEntrega() {
         <Route size={18} />
         Rotas de Entrega
         <span className="text-sm text-gray-500 font-normal">
-          ({rotasSelecionadas.length} selecionada(s))
+          ({rotasSelecionadas.length ? `${rotasSelecionadas.length} selecionada(s)` : "todas"})
         </span>
       </h2>
 
@@ -421,7 +447,7 @@ export function RomaneioEntrega() {
           onClick={limparRotas}
           className="text-sm text-red-700 font-semibold"
         >
-          Limpar
+          Ver todas
         </button>
       </div>
     </div>
@@ -450,11 +476,7 @@ export function RomaneioEntrega() {
     </div>
   </div>
 </div>
-
-
-
-
-      </div>
+      </form>
 
       <CabecalhoImpressao
         empresa={empresa}
@@ -463,6 +485,11 @@ export function RomaneioEntrega() {
         periodoFim={dataFim}
       />
 
+      {carregando ? (
+        <LoadingState mensagem="Preparando o romaneio de entrega..." />
+      ) : erro ? (
+        <ErrorState onRetry={() => carregarRelatorio()} />
+      ) : (
       <div className="print-area">
         <div className="bg-white rounded-2xl shadow-md p-6">
           <div className="mb-6">
@@ -471,7 +498,7 @@ export function RomaneioEntrega() {
             </h2>
 
             <p className="text-gray-600">
-              Período: {formatarData(dataInicio)} até {formatarData(dataFim)}
+              Período: {dataInicio || dataFim ? `${formatarData(dataInicio)} até ${formatarData(dataFim)}` : "Todo o período"}
             </p>
 
             <p className="text-gray-600">
@@ -509,6 +536,7 @@ export function RomaneioEntrega() {
                         <Th>Recebedor</Th>
                         <Th>Contato</Th>
                         <Th>Endereço</Th>
+                        <Th>Status</Th>
                       </tr>
                     </thead>
 
@@ -516,8 +544,10 @@ export function RomaneioEntrega() {
                       {pedidosDaRota.map((pedido) => (
                         <tr key={pedido.id}>
                           <Td className="text-center text-lg">□</Td>
-                          <Td className="font-bold">
-                            {obterNumeroPedido(pedido)}
+                          <Td>
+                            <Link to={`/pedidos/${pedido.id}`} className="inline-flex min-h-10 items-center gap-2 font-bold text-blue-700 hover:underline">
+                              {obterNumeroPedido(pedido)} <Eye size={14} aria-hidden="true" />
+                            </Link>
                           </Td>
                           <Td>
                             {pedido.cliente?.nome || "-"}
@@ -537,6 +567,7 @@ export function RomaneioEntrega() {
                           <Td>
                             {pedido.enderecoEntrega || "-"}
                           </Td>
+                          <Td><BadgeStatus status={pedido.status} /></Td>
                         </tr>
                       ))}
                     </tbody>
@@ -552,13 +583,10 @@ export function RomaneioEntrega() {
             )
           })}
 
-          {pedidos.length === 0 && (
-            <div className="text-gray-600">
-              Nenhum pedido concluído encontrado para as rotas selecionadas.
-            </div>
-          )}
+          {pedidos.length === 0 && <EmptyState titulo="Nenhum pedido para o romaneio" descricao="Altere os filtros ou selecione outras rotas e status." />}
         </div>
       </div>
+      )}
     </div>
   )
 }
