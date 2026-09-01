@@ -27,15 +27,21 @@ export async function produtividadeOperadores(req, res) {
     }
 
     if (dataInicio || dataFim) {
-      where.dataFim = {}
+      const intervalo = {}
 
       if (dataInicio) {
-        where.dataFim.gte = criarDataLocal(dataInicio, false)
+        intervalo.gte = criarDataLocal(dataInicio, false)
       }
 
       if (dataFim) {
-        where.dataFim.lte = criarDataLocal(dataFim, true)
+        intervalo.lte = criarDataLocal(dataFim, true)
       }
+
+      where.OR = [
+        { status: "CONCLUIDO", dataFim: intervalo },
+        { status: "INICIADO", dataInicio: intervalo },
+        { status: { in: ["ABERTO", "CANCELADO"] }, createdAt: intervalo }
+      ]
     }
 
     const servicos = await prisma.servicoPlano.findMany({
@@ -59,7 +65,9 @@ export async function produtividadeOperadores(req, res) {
           abertos: 0,
           iniciados: 0,
           concluidos: 0,
-          cancelados: 0
+          cancelados: 0,
+          tempoTotalMinutos: 0,
+          concluidosComTempo: 0
         }
       }
 
@@ -69,11 +77,38 @@ export async function produtividadeOperadores(req, res) {
       if (servico.status === "INICIADO") mapa[operadorId].iniciados += 1
       if (servico.status === "CONCLUIDO") mapa[operadorId].concluidos += 1
       if (servico.status === "CANCELADO") mapa[operadorId].cancelados += 1
+
+      if (
+        servico.status === "CONCLUIDO" &&
+        servico.dataInicio &&
+        servico.dataFim
+      ) {
+        const minutos = Math.round(
+          (new Date(servico.dataFim) - new Date(servico.dataInicio)) / 60000
+        )
+
+        if (minutos >= 0) {
+          mapa[operadorId].tempoTotalMinutos += minutos
+          mapa[operadorId].concluidosComTempo += 1
+        }
+      }
     })
 
-    const resultado = Object.values(mapa).sort(
-      (a, b) => b.concluidos - a.concluidos
-    )
+    const resultado = Object.values(mapa)
+      .map(({ tempoTotalMinutos, concluidosComTempo, ...item }) => ({
+        ...item,
+        taxaConclusao: item.total > 0
+          ? Math.round((item.concluidos / item.total) * 100)
+          : 0,
+        tempoMedioMinutos: concluidosComTempo > 0
+          ? Math.round(tempoTotalMinutos / concluidosComTempo)
+          : 0
+      }))
+      .sort((a, b) =>
+        b.concluidos - a.concluidos ||
+        b.taxaConclusao - a.taxaConclusao ||
+        a.operador.localeCompare(b.operador, "pt-BR")
+      )
 
     return res.json(resultado)
   } catch (error) {
