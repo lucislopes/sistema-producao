@@ -232,7 +232,7 @@ export function MainLayout() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100 overflow-x-hidden">
+    <div className="flex min-h-screen bg-gray-100 overflow-x-clip">
       {menuLateralAberto && (
         <button
           type="button"
@@ -247,8 +247,8 @@ export function MainLayout() {
         aria-label="Navegação principal"
         className={`
           fixed inset-y-0 left-0 z-50 w-72 bg-gray-900 text-white p-4
-          h-screen overflow-y-auto transition-transform duration-200 no-print
-          lg:sticky lg:top-0 lg:z-20 lg:w-64 lg:translate-x-0 lg:shrink-0
+          h-dvh overflow-y-auto overscroll-contain transition-transform duration-200 no-print
+          lg:sticky lg:top-0 lg:self-start lg:z-20 lg:w-64 lg:translate-x-0 lg:shrink-0
           ${menuLateralAberto ? "translate-x-0" : "-translate-x-full"}
         `}
       >

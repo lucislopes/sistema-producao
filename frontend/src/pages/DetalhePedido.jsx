@@ -21,6 +21,8 @@ export function DetalhePedido() {
   const { id } = useParams()
   const [pedido, setPedido] = useState(null)
   const [empresa, setEmpresa] = useState(null)
+  const [linkAcompanhamento, setLinkAcompanhamento] = useState("")
+  const [avisoLink, setAvisoLink] = useState("")
   const [erroCarregamento, setErroCarregamento] = useState("")
 
   const usuarioLogado = JSON.parse(localStorage.getItem("@usuario") || "{}")
@@ -54,6 +56,18 @@ export function DetalhePedido() {
 
   function imprimir() {
     window.print()
+  }
+
+  async function copiarAcompanhamento() {
+    const url = new URL("/acompanhar", window.location.origin)
+    url.searchParams.set("pedido", id)
+    setLinkAcompanhamento(url.href)
+    try {
+      await navigator.clipboard.writeText(url.href)
+      setAvisoLink("Link copiado! O cliente deverá informar os cinco primeiros dígitos do CPF/CNPJ.")
+    } catch {
+      setAvisoLink("Selecione e copie o link abaixo para enviar ao cliente.")
+    }
   }
 
   function formatarData(data) {
@@ -128,7 +142,8 @@ export function DetalhePedido() {
           </span>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={copiarAcompanhamento}>Copiar link de acompanhamento</Button>
           <Button
             onClick={imprimir}
             className="bg-gray-800 text-white px-4 py-2 rounded-lg"
@@ -144,6 +159,13 @@ export function DetalhePedido() {
           </Link>
         </div>
       </div>
+
+      {linkAcompanhamento && (
+        <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 no-print">
+          <p role="status" className="mb-2 text-sm text-emerald-900">{avisoLink}</p>
+          <input aria-label="Link de acompanhamento do cliente" readOnly value={linkAcompanhamento} onFocus={(event) => event.target.select()} className="w-full rounded-lg border bg-white p-2 text-sm" />
+        </div>
+      )}
 
       <CabecalhoImpressao
         empresa={empresa}

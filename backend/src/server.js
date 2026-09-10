@@ -30,6 +30,7 @@ import relatorioConsumoChapasRoutes from "./routes/relatorioConsumoChapas.routes
 import relatorioProgramacaoChapasRoutes from "./routes/relatorioProgramacaoChapas.routes.js"
 import relatoriosNovosRoutes from "./routes/relatoriosNovos.routes.js"
 import modoTVRoutes from "./routes/modoTV.routes.js"
+import acompanhamentoRoutes from "./routes/acompanhamento.routes.js"
 import { securityHeaders } from "./middlewares/security.middleware.js"
 import { errorMiddleware, rotaNaoEncontrada } from "./middlewares/error.middleware.js"
 
@@ -65,6 +66,7 @@ app.use(cors({
 app.use(express.json({ limit: "10mb" }))
 app.use(express.urlencoded({ extended: true, limit: "10mb" }))
 app.use("/auth", authRoutes)
+app.use("/acompanhamento", acompanhamentoRoutes)
 app.use("/clientes", clientesRoutes)
 app.use("/funcionarios", funcionariosRoutes)
 app.use("/rotas-entrega", rotasEntregaRoutes)

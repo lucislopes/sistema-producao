@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { api } from "../services/api"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
 import { useSearchParams } from "react-router-dom"
@@ -21,6 +21,8 @@ import {
 } from "lucide-react"
 
 export function Kanban() {
+  const [faseSelecionada, setFaseSelecionada] = useState("ABERTO")
+  const navegacaoFases = useRef(null)
 
   const [operadores, setOperadores] = useState([])
   const [modalTransferir, setModalTransferir] = useState(false)
@@ -330,7 +332,7 @@ export function Kanban() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <ResumoCard titulo="Abertos" valor={totalAbertos} icon={ClipboardList} />
           <ResumoCard titulo="Em Produção" valor={totalIniciados} tipo="info" icon={Factory} />
           <ResumoCard titulo="Concluídos" valor={totalConcluidos} tipo="sucesso" icon={CheckCircle2} />
@@ -341,16 +343,40 @@ export function Kanban() {
       ) : erro ? (
         <ErrorState onRetry={() => carregarKanban()} />
       ) : (
+      <>
+      <nav ref={navegacaoFases} aria-label="Fases da produção" className="sticky top-0 z-10 grid grid-cols-3 gap-2 rounded-xl border border-gray-200 bg-white p-2 shadow-sm xl:hidden">
+        {colunas.map((coluna) => (
+          <button
+            key={coluna.key}
+            type="button"
+            aria-pressed={faseSelecionada === coluna.key}
+            aria-controls={`fase-${coluna.key}`}
+            onClick={() => {
+              setFaseSelecionada(coluna.key)
+              navegacaoFases.current?.scrollIntoView({ block: "start" })
+            }}
+            className={`flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:text-sm ${faseSelecionada === coluna.key
+              ? coluna.key === "ABERTO" ? "bg-gray-800 text-white" : coluna.key === "INICIADO" ? "bg-blue-700 text-white" : "bg-green-700 text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+          >
+            <span>{coluna.titulo}</span>
+            <span className="rounded-full bg-white/20 px-2 text-sm">{kanban[coluna.key]?.length || 0}</span>
+          </button>
+        ))}
+      </nav>
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
           {colunas.map((coluna) => (
 
           <div
             key={coluna.key}
-            className="
-              bg-gray-50 rounded-2xl p-4 min-h-[600px]
-              border border-gray-200 shadow-sm
-            "
+            id={`fase-${coluna.key}`}
+            className={`
+              ${faseSelecionada === coluna.key ? "block" : "hidden"} xl:block min-w-0
+              bg-gray-50 rounded-2xl p-3 sm:p-4 xl:min-h-[600px]
+              border border-t-4 shadow-sm
+              ${coluna.key === "ABERTO" ? "border-gray-300 border-t-gray-600" : coluna.key === "INICIADO" ? "border-blue-200 border-t-blue-600" : "border-green-200 border-t-green-600"}
+            `}
           >
 
             <h2
@@ -379,7 +405,7 @@ export function Kanban() {
                 <div
                   key={servico.id}
                   className={`
-                    rounded-xl p-4 border border-l-4 shadow-sm transition-shadow hover:shadow-md
+                    min-w-0 break-words rounded-xl p-4 border border-l-4 shadow-sm transition-shadow hover:shadow-md
                     ${
                       pedidoAtrasado(servico.plano?.pedido)
                         ? "bg-white border-gray-200 border-l-red-500"
@@ -390,7 +416,7 @@ export function Kanban() {
                   `}
                 >
 
-                        <div className="flex justify-between items-start mb-2">
+                        <div className="flex flex-wrap justify-between items-start gap-2 mb-2">
                           <div>
                             <h3 className="text-lg font-bold">
                               {servico.tipoServico?.nome}
@@ -593,6 +619,7 @@ export function Kanban() {
         ))}
 
       </div>
+      </>
       )}
 
       {modalTransferir && (

@@ -92,6 +92,7 @@ export function Login() {
           </Button>
         </div>
 
+        <a href="/acompanhar" className="mt-6 block text-center text-sm font-medium text-emerald-700 underline">Sou cliente: acompanhar meu pedido</a>
       </form>
 
     </div>

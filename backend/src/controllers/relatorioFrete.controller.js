@@ -117,10 +117,20 @@ export async function relatorioAuditoriaFrete(req, res) {
       }
     })
 
+    const valorAumentos = dados
+      .filter((item) => item.diferenca > 0)
+      .reduce((total, item) => total + item.diferenca, 0)
+
+    const valorDescontos = dados
+      .filter((item) => item.diferenca < 0)
+      .reduce((total, item) => total + Math.abs(item.diferenca), 0)
+
     const resumo = {
       total: dados.length,
       aumentos: dados.filter((item) => item.diferenca > 0).length,
       descontos: dados.filter((item) => item.diferenca < 0).length,
+      valorAumentos,
+      valorDescontos,
       impactoTotal: dados.reduce((total, item) => total + item.diferenca, 0)
     }
 
