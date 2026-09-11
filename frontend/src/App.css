@@ -431,3 +431,29 @@
     padding: 0;
   }
 }
+
+.report-ranking-row {
+  margin-bottom: 7px;
+}
+
+.report-ranking-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 3px;
+  font-size: 9px;
+}
+
+.report-ranking-track {
+  width: 100%;
+  height: 7px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.report-ranking-bar {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 999px;
+}

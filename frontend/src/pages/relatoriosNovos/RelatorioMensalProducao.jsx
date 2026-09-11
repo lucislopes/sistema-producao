@@ -103,6 +103,46 @@ function TituloSecao({ children }) {
   )
 }
 
+function RankingBar({
+  posicao,
+  nome,
+  valor,
+  valorMaximo,
+  sufixo = ""
+}) {
+  const percentual =
+    valorMaximo > 0
+      ? Math.max(
+          4,
+          (Number(valor || 0) / Number(valorMaximo)) * 100
+        )
+      : 0
+
+  return (
+    <div className="report-ranking-row">
+      <div className="report-ranking-label">
+        <span>
+          <strong>{posicao}º</strong> {nome}
+        </span>
+
+        <strong>
+          {formatarNumero(valor)}
+          {sufixo}
+        </strong>
+      </div>
+
+      <div className="report-ranking-track">
+        <div
+          className="report-ranking-bar"
+          style={{
+            width: `${Math.min(percentual, 100)}%`
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+
 export function RelatorioMensalProducao() {
   const relatorioRef = useRef(null)
 
@@ -115,6 +155,7 @@ export function RelatorioMensalProducao() {
   const [dados, setDados] = useState(null)
   const [carregando, setCarregando] = useState(false)
   const [gerandoPdf, setGerandoPdf] = useState(false)
+  const [modoPdf, setModoPdf] = useState("completo")
 
   async function carregarRelatorio() {
   try {
@@ -389,54 +430,73 @@ export function RelatorioMensalProducao() {
     return `producao-${dataInicio}-${dataFim}.pdf`
   }, [dataInicio, dataFim])
 
-  async function gerarPDF() {
-    if (!relatorioRef.current) return
+  async function gerarPDF(tipo = "completo") {
+  if (!relatorioRef.current) return
 
-    try {
-      setGerandoPdf(true)
+  try {
+    setGerandoPdf(true)
+    setModoPdf(tipo)
 
-      const elemento = relatorioRef.current
+    /*
+      Aguarda o React aplicar a versão
+      resumida/completa antes de capturar.
+    */
+    await new Promise((resolve) =>
+      setTimeout(resolve, 150)
+    )
 
-      const opcoes = {
-        margin: [8, 8, 10, 8],
+    const elemento = relatorioRef.current
 
-        filename: nomeArquivo,
+    const opcoes = {
+      margin:
+        tipo === "resumido"
+          ? [5, 5, 5, 5]
+          : [8, 8, 10, 8],
 
-        image: {
-          type: "jpeg",
-          quality: 0.98
-        },
+      filename:
+        tipo === "resumido"
+          ? `producao-resumido-${dataInicio}-${dataFim}.pdf`
+          : `producao-${dataInicio}-${dataFim}.pdf`,
 
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: "#ffffff",
-          scrollY: 0
-        },
+      image: {
+        type: "jpeg",
+        quality: 0.98
+      },
 
-        jsPDF: {
-          unit: "mm",
-          format: "a4",
-          orientation: "portrait"
-        },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        scrollY: 0
+      },
 
-        pagebreak: {
-          mode: ["avoid-all", "css", "legacy"]
-        }
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait"
+      },
+
+      pagebreak: {
+        mode: ["avoid-all", "css", "legacy"]
       }
-
-      await html2pdf()
-        .set(opcoes)
-        .from(elemento)
-        .save()
-
-    } catch (error) {
-      console.error(error)
-      alert("Não foi possível gerar o PDF.")
-    } finally {
-      setGerandoPdf(false)
     }
+
+    await html2pdf()
+      .set(opcoes)
+      .from(elemento)
+      .save()
+
+  } catch (error) {
+    console.error(error)
+
+    alert(
+      "Não foi possível gerar o PDF."
+    )
+  } finally {
+    setModoPdf("completo")
+    setGerandoPdf(false)
   }
+}
 
   return (
     <div className="space-y-5">
@@ -455,7 +515,7 @@ export function RelatorioMensalProducao() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
 
           <Input
             type="date"
@@ -484,13 +544,24 @@ export function RelatorioMensalProducao() {
 
           <Button
             type="button"
-            variant="success"
-            onClick={gerarPDF}
+            variant="secondary"
+            onClick={() => gerarPDF("resumido")}
             loading={gerandoPdf}
             disabled={!dados}
           >
             <Download size={17} />
-            Gerar PDF
+            PDF Resumido
+          </Button>
+
+          <Button
+            type="button"
+            variant="success"
+            onClick={() => gerarPDF("completo")}
+            loading={gerandoPdf}
+            disabled={!dados}
+          >
+            <Download size={17} />
+            PDF Completo
           </Button>
 
         </div>
@@ -664,34 +735,24 @@ export function RelatorioMensalProducao() {
                 Ranking de Chapas por Vendedor
               </h3>
 
-              <table className="report-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Vendedor</th>
-                    <th>Chapas</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {(dados.rankingVendedores || [])
-                    .map((item, index) => (
-                      <tr key={item.id || index}>
-                        <td>{index + 1}º</td>
-
-                        <td>
-                          {item.nome}
-                        </td>
-
-                        <td className="number">
-                          {formatarNumero(
-                            item.chapas
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
+              <div className="report-ranking-list">
+              {(dados.rankingVendedores || [])
+                .slice(
+                  0,
+                  modoPdf === "resumido" ? 6 : 10
+                )
+                .map((item, index) => (
+                  <RankingBar
+                    key={item.id || item.nome || index}
+                    posicao={index + 1}
+                    nome={item.nome}
+                    valor={item.chapas}
+                    valorMaximo={
+                      dados.rankingVendedores?.[0]?.chapas || 1
+                    }
+                  />
+                ))}
+            </div>
 
             </div>
 
@@ -702,42 +763,24 @@ export function RelatorioMensalProducao() {
                 Ranking de Chapas por Dia
               </h3>
 
-              <table className="report-table">
-
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Data</th>
-                    <th>Chapas</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {(dados.rankingDias || [])
-                    .map((item, index) => (
-                      <tr key={item.data || index}>
-
-                        <td>
-                          {index + 1}º
-                        </td>
-
-                        <td>
-                          {formatarData(
-                            item.data
-                          )}
-                        </td>
-
-                        <td className="number">
-                          {formatarNumero(
-                            item.chapas
-                          )}
-                        </td>
-
-                      </tr>
-                    ))}
-                </tbody>
-
-              </table>
+              <div className="report-ranking-list">
+                {(dados.rankingDias || [])
+                  .slice(
+                    0,
+                    modoPdf === "resumido" ? 6 : 10
+                  )
+                  .map((item, index) => (
+                    <RankingBar
+                      key={item.data || index}
+                      posicao={index + 1}
+                      nome={formatarData(item.data)}
+                      valor={item.chapas}
+                      valorMaximo={
+                        dados.rankingDias?.[0]?.chapas || 1
+                      }
+                    />
+                  ))}
+              </div>
 
             </div>
 
