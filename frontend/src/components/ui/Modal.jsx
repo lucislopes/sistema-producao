@@ -9,15 +9,23 @@ export function Modal({
 }) {
   const titleId = useId()
   const closeButtonRef = useRef(null)
+  const onCloseRef = useRef(onClose)
+
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
 
   useEffect(() => {
     if (!open) return undefined
 
     const previousElement = document.activeElement
+
     closeButtonRef.current?.focus()
 
     function handleKeyDown(event) {
-      if (event.key === "Escape") onClose?.()
+      if (event.key === "Escape") {
+        onCloseRef.current?.()
+      }
     }
 
     document.addEventListener("keydown", handleKeyDown)
@@ -26,7 +34,7 @@ export function Modal({
       document.removeEventListener("keydown", handleKeyDown)
       previousElement?.focus?.()
     }
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
 
@@ -57,7 +65,7 @@ export function Modal({
           <button
             ref={closeButtonRef}
             type="button"
-            onClick={onClose}
+            onClick={() => onCloseRef.current?.()}
             className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             aria-label="Fechar janela"
           >
