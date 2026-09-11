@@ -243,3 +243,191 @@
     border-radius: 0 !important;
   }
 }
+
+/* =====================================================
+   RELATÓRIO MENSAL DE PRODUÇÃO
+   ===================================================== */
+
+.report-pdf {
+  width: 100%;
+  background: #ffffff;
+  color: #111827;
+  padding: 20px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #1d4ed8;
+  padding-bottom: 12px;
+  margin-bottom: 18px;
+}
+
+.report-header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.report-header p {
+  margin-top: 5px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.report-header-periodo {
+  background: #1d4ed8;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.report-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 20px 0 12px;
+  color: #111827;
+}
+
+.report-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.report-card {
+  min-height: 88px;
+  padding: 12px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+
+  background: #f9fafb;
+
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+
+  page-break-inside: avoid;
+}
+
+.report-card-title {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.report-card-value {
+  font-size: 21px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.report-card-subtitle {
+  margin-top: 3px;
+  font-size: 10px;
+  color: #4b5563;
+}
+
+.report-card-icon {
+  height: 36px;
+  width: 36px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 8px;
+
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.report-block {
+  margin-top: 14px;
+}
+
+.report-two-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  gap: 12px;
+
+  margin-top: 14px;
+}
+
+.report-panel {
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 12px;
+
+  page-break-inside: avoid;
+}
+
+.report-panel h3 {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9px;
+}
+
+.report-table th {
+  background: #f3f4f6;
+  font-weight: 700;
+  text-align: left;
+
+  padding: 6px;
+
+  border: 1px solid #d1d5db;
+}
+
+.report-table td {
+  padding: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.report-table .number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.page-break {
+  break-before: page;
+  page-break-before: always;
+}
+
+.report-footer {
+  margin-top: 20px;
+  border-top: 1px solid #d1d5db;
+
+  padding-top: 8px;
+
+  text-align: center;
+
+  color: #6b7280;
+  font-size: 9px;
+}
+
+@media screen and (max-width: 800px) {
+  .report-grid-3,
+  .report-two-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  .no-pdf {
+    display: none !important;
+  }
+
+  .report-pdf {
+    padding: 0;
+  }
+}

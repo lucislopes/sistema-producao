@@ -206,6 +206,7 @@ export function MainLayout() {
       "/relatorio-pedidos": "Relatório de Pedidos em Andamento",
       "/relatorio-producao": "Relatório de Produção",
       "/alertas": "Alertas",
+      "/relatorios/producao-mensal": "Relatório Mensal de Produção",
       "/produtividade-operadores": "Produtividade",
       "/configuracao-empresa": "Configurações",
       "/minha-senha": "Alterar Senha",
@@ -384,17 +385,16 @@ export function MainLayout() {
               </MenuLink>
 
               {(isAdmin || isVendedorOperador) && (
-                <>
-                  <MenuLink to="/relatorio-producao" icon={BarChart3}>
-                    Produção
-                  </MenuLink>
+              <>
+                <MenuLink to="/relatorio-producao" icon={BarChart3}>
+                  Produção
+                </MenuLink>
 
-                  <MenuLink to="/produtividade-operadores" icon={Users}>
-                    Produtividade
-                  </MenuLink>
-                </>
-
-              )}
+                <MenuLink to="/produtividade-operadores" icon={Users}>
+                  Produtividade
+                </MenuLink>
+              </>
+            )}
 
               {isAdmin && (
                 <MenuLink to="/relatorio-auditoria-frete" icon={DollarSign}>
@@ -431,6 +431,9 @@ export function MainLayout() {
               </MenuLink>
               <MenuLink to="/relatorios-novos/auditoria-cadastro" icon={ClipboardCheck}>
                 Auditoria de Cadastro
+              </MenuLink>
+              <MenuLink to="/relatorios/producao-mensal" icon={FileText}              >
+                Produção Mensal
               </MenuLink>
             </MenuGrupo>
           )}
