@@ -457,3 +457,142 @@
   background: #2563eb;
   border-radius: 999px;
 }
+
+/* =====================================================
+   RANKINGS COM BARRAS
+   ===================================================== */
+
+.report-ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.report-ranking-row {
+  page-break-inside: avoid;
+}
+
+.report-ranking-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+
+  margin-bottom: 3px;
+
+  font-size: 9px;
+  line-height: 1.2;
+}
+
+.report-ranking-label span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-ranking-track {
+  width: 100%;
+  height: 7px;
+
+  background: #e5e7eb;
+
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.report-ranking-bar {
+  height: 100%;
+
+  background: #2563eb;
+
+  border-radius: 999px;
+}
+
+
+/* =====================================================
+   PDF RESUMIDO
+   ===================================================== */
+
+.report-pdf.pdf-resumido {
+  padding: 8px;
+}
+
+.report-pdf.pdf-resumido .report-header {
+  margin-bottom: 8px;
+  padding-bottom: 7px;
+}
+
+.report-pdf.pdf-resumido .report-header h1 {
+  font-size: 18px;
+}
+
+.report-pdf.pdf-resumido .report-section-title {
+  margin: 10px 0 6px;
+  font-size: 14px;
+}
+
+.report-pdf.pdf-resumido .report-grid-3 {
+  gap: 5px;
+}
+
+.report-pdf.pdf-resumido .report-card {
+  min-height: 55px;
+  padding: 7px;
+}
+
+.report-pdf.pdf-resumido .report-card-title {
+  font-size: 8px;
+}
+
+.report-pdf.pdf-resumido .report-card-value {
+  font-size: 15px;
+}
+
+.report-pdf.pdf-resumido .report-card-subtitle {
+  font-size: 7px;
+}
+
+.report-pdf.pdf-resumido .report-card-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.report-pdf.pdf-resumido .report-panel {
+  padding: 7px;
+}
+
+.report-pdf.pdf-resumido .report-panel h3 {
+  margin-bottom: 6px;
+  font-size: 10px;
+}
+
+.report-pdf.pdf-resumido .report-ranking-label {
+  font-size: 7px;
+}
+
+.report-pdf.pdf-resumido .report-ranking-track {
+  height: 5px;
+}
+
+.report-pdf.pdf-resumido .report-table {
+  font-size: 7px;
+}
+
+.report-pdf.pdf-resumido .report-table th,
+.report-pdf.pdf-resumido .report-table td {
+  padding: 3px;
+}
+
+.report-pdf.pdf-resumido .report-block {
+  margin-top: 7px;
+}
+
+.report-pdf.pdf-resumido .report-two-columns {
+  margin-top: 7px;
+  gap: 6px;
+}
+
+.report-pdf.pdf-resumido .report-footer {
+  margin-top: 8px;
+  padding-top: 4px;
+  font-size: 7px;
+}

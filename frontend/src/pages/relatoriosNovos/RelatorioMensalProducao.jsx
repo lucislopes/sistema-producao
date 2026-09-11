@@ -577,7 +577,11 @@ export function RelatorioMensalProducao() {
 
         <div
           ref={relatorioRef}
-          className="report-pdf"
+          className={
+            modoPdf === "resumido"
+              ? "report-pdf pdf-resumido"
+              : "report-pdf"
+          }
         >
 
           {/* CABEÇALHO */}
@@ -809,6 +813,10 @@ export function RelatorioMensalProducao() {
               <tbody>
 
                 {(dados.consumoPorServico || [])
+                  .slice(
+                    0,
+                    modoPdf === "resumido" ? 5 : undefined
+                  )
                   .map((item, index) => (
 
                     <tr
@@ -857,7 +865,9 @@ export function RelatorioMensalProducao() {
           {/* PRODUTIVIDADE */}
           {/* ========================= */}
 
-          <div className="page-break" />
+          {modoPdf === "completo" && (
+            <div className="page-break" />
+          )}
 
           <TituloSecao>
             Produtividade
