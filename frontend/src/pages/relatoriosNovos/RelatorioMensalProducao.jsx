@@ -117,32 +117,269 @@ export function RelatorioMensalProducao() {
   const [gerandoPdf, setGerandoPdf] = useState(false)
 
   async function carregarRelatorio() {
-    try {
-      setCarregando(true)
+  try {
+    setCarregando(true)
 
-      const response = await api.get(
-        "/relatorio-producao/mensal",
-        {
-            params: {
-            dataInicio,
-            dataFim
-            }
+    const [consumoRes, produtividadeRes] = await Promise.all([
+      api.get("/relatorio-consumo-chapas", {
+        params: {
+          dataInicio,
+          dataFim,
+          baseData: "pedido",
+          page: 1,
+          limit: 1000
         }
-        )
+      }),
 
-      setDados(response.data)
+      api.get("/produtividade/operadores", {
+        params: {
+          dataInicio,
+          dataFim
+        }
+      })
+    ])
 
-    } catch (error) {
-      console.error(error)
+    const consumo = consumoRes.data || {}
+    const produtividade = produtividadeRes.data || []
 
-      alert(
-        error.response?.data?.error ||
-        "Erro ao carregar relatório."
+    const resumoConsumo = consumo.resumo || {}
+
+    const rankingVendedores =
+      consumo.porVendedor || []
+
+    const rankingDias =
+      [...(consumo.porDia || [])].sort(
+        (a, b) =>
+          Number(b.chapas || 0) -
+          Number(a.chapas || 0)
       )
-    } finally {
-      setCarregando(false)
-    }
+
+    const consumoPorServico =
+      (consumo.porTipoServico || []).map(
+        (item) => ({
+          id:
+            item.tipoServicoId,
+
+          nome:
+            item.nome,
+
+          quantidadeServicos:
+            Number(
+              item.quantidadeServicos || 0
+            ),
+
+          chapas:
+            Number(
+              item.chapas || 0
+            ),
+
+          metros:
+            Number(
+              item.metrosEncabecamento || 0
+            )
+        })
+      )
+
+    /*
+      =====================================================
+      PRODUTIVIDADE
+      =====================================================
+    */
+
+    const rankingOperadores =
+      produtividade.map(
+        (item) => ({
+          id:
+            item.operadorId,
+
+          nome:
+            item.operador,
+
+          total:
+            Number(
+              item.total || 0
+            ),
+
+          abertos:
+            Number(
+              item.abertos || 0
+            ),
+
+          emProducao:
+            Number(
+              item.iniciados || 0
+            ),
+
+          concluidos:
+            Number(
+              item.concluidos || 0
+            ),
+
+          cancelados:
+            Number(
+              item.cancelados || 0
+            ),
+
+          taxaConclusao:
+            Number(
+              item.taxaConclusao || 0
+            ),
+
+          tempoMedioMinutos:
+            Number(
+              item.tempoMedioMinutos || 0
+            )
+        })
+      )
+
+    const totalServicos =
+      rankingOperadores.reduce(
+        (total, item) =>
+          total + item.total,
+        0
+      )
+
+    const totalAbertos =
+      rankingOperadores.reduce(
+        (total, item) =>
+          total + item.abertos,
+        0
+      )
+
+    const totalEmProducao =
+      rankingOperadores.reduce(
+        (total, item) =>
+          total + item.emProducao,
+        0
+      )
+
+    const totalConcluidos =
+      rankingOperadores.reduce(
+        (total, item) =>
+          total + item.concluidos,
+        0
+      )
+
+    const totalCancelados =
+      rankingOperadores.reduce(
+        (total, item) =>
+          total + item.cancelados,
+        0
+      )
+
+    const melhorOperador =
+      rankingOperadores[0] || null
+
+    /*
+      =====================================================
+      MONTA O OBJETO NO FORMATO QUE O PDF JÁ USA
+      =====================================================
+    */
+
+    setDados({
+      periodo: {
+        dataInicio,
+        dataFim
+      },
+
+      chapas: {
+        totalChapas:
+          Number(
+            resumoConsumo.totalChapas || 0
+          ),
+
+        producao:
+          Number(
+            resumoConsumo.totalProducao || 0
+          ),
+
+        chapasInteiras:
+          Number(
+            resumoConsumo.totalChapaInteira || 0
+          ),
+
+        pedidos:
+          Number(
+            resumoConsumo.totalPedidos || 0
+          ),
+
+        clientes:
+          Number(
+            resumoConsumo.clientesAtendidos || 0
+          ),
+
+        mediaPorPedido:
+          Number(
+            resumoConsumo.mediaPorPedido || 0
+          ),
+
+        totalServicos:
+          Number(
+            resumoConsumo.totalServicosConcluidos || 0
+          ),
+
+        metrosEncabecamento:
+          Number(
+            resumoConsumo.totalMetrosEncabecamento || 0
+          )
+      },
+
+      destaques: {
+        vendedor:
+          rankingVendedores[0] || null,
+
+        maiorConsumo:
+          rankingDias[0] || null,
+
+        servico:
+          consumoPorServico[0] || null
+      },
+
+      rankingVendedores,
+
+      rankingDias,
+
+      consumoPorServico,
+
+      produtividade: {
+        totalServicos,
+
+        operadores:
+          rankingOperadores.length,
+
+        abertos:
+          totalAbertos,
+
+        emProducao:
+          totalEmProducao,
+
+        concluidos:
+          totalConcluidos,
+
+        cancelados:
+          totalCancelados,
+
+        melhorOperador
+      },
+
+      rankingOperadores
+    })
+
+  } catch (error) {
+    console.error(
+      "Erro ao carregar relatório mensal:",
+      error
+    )
+
+    alert(
+      error.response?.data?.error ||
+      "Erro ao carregar relatório mensal de produção."
+    )
+
+  } finally {
+    setCarregando(false)
   }
+}
 
   useEffect(() => {
     carregarRelatorio()
