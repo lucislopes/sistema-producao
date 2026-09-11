@@ -250,6 +250,7 @@
 
 .report-pdf {
   width: 100%;
+  box-sizing: border-box;
   background: #ffffff;
   color: #111827;
   padding: 20px;
@@ -260,6 +261,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 20px;
+
   border-bottom: 2px solid #1d4ed8;
   padding-bottom: 12px;
   margin-bottom: 18px;
@@ -268,38 +271,54 @@
 .report-header h1 {
   margin: 0;
   font-size: 24px;
+  line-height: 1.15;
   font-weight: 700;
 }
 
 .report-header p {
-  margin-top: 5px;
+  margin: 5px 0 0;
   font-size: 12px;
   color: #6b7280;
 }
 
 .report-header-periodo {
+  flex-shrink: 0;
+
   background: #1d4ed8;
-  color: white;
+  color: #ffffff;
+
   padding: 8px 16px;
   border-radius: 8px;
+
   font-weight: 700;
+  font-size: 14px;
 }
 
 .report-section-title {
-  font-size: 18px;
-  font-weight: 700;
   margin: 20px 0 12px;
+
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 700;
+
   color: #111827;
 }
 
+
+/* =====================================================
+   CARDS
+   ===================================================== */
+
 .report-grid-3 {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
 .report-card {
+  min-width: 0;
   min-height: 88px;
+
   padding: 12px;
 
   border: 1px solid #d1d5db;
@@ -308,32 +327,51 @@
   background: #f9fafb;
 
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
 
+  box-sizing: border-box;
+
   page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.report-card > div:first-child {
+  min-width: 0;
+  flex: 1;
 }
 
 .report-card-title {
   font-size: 11px;
+  line-height: 1.25;
   color: #6b7280;
 }
 
 .report-card-value {
-  font-size: 21px;
-  font-weight: 700;
   margin-top: 4px;
+
+  font-size: 21px;
+  line-height: 1.15;
+  font-weight: 700;
+
+  overflow-wrap: anywhere;
 }
 
 .report-card-subtitle {
   margin-top: 3px;
+
   font-size: 10px;
+  line-height: 1.2;
+
   color: #4b5563;
 }
 
 .report-card-icon {
-  height: 36px;
   width: 36px;
+  height: 36px;
+
+  flex: 0 0 36px;
 
   display: flex;
   align-items: center;
@@ -345,66 +383,179 @@
   color: #1d4ed8;
 }
 
+
+/* =====================================================
+   BLOCOS E PAINÉIS
+   ===================================================== */
+
 .report-block {
   margin-top: 14px;
 }
 
 .report-two-columns {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 
   gap: 12px;
-
   margin-top: 14px;
 }
 
 .report-panel {
+  min-width: 0;
+
   border: 1px solid #d1d5db;
   border-radius: 10px;
+
   padding: 12px;
 
+  box-sizing: border-box;
+
   page-break-inside: avoid;
+  break-inside: avoid;
 }
 
 .report-panel h3 {
+  margin: 0 0 10px;
+
   font-size: 13px;
+  line-height: 1.2;
   font-weight: 700;
-  margin-bottom: 10px;
 }
+
+
+/* =====================================================
+   TABELAS
+   ===================================================== */
 
 .report-table {
   width: 100%;
   border-collapse: collapse;
+
+  table-layout: fixed;
+
   font-size: 9px;
 }
 
 .report-table th {
   background: #f3f4f6;
+
   font-weight: 700;
   text-align: left;
 
   padding: 6px;
 
   border: 1px solid #d1d5db;
+
+  overflow-wrap: anywhere;
 }
 
 .report-table td {
   padding: 6px;
+
   border: 1px solid #e5e7eb;
+
+  overflow-wrap: anywhere;
 }
 
 .report-table .number {
   text-align: right;
   font-variant-numeric: tabular-nums;
+
+  white-space: nowrap;
 }
 
+
+/* =====================================================
+   RANKINGS COM BARRAS
+   ===================================================== */
+
+.report-ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.report-ranking-row {
+  display: block;
+
+  min-height: 27px;
+
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.report-ranking-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  min-height: 14px;
+  margin-bottom: 4px;
+
+  font-size: 9px;
+  line-height: 14px;
+
+  color: #111827;
+}
+
+.report-ranking-label span {
+  display: block;
+
+  min-width: 0;
+  flex: 1;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-ranking-label > strong {
+  flex-shrink: 0;
+
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.report-ranking-track {
+  display: block;
+
+  width: 100%;
+  height: 7px;
+
+  background: #e5e7eb;
+
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.report-ranking-bar {
+  display: block;
+
+  height: 100%;
+  min-width: 2px;
+
+  background: #2563eb;
+
+  border-radius: 999px;
+}
+
+
+/* =====================================================
+   QUEBRA DE PÁGINA / RODAPÉ
+   ===================================================== */
+
 .page-break {
+  display: block;
+
   break-before: page;
   page-break-before: always;
 }
 
 .report-footer {
   margin-top: 20px;
+
   border-top: 1px solid #d1d5db;
 
   padding-top: 8px;
@@ -415,12 +566,179 @@
   font-size: 9px;
 }
 
+
+/* =====================================================
+   PDF RESUMIDO
+   ===================================================== */
+
+.report-pdf.pdf-resumido {
+  padding: 7px;
+}
+
+.report-pdf.pdf-resumido .report-header {
+  gap: 10px;
+
+  margin-bottom: 7px;
+  padding-bottom: 6px;
+}
+
+.report-pdf.pdf-resumido .report-header h1 {
+  font-size: 17px;
+}
+
+.report-pdf.pdf-resumido .report-header p {
+  margin-top: 2px;
+  font-size: 8px;
+}
+
+.report-pdf.pdf-resumido .report-header-periodo {
+  padding: 6px 12px;
+
+  border-radius: 6px;
+
+  font-size: 10px;
+}
+
+.report-pdf.pdf-resumido .report-section-title {
+  margin: 9px 0 5px;
+
+  font-size: 13px;
+}
+
+.report-pdf.pdf-resumido .report-grid-3 {
+  gap: 5px;
+}
+
+.report-pdf.pdf-resumido .report-card {
+  min-height: 51px;
+
+  padding: 6px;
+  gap: 5px;
+}
+
+.report-pdf.pdf-resumido .report-card-title {
+  font-size: 7px;
+}
+
+.report-pdf.pdf-resumido .report-card-value {
+  margin-top: 2px;
+
+  font-size: 14px;
+}
+
+.report-pdf.pdf-resumido .report-card-subtitle {
+  margin-top: 1px;
+
+  font-size: 6.5px;
+}
+
+.report-pdf.pdf-resumido .report-card-icon {
+  width: 25px;
+  height: 25px;
+
+  flex-basis: 25px;
+
+  border-radius: 6px;
+}
+
+.report-pdf.pdf-resumido .report-card-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.report-pdf.pdf-resumido .report-block {
+  margin-top: 6px;
+}
+
+.report-pdf.pdf-resumido .report-two-columns {
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.report-pdf.pdf-resumido .report-panel {
+  padding: 6px;
+  border-radius: 7px;
+}
+
+.report-pdf.pdf-resumido .report-panel h3 {
+  margin-bottom: 5px;
+
+  font-size: 9px;
+}
+
+
+/* =====================================================
+   RANKINGS - RESUMIDO
+   ===================================================== */
+
+.report-pdf.pdf-resumido .report-ranking-list {
+  gap: 5px;
+}
+
+.report-pdf.pdf-resumido .report-ranking-row {
+  min-height: 19px;
+}
+
+.report-pdf.pdf-resumido .report-ranking-label {
+  min-height: 9px;
+
+  margin-bottom: 2px;
+
+  font-size: 6.8px;
+  line-height: 9px;
+}
+
+.report-pdf.pdf-resumido .report-ranking-track {
+  height: 4px;
+}
+
+.report-pdf.pdf-resumido .report-ranking-bar {
+  height: 4px;
+}
+
+
+/* =====================================================
+   TABELAS - RESUMIDO
+   ===================================================== */
+
+.report-pdf.pdf-resumido .report-table {
+  font-size: 6.5px;
+}
+
+.report-pdf.pdf-resumido .report-table th,
+.report-pdf.pdf-resumido .report-table td {
+  padding: 2.5px 3px;
+}
+
+
+/* =====================================================
+   RODAPÉ - RESUMIDO
+   ===================================================== */
+
+.report-pdf.pdf-resumido .report-footer {
+  margin-top: 6px;
+
+  padding-top: 3px;
+
+  font-size: 6px;
+}
+
+
+/* =====================================================
+   RESPONSIVO
+   ===================================================== */
+
 @media screen and (max-width: 800px) {
   .report-grid-3,
   .report-two-columns {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* =====================================================
+   IMPRESSÃO
+   ===================================================== */
 
 @media print {
   .no-pdf {
@@ -430,169 +748,11 @@
   .report-pdf {
     padding: 0;
   }
-}
 
-.report-ranking-row {
-  margin-bottom: 7px;
-}
-
-.report-ranking-label {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 3px;
-  font-size: 9px;
-}
-
-.report-ranking-track {
-  width: 100%;
-  height: 7px;
-  background: #e5e7eb;
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.report-ranking-bar {
-  height: 100%;
-  background: #2563eb;
-  border-radius: 999px;
-}
-
-/* =====================================================
-   RANKINGS COM BARRAS
-   ===================================================== */
-
-.report-ranking-list {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.report-ranking-row {
-  page-break-inside: avoid;
-}
-
-.report-ranking-label {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-
-  margin-bottom: 3px;
-
-  font-size: 9px;
-  line-height: 1.2;
-}
-
-.report-ranking-label span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.report-ranking-track {
-  width: 100%;
-  height: 7px;
-
-  background: #e5e7eb;
-
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.report-ranking-bar {
-  height: 100%;
-
-  background: #2563eb;
-
-  border-radius: 999px;
-}
-
-
-/* =====================================================
-   PDF RESUMIDO
-   ===================================================== */
-
-.report-pdf.pdf-resumido {
-  padding: 8px;
-}
-
-.report-pdf.pdf-resumido .report-header {
-  margin-bottom: 8px;
-  padding-bottom: 7px;
-}
-
-.report-pdf.pdf-resumido .report-header h1 {
-  font-size: 18px;
-}
-
-.report-pdf.pdf-resumido .report-section-title {
-  margin: 10px 0 6px;
-  font-size: 14px;
-}
-
-.report-pdf.pdf-resumido .report-grid-3 {
-  gap: 5px;
-}
-
-.report-pdf.pdf-resumido .report-card {
-  min-height: 55px;
-  padding: 7px;
-}
-
-.report-pdf.pdf-resumido .report-card-title {
-  font-size: 8px;
-}
-
-.report-pdf.pdf-resumido .report-card-value {
-  font-size: 15px;
-}
-
-.report-pdf.pdf-resumido .report-card-subtitle {
-  font-size: 7px;
-}
-
-.report-pdf.pdf-resumido .report-card-icon {
-  width: 28px;
-  height: 28px;
-}
-
-.report-pdf.pdf-resumido .report-panel {
-  padding: 7px;
-}
-
-.report-pdf.pdf-resumido .report-panel h3 {
-  margin-bottom: 6px;
-  font-size: 10px;
-}
-
-.report-pdf.pdf-resumido .report-ranking-label {
-  font-size: 7px;
-}
-
-.report-pdf.pdf-resumido .report-ranking-track {
-  height: 5px;
-}
-
-.report-pdf.pdf-resumido .report-table {
-  font-size: 7px;
-}
-
-.report-pdf.pdf-resumido .report-table th,
-.report-pdf.pdf-resumido .report-table td {
-  padding: 3px;
-}
-
-.report-pdf.pdf-resumido .report-block {
-  margin-top: 7px;
-}
-
-.report-pdf.pdf-resumido .report-two-columns {
-  margin-top: 7px;
-  gap: 6px;
-}
-
-.report-pdf.pdf-resumido .report-footer {
-  margin-top: 8px;
-  padding-top: 4px;
-  font-size: 7px;
+  .report-card,
+  .report-panel,
+  .report-ranking-row {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 }
