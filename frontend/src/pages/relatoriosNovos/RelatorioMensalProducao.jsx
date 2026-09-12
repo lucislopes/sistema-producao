@@ -431,381 +431,380 @@ export function RelatorioMensalProducao() {
   }, [dataInicio, dataFim])
 
   async function gerarPDF(tipo = "completo") {
-  if (!relatorioRef.current) return
+    if (!relatorioRef.current) return
 
-  try {
-    setGerandoPdf(true)
-    setModoPdf(tipo)
+    try {
+      setGerandoPdf(true)
+      setModoPdf(tipo)
 
-    /*
-      Aguarda o React aplicar a versão
-      resumida/completa antes de capturar.
-    */
-    await new Promise((resolve) =>
-      setTimeout(resolve, 150)
-    )
+      // Aguarda o React aplicar completo/resumido
+      await new Promise((resolve) =>
+        setTimeout(resolve, 200)
+      )
 
-    const elemento = relatorioRef.current
+      const elemento = relatorioRef.current
 
-    const opcoes = {
-      margin:
-        tipo === "resumido"
-          ? [5, 5, 5, 5]
-          : [8, 8, 10, 8],
+      const opcoes = {
+        margin:
+          tipo === "resumido"
+            ? [5, 5, 5, 5]
+            : [8, 8, 10, 8],
 
-      filename:
-        tipo === "resumido"
-          ? `producao-resumido-${dataInicio}-${dataFim}.pdf`
-          : `producao-${dataInicio}-${dataFim}.pdf`,
+        filename:
+          tipo === "resumido"
+            ? `producao-resumido-${dataInicio}-${dataFim}.pdf`
+            : `producao-${dataInicio}-${dataFim}.pdf`,
 
-      image: {
-        type: "jpeg",
-        quality: 0.98
-      },
+        image: {
+          type: "jpeg",
+          quality: 0.98
+        },
 
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        scrollX: 0,
-        scrollY: 0,
-        logging: false,
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: "#ffffff",
+          scrollX: 0,
+          scrollY: 0,
+          logging: false,
 
-        onclone: (documentoClonado) => {
-          const relatorio =
-            documentoClonado.querySelector(".report-pdf")
+          onclone: (documentoClonado) => {
+            const relatorio =
+              documentoClonado.querySelector(".report-pdf")
 
-          if (!relatorio) return
+            if (!relatorio) return
 
-          const resumido =
-            relatorio.classList.contains("pdf-resumido")
+            const resumido =
+              relatorio.classList.contains("pdf-resumido")
 
-          const linhas =
-            relatorio.querySelectorAll(".report-ranking-row")
+            const linhas =
+              relatorio.querySelectorAll(".report-ranking-row")
 
-          linhas.forEach((linha) => {
-            const label =
-              linha.querySelector(".report-ranking-label")
+            linhas.forEach((linha) => {
+              const label =
+                linha.querySelector(".report-ranking-label")
 
-            const nomeElemento =
-              label?.querySelector("span")
+              const nomeEl =
+                label?.querySelector("span")
 
-            const valorElemento =
-              label?.querySelector(":scope > strong")
+              const valorEl =
+                label?.querySelector(":scope > strong")
 
-            const barra =
-              linha.querySelector(".report-ranking-bar")
+              const barraEl =
+                linha.querySelector(".report-ranking-bar")
 
-            if (
-              !nomeElemento ||
-              !valorElemento ||
-              !barra
-            ) {
-              return
-            }
+              if (!nomeEl || !valorEl || !barraEl) {
+                return
+              }
 
-            const nome =
-              nomeElemento.textContent?.trim() || ""
+              const nome =
+                nomeEl.textContent?.trim() || ""
 
-            const valor =
-              valorElemento.textContent?.trim() || ""
+              const valor =
+                valorEl.textContent?.trim() || ""
 
-            const percentual =
-              Math.max(
+              const percentual =
+                Math.max(
+                  0,
+                  Math.min(
+                    100,
+                    parseFloat(barraEl.style.width) || 0
+                  )
+                )
+
+              /*
+                Largura real disponível no relatório.
+              */
+              const larguraVisual =
+                Math.max(
+                  250,
+                  Math.round(
+                    linha.getBoundingClientRect().width
+                  )
+                )
+
+              /*
+                Desenha em resolução 2x para ficar nítido
+                no PDF.
+              */
+              const escala = 2
+
+              const alturaVisual =
+                resumido ? 24 : 34
+
+              const canvas =
+                documentoClonado.createElement("canvas")
+
+              canvas.width =
+                larguraVisual * escala
+
+              canvas.height =
+                alturaVisual * escala
+
+              const ctx =
+                canvas.getContext("2d")
+
+              if (!ctx) return
+
+              ctx.scale(escala, escala)
+
+              /*
+                Fundo transparente
+              */
+              ctx.clearRect(
                 0,
-                Math.min(
-                  100,
-                  parseFloat(barra.style.width) || 0
+                0,
+                larguraVisual,
+                alturaVisual
+              )
+
+              /*
+                Configuração do texto
+              */
+              const tamanhoFonte =
+                resumido ? 7 : 9
+
+              ctx.font =
+                `600 ${tamanhoFonte}px Arial, Helvetica, sans-serif`
+
+              ctx.fillStyle = "#111827"
+
+              ctx.textBaseline = "top"
+
+              /*
+                Nome / posição
+              */
+              ctx.textAlign = "left"
+
+              ctx.fillText(
+                nome,
+                0,
+                1
+              )
+
+              /*
+                Valor
+              */
+              ctx.font =
+                `700 ${tamanhoFonte}px Arial, Helvetica, sans-serif`
+
+              ctx.textAlign = "right"
+
+              ctx.fillText(
+                valor,
+                larguraVisual,
+                1
+              )
+
+              /*
+                Barra
+              */
+              const yBarra =
+                resumido ? 15 : 20
+
+              const alturaBarra =
+                resumido ? 4 : 6
+
+              const raio =
+                alturaBarra / 2
+
+              function roundedRect(
+                contexto,
+                x,
+                y,
+                largura,
+                altura,
+                raioBorda
+              ) {
+                contexto.beginPath()
+
+                contexto.moveTo(
+                  x + raioBorda,
+                  y
                 )
-              )
 
-            /*
-              Pegamos a largura real do ranking já
-              renderizado antes de transformá-lo em SVG.
-            */
-            const largura =
-              Math.max(
-                300,
-                Math.round(
-                  linha.getBoundingClientRect().width
+                contexto.lineTo(
+                  x + largura - raioBorda,
+                  y
                 )
+
+                contexto.quadraticCurveTo(
+                  x + largura,
+                  y,
+                  x + largura,
+                  y + raioBorda
+                )
+
+                contexto.lineTo(
+                  x + largura,
+                  y + altura - raioBorda
+                )
+
+                contexto.quadraticCurveTo(
+                  x + largura,
+                  y + altura,
+                  x + largura - raioBorda,
+                  y + altura
+                )
+
+                contexto.lineTo(
+                  x + raioBorda,
+                  y + altura
+                )
+
+                contexto.quadraticCurveTo(
+                  x,
+                  y + altura,
+                  x,
+                  y + altura - raioBorda
+                )
+
+                contexto.lineTo(
+                  x,
+                  y + raioBorda
+                )
+
+                contexto.quadraticCurveTo(
+                  x,
+                  y,
+                  x + raioBorda,
+                  y
+                )
+
+                contexto.closePath()
+              }
+
+              /*
+                Fundo cinza
+              */
+              ctx.fillStyle = "#e5e7eb"
+
+              roundedRect(
+                ctx,
+                0,
+                yBarra,
+                larguraVisual,
+                alturaBarra,
+                raio
               )
 
-            const altura =
-              resumido ? 24 : 34
+              ctx.fill()
 
-            const tamanhoFonte =
-              resumido ? 7 : 9
+              /*
+                Barra azul
+              */
+              const larguraAzul =
+                Math.max(
+                  2,
+                  larguraVisual *
+                    (percentual / 100)
+                )
 
-            const alturaBarra =
-              resumido ? 4 : 6
+              ctx.fillStyle = "#2563eb"
 
-            const yTexto =
-              resumido ? 7 : 10
-
-            const yBarra =
-              resumido ? 15 : 22
-
-            const larguraBarra =
-              Math.max(
-                2,
-                (largura * percentual) / 100
+              roundedRect(
+                ctx,
+                0,
+                yBarra,
+                larguraAzul,
+                alturaBarra,
+                Math.min(raio, larguraAzul / 2)
               )
 
-            const svgNS =
-              "http://www.w3.org/2000/svg"
+              ctx.fill()
 
-            const svg =
-              documentoClonado.createElementNS(
-                svgNS,
-                "svg"
-              )
+              /*
+                Transforma o Canvas pronto em imagem.
 
-            svg.setAttribute(
-              "viewBox",
-              `0 0 ${largura} ${altura}`
-            )
+                Agora o html2canvas não precisa mais
+                renderizar texto/flex/line-height dessa linha.
+              */
+              const imagem =
+                documentoClonado.createElement("img")
 
-            svg.setAttribute(
-              "width",
-              "100%"
-            )
+              imagem.src =
+                canvas.toDataURL("image/png")
 
-            svg.setAttribute(
-              "height",
-              String(altura)
-            )
+              imagem.style.display = "block"
+              imagem.style.width = "100%"
+              imagem.style.height =
+                `${alturaVisual}px`
 
-            svg.style.display = "block"
-            svg.style.width = "100%"
-            svg.style.height = `${altura}px`
-            svg.style.overflow = "visible"
+              imagem.style.objectFit = "fill"
+
+              /*
+                Substitui exclusivamente na cópia
+                usada para o PDF.
+              */
+              linha.innerHTML = ""
+              linha.appendChild(imagem)
+
+              linha.style.display = "block"
+              linha.style.width = "100%"
+              linha.style.height =
+                `${alturaVisual}px`
+
+              linha.style.minHeight =
+                `${alturaVisual}px`
+
+              linha.style.margin = "0"
+              linha.style.padding = "0"
+
+              linha.style.overflow = "visible"
+
+              linha.style.breakInside = "avoid"
+              linha.style.pageBreakInside = "avoid"
+            })
 
             /*
-              Nome / posição
+              Espaçamento dos rankings somente no PDF.
             */
-            const textoNome =
-              documentoClonado.createElementNS(
-                svgNS,
-                "text"
+            const listas =
+              relatorio.querySelectorAll(
+                ".report-ranking-list"
               )
 
-            textoNome.setAttribute("x", "0")
-            textoNome.setAttribute("y", String(yTexto))
-            textoNome.setAttribute(
-              "dominant-baseline",
-              "middle"
-            )
+            listas.forEach((lista) => {
+              lista.style.display = "flex"
+              lista.style.flexDirection = "column"
 
-            textoNome.setAttribute(
-              "font-family",
-              "Arial, Helvetica, sans-serif"
-            )
+              lista.style.gap =
+                resumido ? "3px" : "5px"
+            })
+          }
+        },
 
-            textoNome.setAttribute(
-              "font-size",
-              String(tamanhoFonte)
-            )
+        jsPDF: {
+          unit: "mm",
+          format: "a4",
+          orientation: "portrait"
+        },
 
-            textoNome.setAttribute(
-              "font-weight",
-              "600"
-            )
-
-            textoNome.setAttribute(
-              "fill",
-              "#111827"
-            )
-
-            textoNome.textContent = nome
-
-            /*
-              Valor na direita
-            */
-            const textoValor =
-              documentoClonado.createElementNS(
-                svgNS,
-                "text"
-              )
-
-            textoValor.setAttribute(
-              "x",
-              String(largura)
-            )
-
-            textoValor.setAttribute(
-              "y",
-              String(yTexto)
-            )
-
-            textoValor.setAttribute(
-              "text-anchor",
-              "end"
-            )
-
-            textoValor.setAttribute(
-              "dominant-baseline",
-              "middle"
-            )
-
-            textoValor.setAttribute(
-              "font-family",
-              "Arial, Helvetica, sans-serif"
-            )
-
-            textoValor.setAttribute(
-              "font-size",
-              String(tamanhoFonte)
-            )
-
-            textoValor.setAttribute(
-              "font-weight",
-              "700"
-            )
-
-            textoValor.setAttribute(
-              "fill",
-              "#111827"
-            )
-
-            textoValor.textContent = valor
-
-            /*
-              Fundo da barra
-            */
-            const fundo =
-              documentoClonado.createElementNS(
-                svgNS,
-                "rect"
-              )
-
-            fundo.setAttribute("x", "0")
-            fundo.setAttribute(
-              "y",
-              String(yBarra)
-            )
-
-            fundo.setAttribute(
-              "width",
-              String(largura)
-            )
-
-            fundo.setAttribute(
-              "height",
-              String(alturaBarra)
-            )
-
-            fundo.setAttribute(
-              "rx",
-              String(alturaBarra / 2)
-            )
-
-            fundo.setAttribute(
-              "fill",
-              "#e5e7eb"
-            )
-
-            /*
-              Parte azul
-            */
-            const progresso =
-              documentoClonado.createElementNS(
-                svgNS,
-                "rect"
-              )
-
-            progresso.setAttribute("x", "0")
-            progresso.setAttribute(
-              "y",
-              String(yBarra)
-            )
-
-            progresso.setAttribute(
-              "width",
-              String(larguraBarra)
-            )
-
-            progresso.setAttribute(
-              "height",
-              String(alturaBarra)
-            )
-
-            progresso.setAttribute(
-              "rx",
-              String(alturaBarra / 2)
-            )
-
-            progresso.setAttribute(
-              "fill",
-              "#2563eb"
-            )
-
-            svg.appendChild(textoNome)
-            svg.appendChild(textoValor)
-            svg.appendChild(fundo)
-            svg.appendChild(progresso)
-
-            /*
-              Substitui SOMENTE na cópia do PDF.
-              A tela original permanece intacta.
-            */
-            linha.innerHTML = ""
-            linha.appendChild(svg)
-
-            linha.style.display = "block"
-            linha.style.height = `${altura}px`
-            linha.style.minHeight = `${altura}px`
-            linha.style.margin = "0"
-            linha.style.padding = "0"
-            linha.style.overflow = "visible"
-            linha.style.breakInside = "avoid"
-            linha.style.pageBreakInside = "avoid"
-          })
-
-          /*
-            Espaçamento entre os SVGs.
-          */
-          const listas =
-            relatorio.querySelectorAll(
-              ".report-ranking-list"
-            )
-
-          listas.forEach((lista) => {
-            lista.style.display = "flex"
-            lista.style.flexDirection = "column"
-            lista.style.gap =
-              resumido ? "3px" : "6px"
-          })
+        pagebreak: {
+          mode: ["css", "legacy"]
         }
-      },
-
-      jsPDF: {
-        unit: "mm",
-        format: "a4",
-        orientation: "portrait"
-      },
-
-      pagebreak: {
-        mode: ["css", "legacy"]
       }
+
+      await html2pdf()
+        .set(opcoes)
+        .from(elemento)
+        .save()
+
+    } catch (error) {
+      console.error(
+        "Erro ao gerar PDF:",
+        error
+      )
+
+      alert(
+        "Não foi possível gerar o PDF."
+      )
+
+    } finally {
+      setModoPdf("completo")
+      setGerandoPdf(false)
     }
-
-    await html2pdf()
-      .set(opcoes)
-      .from(elemento)
-      .save()
-
-  } catch (error) {
-    console.error(error)
-
-    alert(
-      "Não foi possível gerar o PDF."
-    )
-  } finally {
-    setModoPdf("completo")
-    setGerandoPdf(false)
   }
-}
 
   return (
     <div className="space-y-5">
