@@ -494,10 +494,14 @@ export function RelatorioMensalProducao() {
 
           linhas.forEach((linha) => {
             linha.style.display = "block"
-            linha.style.minHeight = "34px"
             linha.style.height = "auto"
-            linha.style.marginBottom = "8px"
+            linha.style.minHeight = "0"
+
+            linha.style.margin = "0"
+            linha.style.padding = "0 0 10px 0"
+
             linha.style.overflow = "visible"
+
             linha.style.breakInside = "avoid"
             linha.style.pageBreakInside = "avoid"
           })
@@ -506,21 +510,26 @@ export function RelatorioMensalProducao() {
             relatorio.querySelectorAll(".report-ranking-label")
 
           labels.forEach((label) => {
-            label.style.display = "flex"
+            label.style.display = "grid"
+            label.style.gridTemplateColumns = "1fr auto"
             label.style.alignItems = "center"
-            label.style.justifyContent = "space-between"
+            label.style.columnGap = "10px"
 
             label.style.width = "100%"
-            label.style.height = "16px"
-            label.style.minHeight = "16px"
 
-            label.style.margin = "0 0 6px 0"
+            // MUITO IMPORTANTE:
+            // não definir height/minHeight
+            label.style.height = "auto"
+            label.style.minHeight = "0"
+
+            label.style.margin = "0"
+            label.style.padding = "0 0 5px 0"
 
             label.style.fontSize = "9px"
-            label.style.lineHeight = "16px"
+            label.style.lineHeight = "1.5"
 
-            label.style.position = "relative"
             label.style.overflow = "visible"
+            label.style.position = "static"
           })
 
           const textos =
@@ -530,13 +539,18 @@ export function RelatorioMensalProducao() {
 
           textos.forEach((texto) => {
             texto.style.display = "block"
-            texto.style.flex = "1"
-            texto.style.minWidth = "0"
-            texto.style.height = "16px"
-            texto.style.lineHeight = "16px"
+
+            texto.style.height = "auto"
+            texto.style.minHeight = "0"
+
+            texto.style.margin = "0"
+            texto.style.padding = "0"
+
+            texto.style.lineHeight = "1.5"
+
             texto.style.whiteSpace = "nowrap"
-            texto.style.overflow = "hidden"
-            texto.style.textOverflow = "ellipsis"
+            texto.style.overflow = "visible"
+            texto.style.textOverflow = "clip"
           })
 
           const valores =
@@ -546,11 +560,17 @@ export function RelatorioMensalProducao() {
 
           valores.forEach((valor) => {
             valor.style.display = "block"
-            valor.style.flexShrink = "0"
-            valor.style.height = "16px"
-            valor.style.lineHeight = "16px"
-            valor.style.marginLeft = "8px"
+
+            valor.style.height = "auto"
+            valor.style.minHeight = "0"
+
+            valor.style.margin = "0"
+            valor.style.padding = "0"
+
+            valor.style.lineHeight = "1.5"
+
             valor.style.whiteSpace = "nowrap"
+            valor.style.textAlign = "right"
           })
 
           const trilhos =
@@ -558,7 +578,6 @@ export function RelatorioMensalProducao() {
 
           trilhos.forEach((trilho) => {
             trilho.style.display = "block"
-            trilho.style.position = "relative"
 
             trilho.style.width = "100%"
             trilho.style.height = "7px"
@@ -567,6 +586,8 @@ export function RelatorioMensalProducao() {
             trilho.style.margin = "0"
             trilho.style.padding = "0"
 
+            trilho.style.backgroundColor = "#e5e7eb"
+            trilho.style.borderRadius = "999px"
             trilho.style.overflow = "hidden"
           })
 
@@ -577,6 +598,7 @@ export function RelatorioMensalProducao() {
             barra.style.display = "block"
             barra.style.height = "7px"
             barra.style.minHeight = "7px"
+            barra.style.borderRadius = "999px"
           })
 
           /*
@@ -585,31 +607,24 @@ export function RelatorioMensalProducao() {
             suficiente entre texto e barra.
           */
 
-          if (
-            relatorio.classList.contains("pdf-resumido")
-          ) {
+          if (relatorio.classList.contains("pdf-resumido")) {
             linhas.forEach((linha) => {
-              linha.style.minHeight = "24px"
-              linha.style.marginBottom = "4px"
+              linha.style.paddingBottom = "5px"
             })
 
             labels.forEach((label) => {
-              label.style.height = "11px"
-              label.style.minHeight = "11px"
-              label.style.lineHeight = "11px"
               label.style.fontSize = "7px"
-              label.style.marginBottom = "3px"
+              label.style.lineHeight = "1.5"
+              label.style.paddingBottom = "2px"
             })
 
             textos.forEach((texto) => {
-              texto.style.height = "11px"
-              texto.style.lineHeight = "11px"
+              texto.style.lineHeight = "1.5"
             })
 
             valores.forEach((valor) => {
-              valor.style.height = "11px"
-              valor.style.lineHeight = "11px"
               valor.style.fontSize = "7px"
+              valor.style.lineHeight = "1.5"
             })
 
             trilhos.forEach((trilho) => {
