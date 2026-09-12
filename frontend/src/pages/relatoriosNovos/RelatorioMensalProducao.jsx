@@ -467,7 +467,162 @@ export function RelatorioMensalProducao() {
         scale: 2,
         useCORS: true,
         backgroundColor: "#ffffff",
-        scrollY: 0
+        scrollX: 0,
+        scrollY: 0,
+        logging: false,
+
+        onclone: (documentoClonado) => {
+          /*
+            IMPORTANTE:
+            Tudo aqui altera SOMENTE a cópia usada
+            para gerar o PDF.
+
+            A tela do sistema não é modificada.
+          */
+
+          const relatorio =
+            documentoClonado.querySelector(".report-pdf")
+
+          if (!relatorio) return
+
+          /*
+            Corrige os rankings no PDF.
+          */
+
+          const linhas =
+            relatorio.querySelectorAll(".report-ranking-row")
+
+          linhas.forEach((linha) => {
+            linha.style.display = "block"
+            linha.style.minHeight = "34px"
+            linha.style.height = "auto"
+            linha.style.marginBottom = "8px"
+            linha.style.overflow = "visible"
+            linha.style.breakInside = "avoid"
+            linha.style.pageBreakInside = "avoid"
+          })
+
+          const labels =
+            relatorio.querySelectorAll(".report-ranking-label")
+
+          labels.forEach((label) => {
+            label.style.display = "flex"
+            label.style.alignItems = "center"
+            label.style.justifyContent = "space-between"
+
+            label.style.width = "100%"
+            label.style.height = "16px"
+            label.style.minHeight = "16px"
+
+            label.style.margin = "0 0 6px 0"
+
+            label.style.fontSize = "9px"
+            label.style.lineHeight = "16px"
+
+            label.style.position = "relative"
+            label.style.overflow = "visible"
+          })
+
+          const textos =
+            relatorio.querySelectorAll(
+              ".report-ranking-label span"
+            )
+
+          textos.forEach((texto) => {
+            texto.style.display = "block"
+            texto.style.flex = "1"
+            texto.style.minWidth = "0"
+            texto.style.height = "16px"
+            texto.style.lineHeight = "16px"
+            texto.style.whiteSpace = "nowrap"
+            texto.style.overflow = "hidden"
+            texto.style.textOverflow = "ellipsis"
+          })
+
+          const valores =
+            relatorio.querySelectorAll(
+              ".report-ranking-label strong"
+            )
+
+          valores.forEach((valor) => {
+            valor.style.display = "block"
+            valor.style.flexShrink = "0"
+            valor.style.height = "16px"
+            valor.style.lineHeight = "16px"
+            valor.style.marginLeft = "8px"
+            valor.style.whiteSpace = "nowrap"
+          })
+
+          const trilhos =
+            relatorio.querySelectorAll(".report-ranking-track")
+
+          trilhos.forEach((trilho) => {
+            trilho.style.display = "block"
+            trilho.style.position = "relative"
+
+            trilho.style.width = "100%"
+            trilho.style.height = "7px"
+            trilho.style.minHeight = "7px"
+
+            trilho.style.margin = "0"
+            trilho.style.padding = "0"
+
+            trilho.style.overflow = "hidden"
+          })
+
+          const barras =
+            relatorio.querySelectorAll(".report-ranking-bar")
+
+          barras.forEach((barra) => {
+            barra.style.display = "block"
+            barra.style.height = "7px"
+            barra.style.minHeight = "7px"
+          })
+
+          /*
+            PDF resumido:
+            deixa compacto, mas mantém espaço
+            suficiente entre texto e barra.
+          */
+
+          if (
+            relatorio.classList.contains("pdf-resumido")
+          ) {
+            linhas.forEach((linha) => {
+              linha.style.minHeight = "24px"
+              linha.style.marginBottom = "4px"
+            })
+
+            labels.forEach((label) => {
+              label.style.height = "11px"
+              label.style.minHeight = "11px"
+              label.style.lineHeight = "11px"
+              label.style.fontSize = "7px"
+              label.style.marginBottom = "3px"
+            })
+
+            textos.forEach((texto) => {
+              texto.style.height = "11px"
+              texto.style.lineHeight = "11px"
+            })
+
+            valores.forEach((valor) => {
+              valor.style.height = "11px"
+              valor.style.lineHeight = "11px"
+              valor.style.fontSize = "7px"
+            })
+
+            trilhos.forEach((trilho) => {
+              trilho.style.height = "4px"
+              trilho.style.minHeight = "4px"
+            })
+
+            barras.forEach((barra) => {
+              barra.style.height = "4px"
+              barra.style.minHeight = "4px"
+            })
+          }
+        }
       },
 
       jsPDF: {
@@ -477,7 +632,7 @@ export function RelatorioMensalProducao() {
       },
 
       pagebreak: {
-        mode: ["avoid-all", "css", "legacy"]
+        mode: ["css", "legacy"]
       }
     }
 
