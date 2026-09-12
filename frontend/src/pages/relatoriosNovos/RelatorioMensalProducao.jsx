@@ -472,171 +472,310 @@ export function RelatorioMensalProducao() {
         logging: false,
 
         onclone: (documentoClonado) => {
-          /*
-            IMPORTANTE:
-            Tudo aqui altera SOMENTE a cópia usada
-            para gerar o PDF.
-
-            A tela do sistema não é modificada.
-          */
-
           const relatorio =
             documentoClonado.querySelector(".report-pdf")
 
           if (!relatorio) return
 
-          /*
-            Corrige os rankings no PDF.
-          */
+          const resumido =
+            relatorio.classList.contains("pdf-resumido")
 
           const linhas =
             relatorio.querySelectorAll(".report-ranking-row")
 
           linhas.forEach((linha) => {
+            const label =
+              linha.querySelector(".report-ranking-label")
+
+            const nomeElemento =
+              label?.querySelector("span")
+
+            const valorElemento =
+              label?.querySelector(":scope > strong")
+
+            const barra =
+              linha.querySelector(".report-ranking-bar")
+
+            if (
+              !nomeElemento ||
+              !valorElemento ||
+              !barra
+            ) {
+              return
+            }
+
+            const nome =
+              nomeElemento.textContent?.trim() || ""
+
+            const valor =
+              valorElemento.textContent?.trim() || ""
+
+            const percentual =
+              Math.max(
+                0,
+                Math.min(
+                  100,
+                  parseFloat(barra.style.width) || 0
+                )
+              )
+
+            /*
+              Pegamos a largura real do ranking já
+              renderizado antes de transformá-lo em SVG.
+            */
+            const largura =
+              Math.max(
+                300,
+                Math.round(
+                  linha.getBoundingClientRect().width
+                )
+              )
+
+            const altura =
+              resumido ? 24 : 34
+
+            const tamanhoFonte =
+              resumido ? 7 : 9
+
+            const alturaBarra =
+              resumido ? 4 : 6
+
+            const yTexto =
+              resumido ? 7 : 10
+
+            const yBarra =
+              resumido ? 15 : 22
+
+            const larguraBarra =
+              Math.max(
+                2,
+                (largura * percentual) / 100
+              )
+
+            const svgNS =
+              "http://www.w3.org/2000/svg"
+
+            const svg =
+              documentoClonado.createElementNS(
+                svgNS,
+                "svg"
+              )
+
+            svg.setAttribute(
+              "viewBox",
+              `0 0 ${largura} ${altura}`
+            )
+
+            svg.setAttribute(
+              "width",
+              "100%"
+            )
+
+            svg.setAttribute(
+              "height",
+              String(altura)
+            )
+
+            svg.style.display = "block"
+            svg.style.width = "100%"
+            svg.style.height = `${altura}px`
+            svg.style.overflow = "visible"
+
+            /*
+              Nome / posição
+            */
+            const textoNome =
+              documentoClonado.createElementNS(
+                svgNS,
+                "text"
+              )
+
+            textoNome.setAttribute("x", "0")
+            textoNome.setAttribute("y", String(yTexto))
+            textoNome.setAttribute(
+              "dominant-baseline",
+              "middle"
+            )
+
+            textoNome.setAttribute(
+              "font-family",
+              "Arial, Helvetica, sans-serif"
+            )
+
+            textoNome.setAttribute(
+              "font-size",
+              String(tamanhoFonte)
+            )
+
+            textoNome.setAttribute(
+              "font-weight",
+              "600"
+            )
+
+            textoNome.setAttribute(
+              "fill",
+              "#111827"
+            )
+
+            textoNome.textContent = nome
+
+            /*
+              Valor na direita
+            */
+            const textoValor =
+              documentoClonado.createElementNS(
+                svgNS,
+                "text"
+              )
+
+            textoValor.setAttribute(
+              "x",
+              String(largura)
+            )
+
+            textoValor.setAttribute(
+              "y",
+              String(yTexto)
+            )
+
+            textoValor.setAttribute(
+              "text-anchor",
+              "end"
+            )
+
+            textoValor.setAttribute(
+              "dominant-baseline",
+              "middle"
+            )
+
+            textoValor.setAttribute(
+              "font-family",
+              "Arial, Helvetica, sans-serif"
+            )
+
+            textoValor.setAttribute(
+              "font-size",
+              String(tamanhoFonte)
+            )
+
+            textoValor.setAttribute(
+              "font-weight",
+              "700"
+            )
+
+            textoValor.setAttribute(
+              "fill",
+              "#111827"
+            )
+
+            textoValor.textContent = valor
+
+            /*
+              Fundo da barra
+            */
+            const fundo =
+              documentoClonado.createElementNS(
+                svgNS,
+                "rect"
+              )
+
+            fundo.setAttribute("x", "0")
+            fundo.setAttribute(
+              "y",
+              String(yBarra)
+            )
+
+            fundo.setAttribute(
+              "width",
+              String(largura)
+            )
+
+            fundo.setAttribute(
+              "height",
+              String(alturaBarra)
+            )
+
+            fundo.setAttribute(
+              "rx",
+              String(alturaBarra / 2)
+            )
+
+            fundo.setAttribute(
+              "fill",
+              "#e5e7eb"
+            )
+
+            /*
+              Parte azul
+            */
+            const progresso =
+              documentoClonado.createElementNS(
+                svgNS,
+                "rect"
+              )
+
+            progresso.setAttribute("x", "0")
+            progresso.setAttribute(
+              "y",
+              String(yBarra)
+            )
+
+            progresso.setAttribute(
+              "width",
+              String(larguraBarra)
+            )
+
+            progresso.setAttribute(
+              "height",
+              String(alturaBarra)
+            )
+
+            progresso.setAttribute(
+              "rx",
+              String(alturaBarra / 2)
+            )
+
+            progresso.setAttribute(
+              "fill",
+              "#2563eb"
+            )
+
+            svg.appendChild(textoNome)
+            svg.appendChild(textoValor)
+            svg.appendChild(fundo)
+            svg.appendChild(progresso)
+
+            /*
+              Substitui SOMENTE na cópia do PDF.
+              A tela original permanece intacta.
+            */
+            linha.innerHTML = ""
+            linha.appendChild(svg)
+
             linha.style.display = "block"
-            linha.style.height = "auto"
-            linha.style.minHeight = "0"
-
+            linha.style.height = `${altura}px`
+            linha.style.minHeight = `${altura}px`
             linha.style.margin = "0"
-            linha.style.padding = "0 0 10px 0"
-
+            linha.style.padding = "0"
             linha.style.overflow = "visible"
-
             linha.style.breakInside = "avoid"
             linha.style.pageBreakInside = "avoid"
           })
 
-          const labels =
-            relatorio.querySelectorAll(".report-ranking-label")
-
-          labels.forEach((label) => {
-            label.style.display = "grid"
-            label.style.gridTemplateColumns = "1fr auto"
-            label.style.alignItems = "center"
-            label.style.columnGap = "10px"
-
-            label.style.width = "100%"
-
-            // MUITO IMPORTANTE:
-            // não definir height/minHeight
-            label.style.height = "auto"
-            label.style.minHeight = "0"
-
-            label.style.margin = "0"
-            label.style.padding = "0 0 5px 0"
-
-            label.style.fontSize = "9px"
-            label.style.lineHeight = "1.5"
-
-            label.style.overflow = "visible"
-            label.style.position = "static"
-          })
-
-          const textos =
-            relatorio.querySelectorAll(
-              ".report-ranking-label span"
-            )
-
-          textos.forEach((texto) => {
-            texto.style.display = "block"
-
-            texto.style.height = "auto"
-            texto.style.minHeight = "0"
-
-            texto.style.margin = "0"
-            texto.style.padding = "0"
-
-            texto.style.lineHeight = "1.5"
-
-            texto.style.whiteSpace = "nowrap"
-            texto.style.overflow = "visible"
-            texto.style.textOverflow = "clip"
-          })
-
-          const valores =
-            relatorio.querySelectorAll(
-              ".report-ranking-label strong"
-            )
-
-          valores.forEach((valor) => {
-            valor.style.display = "block"
-
-            valor.style.height = "auto"
-            valor.style.minHeight = "0"
-
-            valor.style.margin = "0"
-            valor.style.padding = "0"
-
-            valor.style.lineHeight = "1.5"
-
-            valor.style.whiteSpace = "nowrap"
-            valor.style.textAlign = "right"
-          })
-
-          const trilhos =
-            relatorio.querySelectorAll(".report-ranking-track")
-
-          trilhos.forEach((trilho) => {
-            trilho.style.display = "block"
-
-            trilho.style.width = "100%"
-            trilho.style.height = "7px"
-            trilho.style.minHeight = "7px"
-
-            trilho.style.margin = "0"
-            trilho.style.padding = "0"
-
-            trilho.style.backgroundColor = "#e5e7eb"
-            trilho.style.borderRadius = "999px"
-            trilho.style.overflow = "hidden"
-          })
-
-          const barras =
-            relatorio.querySelectorAll(".report-ranking-bar")
-
-          barras.forEach((barra) => {
-            barra.style.display = "block"
-            barra.style.height = "7px"
-            barra.style.minHeight = "7px"
-            barra.style.borderRadius = "999px"
-          })
-
           /*
-            PDF resumido:
-            deixa compacto, mas mantém espaço
-            suficiente entre texto e barra.
+            Espaçamento entre os SVGs.
           */
+          const listas =
+            relatorio.querySelectorAll(
+              ".report-ranking-list"
+            )
 
-          if (relatorio.classList.contains("pdf-resumido")) {
-            linhas.forEach((linha) => {
-              linha.style.paddingBottom = "5px"
-            })
-
-            labels.forEach((label) => {
-              label.style.fontSize = "7px"
-              label.style.lineHeight = "1.5"
-              label.style.paddingBottom = "2px"
-            })
-
-            textos.forEach((texto) => {
-              texto.style.lineHeight = "1.5"
-            })
-
-            valores.forEach((valor) => {
-              valor.style.fontSize = "7px"
-              valor.style.lineHeight = "1.5"
-            })
-
-            trilhos.forEach((trilho) => {
-              trilho.style.height = "4px"
-              trilho.style.minHeight = "4px"
-            })
-
-            barras.forEach((barra) => {
-              barra.style.height = "4px"
-              barra.style.minHeight = "4px"
-            })
-          }
+          listas.forEach((lista) => {
+            lista.style.display = "flex"
+            lista.style.flexDirection = "column"
+            lista.style.gap =
+              resumido ? "3px" : "6px"
+          })
         }
       },
 
