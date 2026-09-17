@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { CapacidadeDiaria } from "../components/CapacidadeDiaria"
 import { api } from "../services/api"
 import { Link, useNavigate } from "react-router-dom"
 import { AutocompleteCliente } from "../components/AutocompleteCliente"
@@ -1032,6 +1033,12 @@ function aplicarRotaSelecionada(id) {
             titulo="Entrega"
             descricao="Informe se a empresa entregará ou se o cliente fará a retirada."
           >
+            <CapacidadeDiaria
+              data={dataEntrega}
+              mostrarChapas={tipoPedido === "COM_PRODUCAO"}
+              responsavelFrete={tipoEntrega === "ENTREGA_EMPRESA" ? responsavelFrete : null}
+              atualizacao={pedidos}
+            />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
               <OpcaoCard
                 name="tipoEntrega"

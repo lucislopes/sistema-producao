@@ -1,3 +1,4 @@
+import { bloquearAgenda, validarLimitesPlano } from "../utils/limitesDiarios.js"
 import { prisma } from "../lib/prisma.js"
 import { recalcularStatusPedido } from "../utils/recalcularStatusPedido.js"
 
@@ -88,6 +89,7 @@ export async function criarPlanosComServicos(req, res) {
     }
 
     const resultado = await prisma.$transaction(async (tx) => {
+      await bloquearAgenda(tx)
       await validarCriacaoNovoPlano(tx, pedidoId, req)
 
       const planoExistente = await tx.planoCorte.findFirst({
@@ -115,6 +117,7 @@ export async function criarPlanosComServicos(req, res) {
         tiposServico.map((tipo) => [tipo.id, tipo.nome])
       )
 
+      await validarLimitesPlano(tx, pedidoId, quantidadeChapas)
       const plano = await tx.planoCorte.create({
         data: {
           pedidoId,
@@ -176,7 +179,7 @@ export async function criarPlanosComServicos(req, res) {
       })
 
       return plano
-    })
+    }, { isolationLevel: "ReadCommitted" })
 
     return res.status(201).json({
       message: "Plano e serviços criados com sucesso",
@@ -265,6 +268,7 @@ export async function atualizarPlanoComServicos(req, res) {
     }
 
     const resultado = await prisma.$transaction(async (tx) => {
+      await bloquearAgenda(tx)
       const planoAntes = await tx.planoCorte.findUnique({
         where: { id },
         include: {
@@ -296,6 +300,7 @@ export async function atualizarPlanoComServicos(req, res) {
         )
       }
 
+      await validarLimitesPlano(tx, planoAntes.pedidoId, quantidadeChapas, id)
       const plano = await tx.planoCorte.update({
         where: { id },
         data: {
@@ -373,7 +378,7 @@ export async function atualizarPlanoComServicos(req, res) {
       }
 
       return plano
-    })
+    }, { isolationLevel: "ReadCommitted" })
 
     await recalcularStatusPedido(resultado.pedidoId)
 
@@ -428,6 +433,7 @@ export async function excluirPlanoComServicos(req, res) {
     const pedidoEstavaProntoEntrega = plano.pedido.status === "PRONTO_ENTREGA"
 
     await prisma.$transaction(async (tx) => {
+      await bloquearAgenda(tx)
       const nomesServicos = plano.servicos
         .map((servico) => servico.tipoServico?.nome)
         .filter(Boolean)

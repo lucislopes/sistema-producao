@@ -21,6 +21,14 @@ export function ConfiguracaoEmpresa() {
   const [cnpj, setCnpj] = useState("")
   const [logoUrl, setLogoUrl] = useState("")
 
+  const camposLimites = [
+    ["limiteFretesEmpresaDia", "Fretes da loja por dia"],
+    ["limiteFretesClienteDia", "Fretes do cliente por dia"],
+    ["limiteChapasDia", "Chapas de produção por dia"]
+  ]
+  const [limites, setLimites] = useState({})
+  const isAdmin = JSON.parse(localStorage.getItem("@usuario") || "{}").funcao === "ADMIN"
+
   const inputLogoRef = useRef(null)
 
   const estadosBrasil = [
@@ -33,6 +41,7 @@ export function ConfiguracaoEmpresa() {
     try {
       const response = await api.get("/configuracao-empresa")
 
+      setLimites(Object.fromEntries(camposLimites.map(([campo]) => [campo, response.data[campo] ?? ""])))
       setNome(response.data.nome || "")
       setTelefone(response.data.telefone || "")
       setEmail(response.data.email || "")
@@ -59,14 +68,15 @@ export function ConfiguracaoEmpresa() {
         cidade,
         estado,
         cnpj,
-        logoUrl
+        logoUrl,
+        ...limites
       })
 
       alert("Configuração salva com sucesso")
       carregarConfiguracao()
     } catch (error) {
       console.log(error)
-      alert("Erro ao salvar configuração")
+      alert(error.response?.data?.error || "Erro ao salvar configuração")
     }
   }
 
@@ -121,8 +131,12 @@ export function ConfiguracaoEmpresa() {
   }
 
   useEffect(() => {
-    carregarConfiguracao()
+    if (isAdmin) carregarConfiguracao()
+    // Configuração carregada ao abrir a página.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  if (!isAdmin) return <p className="p-5 text-gray-700">Somente administradores podem acessar as configurações.</p>
 
   return (
     <div className="space-y-6">
@@ -276,6 +290,21 @@ export function ConfiguracaoEmpresa() {
             </select>
           </div>
         </div>
+
+        <section className="mt-6 border-t border-gray-200 pt-6">
+          <h2 className="text-lg font-semibold text-gray-800">Limites diários</h2>
+          <p className="text-sm text-gray-600 mt-2 mb-4">Somente administradores podem editar. A contagem usa a data prevista de entrega e ignora pedidos cancelados. Deixe em branco para desativar; zero bloqueia novos agendamentos. Chapas seguem os planos dos pedidos com produção.</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {camposLimites.map(([campo, titulo]) => (
+              <label key={campo} className="text-sm font-medium text-gray-700">
+                {titulo}
+                <Input type="number" min="0" max="2147483647" step="1" placeholder="Sem limite"
+                  value={limites[campo] ?? ""}
+                  onChange={e => setLimites(atual => ({ ...atual, [campo]: e.target.value }))} />
+              </label>
+            ))}
+          </div>
+        </section>
 
         <Button
           type="submit"

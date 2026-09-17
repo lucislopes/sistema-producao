@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { CapacidadeDiaria } from "../components/CapacidadeDiaria"
 import { useSearchParams } from "react-router-dom"
 import { api } from "../services/api"
 import { Input } from "../components/ui/Input"
@@ -494,6 +495,10 @@ async function confirmarExclusaoPlano() {
                     </div>
                 </div>
                 )}
+
+            <div className="md:col-span-2">
+              <CapacidadeDiaria data={pedidoSelecionado?.dataEntrega} mostrarFretes={false} atualizacao={planosCadastrados} />
+            </div>
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">

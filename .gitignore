@@ -4,3 +4,8 @@
 
 node_modules/
 frontend/dist/
+
+# Arquivos privados da demonstração e backups locais.
+apresentacao/.build/
+apresentacao/.codex-finalizer/
+backups/

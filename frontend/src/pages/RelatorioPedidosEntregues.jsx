@@ -31,6 +31,7 @@ export function RelatorioPedidosEntregues() {
   const [dataFim, setDataFim] = useState("")
   const [baseData, setBaseData] = useState("realizada")
   const [vendedorId, setVendedorId] = useState("")
+  const [responsavelFrete, setResponsavelFrete] = useState("")
   const [busca, setBusca] = useState("")
 
   const [page, setPage] = useState(1)
@@ -122,6 +123,7 @@ export function RelatorioPedidosEntregues() {
         dataFim,
         baseData,
         vendedorId,
+        responsavelFrete,
         busca,
         page: pagina,
         limit,
@@ -178,6 +180,7 @@ export function RelatorioPedidosEntregues() {
     setBaseData("realizada")
     setVendedorId("")
     setBusca("")
+    setResponsavelFrete("")
     setPage(1)
 
     carregarRelatorio(1, {
@@ -185,6 +188,7 @@ export function RelatorioPedidosEntregues() {
       dataFim: "",
       baseData: "realizada",
       vendedorId: "",
+      responsavelFrete: "",
       busca: ""
     })
   }
@@ -256,6 +260,10 @@ export function RelatorioPedidosEntregues() {
     window.print()
   }
 
+  function nomeFrete(item) {
+    return item.tipoEntrega === "CLIENTE_RETIRA" ? "Cliente retira" : item.responsavelFrete === "EMPRESA" ? "Frete Loja" : item.responsavelFrete === "CLIENTE" ? "Frete Cliente" : "Não informado"
+  }
+
   function exportarCSV() {
     const cabecalho = [
       "Pedido",
@@ -265,6 +273,7 @@ export function RelatorioPedidosEntregues() {
       "Previsao Entrega",
       "Entrega Realizada",
       "Endereco",
+      "Responsavel Frete",
       "Status",
       "Prazo",
       "Valor"
@@ -278,6 +287,7 @@ export function RelatorioPedidosEntregues() {
       formatarData(item.dataEntrega),
       formatarData(item.dataEntregaReal),
       item.enderecoEntrega || item.cliente?.endereco || "",
+      nomeFrete(item),
       item.status || "",
       item.situacaoPrazo || "",
       item.valorTotal || ""
@@ -491,6 +501,13 @@ export function RelatorioPedidosEntregues() {
             ))}
           </Select>
 
+          <Select aria-label="Responsável pelo frete" value={responsavelFrete} onChange={e => setResponsavelFrete(e.target.value)}>
+            <option value="">Todas as modalidades</option>
+            <option value="EMPRESA">Frete Loja</option>
+            <option value="CLIENTE">Frete Cliente</option>
+            <option value="CLIENTE_RETIRA">Cliente retira</option>
+          </Select>
+
           <Select
             aria-label="Registros por página"
             value={limit}
@@ -568,6 +585,7 @@ export function RelatorioPedidosEntregues() {
               <Th>Previsão</Th>
               <Th>Entregue em</Th>
               <Th>Endereço</Th>
+              <Th>Frete</Th>
               <Th>Status</Th>
               <Th>Prazo</Th>
               {podeVerValores && <Th>Valor</Th>}
@@ -602,6 +620,9 @@ export function RelatorioPedidosEntregues() {
                   {item.enderecoEntrega || item.cliente?.endereco || "-"}
                 </Td>
 
+                <Td>
+                  {nomeFrete(item)}
+                </Td>
                 <Td>
                   <BadgeStatus status={item.status} />
                 </Td>

@@ -231,7 +231,9 @@ export async function relatorioProgramacaoChapas(req, res) {
       (a, b) => b.chapas - a.chapas
     )
 
+    const configuracao = await prisma.configuracaoEmpresa.findFirst()
     return res.json({
+      limiteChapasDia: configuracao?.limiteChapasDia ?? null,
       dados,
       resumo: {
         totalPedidos,

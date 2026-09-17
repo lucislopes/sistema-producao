@@ -1,4 +1,5 @@
 import { Router } from "express"
+import { obterCapacidadeDiaria } from "../controllers/capacidadeDiaria.controller.js"
 
 import {
   listarPedidos,
@@ -16,6 +17,12 @@ import { roleMiddleware } from "../middlewares/role.middleware.js"
 const router = Router()
 
 router.use(authMiddleware)
+
+router.get(
+  "/capacidade-diaria",
+  roleMiddleware("ADMIN", "VENDEDOR", "OPERADOR", "VENDEDOR_OPERADOR"),
+  obterCapacidadeDiaria
+)
 
 router.get(
   "/",

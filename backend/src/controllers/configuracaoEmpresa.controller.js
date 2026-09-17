@@ -1,16 +1,14 @@
+import { normalizarLimites, bloquearAgenda } from "../utils/limitesDiarios.js"
 import { prisma } from "../lib/prisma.js"
 
 export async function obterConfiguracaoEmpresa(req, res) {
   try {
-    let configuracao = await prisma.configuracaoEmpresa.findFirst()
-
-    if (!configuracao) {
-      configuracao = await prisma.configuracaoEmpresa.create({
-        data: {
-          nome: "Minha Empresa"
-        }
+    const configuracao = await prisma.$transaction(async tx => {
+      await bloquearAgenda(tx)
+      return await tx.configuracaoEmpresa.findFirst() || tx.configuracaoEmpresa.create({
+        data: { nome: "Minha Empresa" }
       })
-    }
+    }, { isolationLevel: "ReadCommitted" })
 
     return res.json(configuracao)
   } catch (error) {
@@ -35,40 +33,18 @@ export async function salvarConfiguracaoEmpresa(req, res) {
       logoUrl
     } = req.body
 
-    let configuracao = await prisma.configuracaoEmpresa.findFirst()
-
-    if (!configuracao) {
-      configuracao = await prisma.configuracaoEmpresa.create({
-        data: {
-          nome,
-          telefone,
-          email,
-          endereco,
-          cidade,
-          estado,
-          cnpj,
-          logoUrl
-        }
-      })
-
-      return res.status(201).json(configuracao)
+    let limites
+    try { limites = normalizarLimites(req.body) } catch (error) {
+      return res.status(400).json({ error: error.message })
     }
-
-    configuracao = await prisma.configuracaoEmpresa.update({
-      where: {
-        id: configuracao.id
-      },
-      data: {
-        nome,
-        telefone,
-        email,
-        endereco,
-        cidade,
-        estado,
-        cnpj,
-        logoUrl
-      }
-    })
+    const configuracao = await prisma.$transaction(async tx => {
+      await bloquearAgenda(tx)
+      const atual = await tx.configuracaoEmpresa.findFirst()
+      const data = { nome, telefone, email, endereco, cidade, estado, cnpj, logoUrl, ...limites }
+      return atual
+        ? tx.configuracaoEmpresa.update({ where: { id: atual.id }, data })
+        : tx.configuracaoEmpresa.create({ data })
+    }, { isolationLevel: "ReadCommitted" })
 
     return res.json(configuracao)
   } catch (error) {

@@ -25,6 +25,7 @@ export async function relatorioPedidosEntregues(req, res) {
       dataFim,
       baseData = "realizada",
       vendedorId,
+      responsavelFrete,
       busca,
       page = 1,
       limit = 50
@@ -71,6 +72,12 @@ export async function relatorioPedidosEntregues(req, res) {
       } else {
         where[campoData] = intervalo
       }
+    }
+
+    if (responsavelFrete) {
+      if (!["EMPRESA", "CLIENTE", "CLIENTE_RETIRA"].includes(responsavelFrete)) return res.status(400).json({ error: "Responsável pelo frete inválido" })
+      where.tipoEntrega = responsavelFrete === "CLIENTE_RETIRA" ? "CLIENTE_RETIRA" : "ENTREGA_EMPRESA"
+      if (responsavelFrete !== "CLIENTE_RETIRA") where.responsavelFrete = responsavelFrete
     }
 
     if (vendedorId) {

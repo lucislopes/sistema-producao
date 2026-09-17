@@ -8,6 +8,9 @@ datasource db {
 }
 
 model ConfiguracaoEmpresa {
+  limiteFretesEmpresaDia Int?
+  limiteFretesClienteDia Int?
+  limiteChapasDia Int?
   id        String   @id @default(cuid())
   nome      String
   telefone  String?

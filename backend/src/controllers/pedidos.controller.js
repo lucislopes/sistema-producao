@@ -1,3 +1,4 @@
+import { salvarPedidoComLimites } from "../utils/limitesDiarios.js"
 import { prisma } from "../lib/prisma.js"
 import { podeEditarPedido } from "../utils/permissoes.js"
 import { registrarHistoricoPedido } from "../utils/registrarHistoricoPedido.js"
@@ -185,6 +186,7 @@ export async function listarPedidos(req, res) {
       }
     })
   } catch (error) {
+    if (error.statusCode) return res.status(error.statusCode).json({ error: error.message })
     console.log(error)
 
     return res.status(400).json({
@@ -332,9 +334,9 @@ export async function criarPedido(req, res) {
       freteAlterado,
       motivoAlteracaoFrete
     })
-    const dataConvertida = criarDataEntrega(dataEntrega)
 
-    const pedido = await prisma.pedido.create({
+
+    const pedido = await salvarPedidoComLimites(prisma, "create", {
       data: {
         origemPedido: origemTratada,
         numeroPedidoManual: numeroManualTratado,
@@ -406,6 +408,7 @@ export async function criarPedido(req, res) {
 
     return res.status(201).json(pedido)
   } catch (error) {
+    if (error.statusCode) return res.status(error.statusCode).json({ error: error.message })
     console.log(error)
 
     return res.status(500).json({
@@ -597,7 +600,7 @@ export async function atualizarPedido(req, res) {
       motivoAlteracaoFrete
     })
 
-    const pedido = await prisma.pedido.update({
+    const pedido = await salvarPedidoComLimites(prisma, "update", {
       where: { id },
       data: {
         origemPedido: origemTratada,
@@ -681,6 +684,7 @@ export async function atualizarPedido(req, res) {
 
     return res.json(pedido)
   } catch (error) {
+    if (error.statusCode) return res.status(error.statusCode).json({ error: error.message })
     console.log(error)
 
     return res.status(500).json({

@@ -1,3 +1,4 @@
+import { bloquearAgenda, validarLimitesPlano, validarLimitesPedido, erroLimite } from "../utils/limitesDiarios.js"
 import { prisma } from "../lib/prisma.js"
 import { registrarHistoricoPedido } from "../utils/registrarHistoricoPedido.js"
 
@@ -63,6 +64,7 @@ export async function listarPlanosPorPedido(req, res) {
 
     return res.json(planos)
   } catch (error) {
+    if (error.statusCode) return res.status(error.statusCode).json({ error: error.message })
     console.log(error)
 
     return res.status(500).json({
@@ -137,31 +139,40 @@ export async function criarPlanoCorte(req, res) {
       })
     }
 
-    const plano = await prisma.planoCorte.create({
-      data: {
-        pedidoId,
-        numeroPlano: numeroPlanoTratado,
-        quantidadeChapas: qtdChapas,
-        medidaEncabecamento,
-        compraExterna: Boolean(compraExterna),
-        observacoes
+    const plano = await prisma.$transaction(async tx => {
+      await bloquearAgenda(tx)
+      const pedidoAtual = await tx.pedido.findUnique({ where: { id: pedidoId } })
+      if (!pedidoAtual || ["ENTREGUE", "CANCELADO"].includes(pedidoAtual.status)) throw erroLimite("Pedido encerrado não permite novos planos.")
+      const dadosAtualizacaoPedido = {
+        status: "EM_SEPARACAO"
       }
-    })
 
-    const dadosAtualizacaoPedido = {
-      status: "EM_SEPARACAO"
-    }
+      if (!pedidoAtual.dataEntrega) {
+        dadosAtualizacaoPedido.dataEntrega = calcularDataEntregaPorChapas(qtdChapas)
+      }
 
-    if (!pedido.dataEntrega) {
-      dadosAtualizacaoPedido.dataEntrega = calcularDataEntregaPorChapas(qtdChapas)
-    }
+      await validarLimitesPedido(tx, { ...pedidoAtual, ...dadosAtualizacaoPedido }, pedidoAtual)
+      await tx.pedido.update({
+        where: {
+          id: pedidoId
+        },
+        data: dadosAtualizacaoPedido
+      })
 
-    await prisma.pedido.update({
-      where: {
-        id: pedidoId
-      },
-      data: dadosAtualizacaoPedido
-    })
+      await validarLimitesPlano(tx, pedidoId, qtdChapas)
+      const plano = await tx.planoCorte.create({
+        data: {
+          pedidoId,
+          numeroPlano: numeroPlanoTratado,
+          quantidadeChapas: qtdChapas,
+          medidaEncabecamento,
+          compraExterna: Boolean(compraExterna),
+          observacoes
+        }
+      })
+
+      return plano
+    }, { isolationLevel: "ReadCommitted" })
 
     await registrarHistoricoPedido({
       pedidoId,
@@ -172,6 +183,7 @@ export async function criarPlanoCorte(req, res) {
 
     return res.status(201).json(plano)
   } catch (error) {
+    if (error.statusCode) return res.status(error.statusCode).json({ error: error.message })
     console.log(error)
 
     return res.status(500).json({
@@ -269,18 +281,24 @@ export async function atualizarPlanoCorte(req, res) {
       })
     }
 
-    const plano = await prisma.planoCorte.update({
-      where: {
-        id
-      },
-      data: {
-        numeroPlano: numeroPlanoTratado,
-        quantidadeChapas: qtdChapas,
-        medidaEncabecamento,
-        compraExterna: Boolean(compraExterna),
-        observacoes
-      }
-    })
+    const plano = await prisma.$transaction(async tx => {
+      await bloquearAgenda(tx)
+      await validarLimitesPlano(tx, planoAnterior.pedidoId, qtdChapas, id)
+      const plano = await tx.planoCorte.update({
+        where: {
+          id
+        },
+        data: {
+          numeroPlano: numeroPlanoTratado,
+          quantidadeChapas: qtdChapas,
+          medidaEncabecamento,
+          compraExterna: Boolean(compraExterna),
+          observacoes
+        }
+      })
+
+      return plano
+    }, { isolationLevel: "ReadCommitted" })
 
     await registrarHistoricoPedido({
       pedidoId: plano.pedidoId,
@@ -291,6 +309,7 @@ export async function atualizarPlanoCorte(req, res) {
 
     return res.json(plano)
   } catch (error) {
+    if (error.statusCode) return res.status(error.statusCode).json({ error: error.message })
     console.log(error)
 
     return res.status(500).json({
@@ -341,6 +360,7 @@ export async function deletarPlanoCorte(req, res) {
       message: "Plano de corte excluído"
     })
   } catch (error) {
+    if (error.statusCode) return res.status(error.statusCode).json({ error: error.message })
     console.log(error)
 
     return res.status(500).json({

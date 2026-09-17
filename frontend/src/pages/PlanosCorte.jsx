@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { CapacidadeDiaria } from "../components/CapacidadeDiaria"
 import { Link, useSearchParams } from "react-router-dom"
 import { api } from "../services/api"
 import { Input } from "../components/ui/Input"
@@ -273,6 +274,7 @@ export function PlanosCorte() {
           <h2 className="text-xl font-bold mb-4">
             {editandoId ? "Editar Plano" : "Novo Plano"}
           </h2>
+          <CapacidadeDiaria data={pedidoSelecionado?.dataEntrega} mostrarFretes={false} atualizacao={planos} />
           {editandoId && (
             <div className="mb-4 bg-yellow-50 border border-yellow-300 rounded-lg p-3 text-yellow-800">
               ✏️ Editando Plano {numeroPlano}

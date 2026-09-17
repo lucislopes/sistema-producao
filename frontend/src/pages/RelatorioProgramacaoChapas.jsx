@@ -27,7 +27,7 @@ export function RelatorioProgramacaoChapas() {
   const [dataFim, setDataFim] = useState("")
   const [vendedorId, setVendedorId] = useState("")
   const [cliente, setCliente] = useState("")
-  const [limiteChapasDia, setLimiteChapasDia] = useState(90)
+  const [limiteChapasDia, setLimiteChapasDia] = useState(null)
 
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(50)
@@ -64,6 +64,7 @@ export function RelatorioProgramacaoChapas() {
   }
 
   function calcularSituacaoDia(chapas) {
+    if (limiteChapasDia == null) return { texto: "Sem limite", classe: "bg-gray-100 text-gray-700", linha: "" }
     const total = Number(chapas || 0)
 
     if (total > limiteChapasDia) {
@@ -112,6 +113,7 @@ export function RelatorioProgramacaoChapas() {
         }
       })
 
+      setLimiteChapasDia(response.data.limiteChapasDia ?? null)
       setDados(response.data.dados || [])
       setResumo(response.data.resumo || null)
       setPaginacao(
@@ -164,7 +166,7 @@ export function RelatorioProgramacaoChapas() {
     const linhas = []
 
     dados.forEach((dia) => {
-      const disponivel = limiteChapasDia - Number(dia.chapas || 0)
+      const disponivel = limiteChapasDia == null ? "Sem limite" : limiteChapasDia - Number(dia.chapas || 0)
       const situacao = calcularSituacaoDia(dia.chapas)
 
       dia.itens.forEach((pedido) => {
@@ -278,7 +280,7 @@ export function RelatorioProgramacaoChapas() {
         <Card titulo="Metros" valor={resumo?.totalMetrosEncabecamento || 0} icon={Ruler} decimal />
         <Card titulo="Dias Programados" valor={resumo?.diasProgramados || 0} icon={CalendarDays} />
         <Card titulo="Média/Dia" valor={resumo?.mediaDia || 0} icon={TrendingUp} decimal />
-        <Card titulo="Limite Atual" valor={limiteChapasDia} icon={TriangleAlert} />
+        <Card titulo="Limite Atual" valor={limiteChapasDia ?? "Desativado"} icon={TriangleAlert} />
       </div>
 
       <form onSubmit={(event) => { event.preventDefault(); buscar() }} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -313,16 +315,10 @@ export function RelatorioProgramacaoChapas() {
             ))}
           </Select>
 
-          <Input
-            aria-label="Limite de chapas por dia"
-            type="number"
-            min={1}
-            value={limiteChapasDia}
-            onChange={(e) =>
-              setLimiteChapasDia(Number(e.target.value) || 90)
-            }
-            placeholder="Limite chapas/dia"
-          />
+          <div className="text-sm text-gray-700 rounded-lg border p-3">
+            Limite de chapas/dia: <strong>{limiteChapasDia ?? "Desativado"}</strong>
+            <p className="text-xs text-gray-500">Editado pelo administrador em Configurações.</p>
+          </div>
 
           <Select
             aria-label="Dias por página"
@@ -393,7 +389,7 @@ export function RelatorioProgramacaoChapas() {
 
           <tbody>
             {dados.map((dia) => {
-              const disponivel = limiteChapasDia - Number(dia.chapas || 0)
+              const disponivel = limiteChapasDia == null ? "Sem limite" : limiteChapasDia - Number(dia.chapas || 0)
               const situacao = calcularSituacaoDia(dia.chapas)
 
               return (
@@ -417,7 +413,7 @@ export function RelatorioProgramacaoChapas() {
                   <Td className="font-semibold text-purple-700">
                     {formatarNumero(dia.metrosEncabecamento || 0, 2)} m
                   </Td>
-                  <Td>{limiteChapasDia}</Td>
+                  <Td>{limiteChapasDia ?? "Desativado"}</Td>
                   <Td
                     className={
                       disponivel < 0
@@ -425,7 +421,7 @@ export function RelatorioProgramacaoChapas() {
                         : "font-bold text-green-700"
                     }
                   >
-                    {disponivel < 0
+                    {limiteChapasDia == null ? "Sem limite" : disponivel < 0
                       ? `${Math.abs(disponivel)} acima`
                       : `${disponivel} disponível`}
                   </Td>
@@ -525,7 +521,7 @@ function Card({ titulo, valor, icon: Icon, decimal = false }) {
           <p className="text-sm text-gray-600">{titulo}</p>
 
           <strong className="text-3xl font-bold text-gray-800">
-            {numero.toLocaleString("pt-BR", {
+            {typeof valor === "string" ? valor : numero.toLocaleString("pt-BR", {
               minimumFractionDigits: decimal ? 1 : 0,
               maximumFractionDigits: decimal ? 1 : 0
             })}
