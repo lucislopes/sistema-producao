@@ -51,7 +51,7 @@ export function Modal({
         className={`
           bg-white rounded-2xl shadow-xl
           w-full ${width}
-          max-h-[90vh] overflow-auto
+          max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain min-w-0
         `}
         role="dialog"
         aria-modal="true"

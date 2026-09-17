@@ -17,7 +17,7 @@ export function Select({
         px-4 py-3
         w-full
         bg-white
-        text-sm
+        min-w-0 text-base md:text-sm
         transition-colors
         focus-visible:outline-none
         focus-visible:ring-2

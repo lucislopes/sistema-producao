@@ -6,6 +6,8 @@ import { Button } from "../components/ui/Button"
 import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
 import { Table, Th, Td } from "../components/ui/Table"
+import { FiltrosResponsivos } from "../components/ui/FiltrosResponsivos"
+import { CartaoPedido, DadoPedido } from "../components/ui/CartaoPedido"
 import { BadgePrazo } from "../components/ui/BadgePrazo"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
 import { EmptyState, ErrorState, LoadingState } from "../components/ui/FeedbackState"
@@ -321,15 +323,16 @@ export function RelatorioPedidosEntregues() {
   const valorTotalPedidos = resumo.valorTotal || 0
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 min-w-0 max-w-full relatorio-entregues">
       <div className="rounded-2xl border border-green-200 bg-green-50 p-5 no-print">
         <h1 className="text-xl font-bold text-green-950">Pedidos entregues</h1>
-        <p className="mt-1 text-sm text-green-800">Consulte o histórico de entregas realizadas e compare a data efetiva com a previsão.</p>
+        <p className="mt-1 text-sm text-green-800">Entregas e retiradas concluídas: cliente retira, frete pela loja e frete pelo cliente.</p>
+        <p className="mt-2 text-sm text-green-800">Somente pedidos com status Entregue. Ao filtrar pela entrega realizada, o período considera o registro de conclusão; pedidos sem esse registro podem ser consultados sem período ou pela data do pedido/previsão.</p>
       </div>
 
       {podeExportarImprimir && (
         <div className="flex flex-wrap justify-end gap-2 no-print">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               type="button"
               onClick={exportarCSV}
@@ -347,7 +350,7 @@ export function RelatorioPedidosEntregues() {
               disabled={!pedidos.length}
             >
               <Printer size={18} />
-              Imprimir
+              Imprimir página
             </Button>
           </div>
         </div>
@@ -454,6 +457,7 @@ export function RelatorioPedidosEntregues() {
         </Button>
       </div>
 
+      <FiltrosResponsivos ativos={[dataInicio, dataFim, vendedorId, responsavelFrete, busca].filter(Boolean).length}>
       <form onSubmit={(event) => { event.preventDefault(); buscar() }} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm no-print">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Select
@@ -521,7 +525,7 @@ export function RelatorioPedidosEntregues() {
             <option value={100}>100 registros</option>
           </Select>
 
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-4">
             <Button
               type="submit"
               loading={carregando}
@@ -541,8 +545,9 @@ export function RelatorioPedidosEntregues() {
           </div>
         </div>
       </form>
+      </FiltrosResponsivos>
 
-      <div className="bg-white rounded-2xl shadow-md p-6 print-area">
+      <div className="min-w-0 max-w-full bg-white rounded-2xl shadow-md p-3 sm:p-6 print-area">
         <CabecalhoImpressao
           empresa={empresa}
           titulo="Relatório de Pedidos Entregues"
@@ -565,6 +570,13 @@ export function RelatorioPedidosEntregues() {
           <p className="text-gray-600">
             {paginacao.total} pedido{paginacao.total === 1 ? "" : "s"} entregue{paginacao.total === 1 ? "" : "s"} encontrado{paginacao.total === 1 ? "" : "s"}
           </p>
+          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm" aria-label="Totais por modalidade">
+            <span>Cliente retira: <strong>{resumo.clienteRetira || 0}</strong></span>
+            <span>Frete Loja: <strong>{resumo.freteLoja || 0}</strong></span>
+            <span>Frete Cliente: <strong>{resumo.freteCliente || 0}</strong></span>
+            {!!resumo.freteNaoInformado && <span>Frete não informado: <strong>{resumo.freteNaoInformado}</strong></span>}
+          </div>
+          <p className="mt-2 text-xs text-gray-500">Totais de todos os resultados filtrados. Esta página exibe {pedidos.length} pedidos (página {paginacao.page} de {paginacao.totalPages}).</p>
         </div>
 
         {carregando ? (
@@ -575,7 +587,24 @@ export function RelatorioPedidosEntregues() {
           <EmptyState titulo="Nenhum pedido entregue encontrado" descricao="Revise o período ou os demais filtros aplicados." />
         ) : (
           <>
-        <Table>
+        <div className="grid gap-3 md:hidden no-print">
+          {pedidos.map(item => (
+            <CartaoPedido key={item.id} numero={obterNumeroPedido(item)} cliente={item.cliente?.nome}
+              status={<BadgeStatus status={item.status} />} className={obterClassePrazo(item.situacaoPrazo)}
+              acoes={<Link className="inline-flex min-h-11 items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white" to={`/pedidos/${item.id}`}>Ver pedido</Link>}>
+              <DadoPedido titulo="Modalidade">{nomeFrete(item)}</DadoPedido>
+              <DadoPedido titulo="Previsão">{formatarData(item.dataEntrega)}</DadoPedido>
+              <DadoPedido titulo="Entrega / retirada realizada">{formatarData(item.dataEntregaReal)}</DadoPedido>
+              <DadoPedido titulo="Prazo">{item.situacaoPrazo}</DadoPedido>
+              <DadoPedido titulo="Vendedor">{item.vendedor?.nome}</DadoPedido>
+              <DadoPedido titulo="Data do pedido">{formatarData(item.dataPedido)}</DadoPedido>
+              <DadoPedido titulo="Endereço">{item.enderecoEntrega || item.cliente?.endereco}</DadoPedido>
+              {podeVerValores && <DadoPedido titulo="Valor">{formatarMoeda(item.valorTotal)}</DadoPedido>}
+            </CartaoPedido>
+          ))}
+        </div>
+        <div className="hidden md:block print:block">
+        <Table className="tabela-entregues" label="Entregas e retiradas concluídas">
           <thead>
             <tr>
               <Th>Pedido</Th>
@@ -614,7 +643,7 @@ export function RelatorioPedidosEntregues() {
                 <Td>{formatarData(item.dataEntregaReal)}</Td>
 
                 <Td
-                  className="max-w-[250px] truncate"
+                  className="endereco-entrega"
                   title={item.enderecoEntrega || item.cliente?.endereco || "-"}
                 >
                   {item.enderecoEntrega || item.cliente?.endereco || "-"}
@@ -641,6 +670,7 @@ export function RelatorioPedidosEntregues() {
 
           </tbody>
         </Table>
+        </div>
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 no-print">
           <p className="text-sm text-gray-600">

@@ -7,6 +7,9 @@ import { Button } from "../components/ui/Button"
 import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
+import { FiltrosResponsivos } from "../components/ui/FiltrosResponsivos"
+import { CartaoPedido, DadoPedido } from "../components/ui/CartaoPedido"
+import { Modal } from "../components/ui/Modal"
 import { Table, Th, Td } from "../components/ui/Table"
 import { useUnsavedChanges } from "../hooks/useUnsavedChanges"
 
@@ -705,6 +708,51 @@ function aplicarRotaSelecionada(id) {
     return entrega < hoje
   }
 
+  function acoesPedido(pedido) {
+    return (<div className="flex flex-wrap gap-2 whitespace-nowrap">
+                    {podeEditarPedido(pedido) ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => editarPedido(pedido)}
+                        title="Editar pedido"
+                        aria-label={`Editar pedido ${pedido.numeroPedidoManual || pedido.numeroPedido}`}
+                      >
+                        <SquarePen size={16} />
+                        Editar
+                      </Button>
+                    ) : (
+                      <span
+                        className="inline-flex items-center rounded-lg bg-yellow-50 px-3 py-2 text-xs font-semibold text-yellow-800 border border-yellow-200"
+                        title="Somente usuários ADMIN podem editar pedidos"
+                      >
+                        Administrador
+                      </span>
+                    )}
+
+                    <Link
+                      to={`/pedidos/${pedido.id}`}
+                      title="Visualizar pedido"
+                      aria-label={`Visualizar pedido ${pedido.numeroPedidoManual || pedido.numeroPedido}`}
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                    >
+                      <Eye size={16} />
+                      Ver
+                    </Link>
+
+                    {pedido.tipoPedido !== "DIRETO_ENTREGA" && (
+                      <Link
+                        to={`/plano-corte-servico?pedidoId=${pedido.id}`}
+                        title="Abrir planos e serviços"
+                        aria-label={`Abrir planos e serviços do pedido ${pedido.numeroPedidoManual || pedido.numeroPedido}`}
+                        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+                      >
+                        <ClipboardList size={16} /> Planos
+                      </Link>
+                    )}
+                  </div>)
+  }
+
   const pedidosFiltrados = pedidos
 
   const resumoPedidos = {
@@ -1228,6 +1276,7 @@ function aplicarRotaSelecionada(id) {
 
       {modoTela === "LISTA" && (
         <>
+        <FiltrosResponsivos ativos={[busca, filtroVendedorId, filtroStatus, dataInicio, dataFim].filter(Boolean).length}>
         <div className="bg-white p-4 rounded-2xl shadow-md mb-4">
           <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-7 gap-4 items-end">
 
@@ -1368,7 +1417,24 @@ function aplicarRotaSelecionada(id) {
           </div>
         </div>
 
+      </FiltrosResponsivos>
       <div className="bg-white shadow-md">
+        <div className="grid gap-3 md:hidden no-print">
+          {pedidosFiltrados.map(pedido => (
+            <CartaoPedido key={pedido.id}
+              numero={pedido.origemPedido === "EXTERNO" ? pedido.numeroPedidoManual : '#' + pedido.numeroPedido}
+              cliente={pedido.cliente?.nome} status={<BadgeStatus status={pedido.status} />}
+              className={pedidoAtrasado(pedido) ? "border-red-300 bg-red-50" : ""}
+              acoes={acoesPedido(pedido)}>
+              <DadoPedido titulo="Modalidade">{pedido.tipoEntrega === "CLIENTE_RETIRA" ? "Cliente retira" : pedido.responsavelFrete === "EMPRESA" ? "Frete Loja" : pedido.responsavelFrete === "CLIENTE" ? "Frete Cliente" : "Empresa entrega — frete não informado"}</DadoPedido>
+              <DadoPedido titulo="Previsão de entrega">{formatarData(pedido.dataEntrega)}</DadoPedido>
+              {pedidoAtrasado(pedido) && <DadoPedido titulo="Prazo"><strong className="text-red-700">Pedido com entrega atrasada</strong></DadoPedido>}
+              <DadoPedido titulo="Vendedor">{pedido.vendedor?.nome}</DadoPedido>
+            </CartaoPedido>
+          ))}
+          {pedidosFiltrados.length === 0 && <p className="p-4 text-gray-600">Nenhum pedido encontrado.</p>}
+        </div>
+        <div className="hidden md:block print:block">
         <Table>
           <thead>
             <tr>
@@ -1420,48 +1486,7 @@ function aplicarRotaSelecionada(id) {
                 </Td>
 
                 <Td>
-                  <div className="flex flex-wrap gap-2 whitespace-nowrap">
-                    {podeEditarPedido(pedido) ? (
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => editarPedido(pedido)}
-                        title="Editar pedido"
-                        aria-label={`Editar pedido ${pedido.numeroPedidoManual || pedido.numeroPedido}`}
-                      >
-                        <SquarePen size={16} />
-                        Editar
-                      </Button>
-                    ) : (
-                      <span
-                        className="inline-flex items-center rounded-lg bg-yellow-50 px-3 py-2 text-xs font-semibold text-yellow-800 border border-yellow-200"
-                        title="Somente usuários ADMIN podem editar pedidos"
-                      >
-                        Administrador
-                      </span>
-                    )}
-
-                    <Link
-                      to={`/pedidos/${pedido.id}`}
-                      title="Visualizar pedido"
-                      aria-label={`Visualizar pedido ${pedido.numeroPedidoManual || pedido.numeroPedido}`}
-                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                    >
-                      <Eye size={16} />
-                      Ver
-                    </Link>
-
-                    {pedido.tipoPedido !== "DIRETO_ENTREGA" && (
-                      <Link
-                        to={`/plano-corte-servico?pedidoId=${pedido.id}`}
-                        title="Abrir planos e serviços"
-                        aria-label={`Abrir planos e serviços do pedido ${pedido.numeroPedidoManual || pedido.numeroPedido}`}
-                        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
-                      >
-                        <ClipboardList size={16} /> Planos
-                      </Link>
-                    )}
-                  </div>
+                  {acoesPedido(pedido)}
                 </Td>
                 
               </tr>
@@ -1476,7 +1501,8 @@ function aplicarRotaSelecionada(id) {
             )}
           </tbody>
         </Table>
-        <div className="flex justify-between items-center p-4 no-print">
+        </div>
+        <div className="flex flex-wrap justify-between items-center gap-3 p-4 no-print">
           <p className="text-sm text-gray-600">
             Página {paginacao.page} de {paginacao.totalPages} — Total: {paginacao.total}
           </p>
@@ -1507,14 +1533,8 @@ function aplicarRotaSelecionada(id) {
         </>
       )}
 
-      {modalClienteAberto && (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-xl">
-        <h2 className="text-xl font-bold mb-4">
-          Novo Cliente
-        </h2>
-
-        <div className="grid grid-cols-1 gap-4">
+<Modal open={modalClienteAberto} title="Novo Cliente" onClose={() => setModalClienteAberto(false)} width="max-w-xl">
+<div className="grid grid-cols-1 gap-4">
           <Input
             type="text"
             placeholder="Nome do cliente"
@@ -1530,7 +1550,7 @@ function aplicarRotaSelecionada(id) {
           />
 
           <Input
-            type="text"
+            type="tel"
             placeholder="Telefone"
             value={novoClienteTelefone}
             onChange={(e) => setNovoClienteTelefone(e.target.value)}
@@ -1544,7 +1564,7 @@ function aplicarRotaSelecionada(id) {
           />
         </div>
 
-        <div className="flex justify-end gap-2 mt-6" size="sm">
+        <div className="flex flex-wrap justify-end gap-2 mt-6" size="sm">
           <Button
             type="button"
             variant="secondary"
@@ -1564,18 +1584,11 @@ function aplicarRotaSelecionada(id) {
               Salvar Cliente
             </Button>
           </div>
-        </div>
-      </div>
-  )}
+        
+</Modal>
 
-    {modalRotaAberto && (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-xl">
-        <h2 className="text-xl font-bold mb-4">
-          Nova Rota
-        </h2>
-
-        <div className="grid grid-cols-1 gap-4">
+<Modal open={modalRotaAberto} title="Nova Rota" onClose={() => setModalRotaAberto(false)} width="max-w-xl">
+<div className="grid grid-cols-1 gap-4">
           <Input
             type="text"
             placeholder="Nome da rota"
@@ -1592,7 +1605,7 @@ function aplicarRotaSelecionada(id) {
           />
         </div>
 
-        <div className="flex justify-end gap-2 mt-6">
+        <div className="flex flex-wrap justify-end gap-2 mt-6">
           <Button
             type="button"
             variant="secondary"
@@ -1610,9 +1623,8 @@ function aplicarRotaSelecionada(id) {
             Salvar Rota
           </Button>
         </div>
-      </div>
-    </div>
-  )}
+      
+</Modal>
 
     </div>
   )

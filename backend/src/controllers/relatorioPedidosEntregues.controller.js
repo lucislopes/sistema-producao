@@ -158,6 +158,8 @@ export async function relatorioPedidosEntregues(req, res) {
         where,
         select: {
           dataEntrega: true,
+          tipoEntrega: true,
+          responsavelFrete: true,
           valorTotal: true,
           historicos: {
             where: filtroHistoricoEntrega,
@@ -188,8 +190,12 @@ export async function relatorioPedidosEntregues(req, res) {
         acc.semClassificacao += 1
       }
       acc.valorTotal += Number(pedido.valorTotal || 0)
+      if (pedido.tipoEntrega === "CLIENTE_RETIRA") acc.clienteRetira += 1
+      else if (pedido.responsavelFrete === "EMPRESA") acc.freteLoja += 1
+      else if (pedido.responsavelFrete === "CLIENTE") acc.freteCliente += 1
+      else acc.freteNaoInformado += 1
       return acc
-    }, { total, noPrazo: 0, comAtraso: 0, semRegistro: 0, semClassificacao: 0, valorTotal: 0 })
+    }, { total, noPrazo: 0, comAtraso: 0, semRegistro: 0, semClassificacao: 0, valorTotal: 0, clienteRetira: 0, freteLoja: 0, freteCliente: 0, freteNaoInformado: 0 })
 
     return res.json({
       baseData,
