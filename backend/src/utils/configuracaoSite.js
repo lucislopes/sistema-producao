@@ -40,6 +40,7 @@ export function validarRedesSociais(value){
 export function validarConfiguracaoSite(body, logoAnterior) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('Configuração inválida.');
   const site = {};
+  if(body.nomePublicoSite !== undefined) texto(body.nomePublicoSite,'nome público do site',150);
   if(body.ajustesImagens!==undefined)site.ajustesImagens=validarAjustesImagens(body.ajustesImagens);
   if (typeof body.ativo !== 'boolean') throw new Error('Informe se o site está ativo.');
   site.ativo = body.ativo;
@@ -64,9 +65,10 @@ export function validarConfiguracaoSite(body, logoAnterior) {
 }
 export function configuracaoPublica(empresa, site) {
   return {
+    nomePublicoSite: site?.conteudo?.nomePublicoSite || '',
     nome: empresa?.nome || '', telefone: empresa?.telefone || '', email: empresa?.email || '', logoUrl: empresa?.logoUrl || '',
     ...Object.fromEntries(Object.keys(siteDefaults).map(key => [key, site?.[key] ?? siteDefaults[key]])),
-    conteudo: conteudoEfetivo(site?.conteudo, empresa?.nome || 'Sua empresa'), imagemHomeUrl: site?.imagemHomeUrl || '',ajustesImagens:site?.ajustesImagens||{}
+    conteudo: conteudoEfetivo(site?.conteudo, site?.conteudo?.nomePublicoSite || empresa?.nome || 'Sua empresa'), imagemHomeUrl: site?.imagemHomeUrl || '',ajustesImagens:site?.ajustesImagens||{}
   };
 }
 export function criarHandlersConfiguracaoSite(prisma, bloquearAgenda) {
@@ -91,6 +93,10 @@ export function criarHandlersConfiguracaoSite(prisma, bloquearAgenda) {
           const empresa = atual
             ? await tx.configuracaoEmpresa.update({ where: { id: atual.id }, data: dados.empresa, select: empresaPublicaSelect })
             : await tx.configuracaoEmpresa.create({ data: dados.empresa, select: empresaPublicaSelect });
+          if (req.body.nomePublicoSite !== undefined) {
+            const anterior = await tx.configuracaoSite.findUnique({where:{id:'principal'}});
+            dados.site.conteudo = {...anterior?.conteudo, nomePublicoSite:texto(req.body.nomePublicoSite,'nome público do site',150)};
+          }
           const site = await tx.configuracaoSite.upsert({ where: { id: 'principal' }, create: { id: 'principal', ...dados.site }, update: dados.site });
           return configuracaoPublica(empresa, site);
         }, { isolationLevel: 'ReadCommitted' });
@@ -106,7 +112,8 @@ export function criarHandlersConfiguracaoSite(prisma, bloquearAgenda) {
         const site = await prisma.configuracaoSite.findUnique({ where: { id: 'principal' } });
         if (!site?.ativo) return res.status(404).json({ error: 'Site desativado', code: 'SITE_DISABLED' });
         const empresa = await prisma.configuracaoEmpresa.findFirst({ select: empresaPublicaSelect });
-        return res.json(configuracaoPublica(empresa, site));
+        const config=configuracaoPublica(empresa,site);
+        return res.json({...config,nome:config.nomePublicoSite||config.nome});
       } catch (error) { next(error); }
     }
   };

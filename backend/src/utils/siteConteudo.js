@@ -3,6 +3,7 @@ import { conteudoEfetivo } from './siteTextos.js';
 import {validarAjusteImagem,validarAjustesImagens} from './ajusteImagem.js';
 export const camposImagens = { software1LogoUrl: 'Logo do software 1', software2LogoUrl: 'Logo do software 2', imagemCatalogoUrl: 'Estoque e materiais', imagemServicosUrl: 'Central de Serviços', imagemSobreUrl: 'Fachada / sobre a empresa', imagemAtendimentoUrl: 'Equipe de atendimento' };
 export const camposConteudo = {
+  nomePublicoSite: ['Nome público do site', 150],
   tituloProjetoSite:['Iniciar projeto — título',200],descricaoProjetoSite:['Iniciar projeto — apresentação',600],
   beneficio1: ["Benefício 1", 200],
   beneficio2: ["Benefício 2", 200],

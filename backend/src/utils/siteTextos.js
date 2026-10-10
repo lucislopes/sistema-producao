@@ -1,6 +1,7 @@
 // Textos iniciais do tema, compartilhados pelo editor e pela API pública.
 export function textosPadrao(nome = 'Sua empresa') {
   return {
+    nomePublicoSite: '',
     tituloProjetoSite:'Seu projeto começa no Cortecloud.',descricaoProjetoSite:'Peça o link de acesso à nossa equipe, monte seu projeto e receba o orçamento após a conferência.',
     beneficio1: "Materiais para o seu projeto",
     beneficio2: "Corte nas suas medidas",

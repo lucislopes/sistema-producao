@@ -41,3 +41,15 @@ test('salvamento transacional preserva limites e endereço da empresa e ignora c
   assert.equal('limiteChapasDia' in update.data, false); assert.equal('endereco' in update.data, false);
   assert.equal(upsert.where.id, 'principal'); assert.equal(res.data.nome, 'Ferramad');
 });
+
+test('nome público identifica o site sem substituir a razão social no painel', async () => {
+ const empresa={nome:'Biomadeira Serviços Especializados LTDA',telefone:'',email:'',logoUrl:''};
+ const site={ativo:true,conteudo:{nomePublicoSite:'Ferramad'}};
+ const painel=configuracaoPublica(empresa,site);
+ assert.equal(painel.nome,empresa.nome);assert.equal(painel.nomePublicoSite,'Ferramad');
+ let resposta;
+ const handlers=criarHandlersConfiguracaoSite({configuracaoSite:{findUnique:async()=>site},configuracaoEmpresa:{findFirst:async()=>empresa}},async()=>{});
+ await handlers.publico({}, {setHeader(){},json(v){resposta=v}},e=>{throw e});
+ assert.equal(resposta.nome,'Ferramad');assert.equal(empresa.nome,'Biomadeira Serviços Especializados LTDA');
+ assert.throws(()=>validarConfiguracaoSite({...body,nomePublicoSite:'x'.repeat(151)}));
+});
