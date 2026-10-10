@@ -4,6 +4,8 @@
 
 node_modules/
 frontend/dist/
+site/dist/
+backend/uploads/
 
 # Arquivos privados da demonstração e backups locais.
 apresentacao/.build/

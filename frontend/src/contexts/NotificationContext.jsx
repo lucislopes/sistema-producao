@@ -35,6 +35,7 @@ export function NotificationProvider({ children }) {
   }
 
   useEffect(() => {
+    const timers = temporizadores.current
     const alertOriginal = window.alert
 
     window.alert = (mensagem) => {
@@ -48,16 +49,16 @@ export function NotificationProvider({ children }) {
 
       const temporizador = window.setTimeout(() => {
         remover(id)
-        temporizadores.current.delete(temporizador)
+        timers.delete(temporizador)
       }, 5000)
 
-      temporizadores.current.add(temporizador)
+      timers.add(temporizador)
     }
 
     return () => {
       window.alert = alertOriginal
-      temporizadores.current.forEach((temporizador) => window.clearTimeout(temporizador))
-      temporizadores.current.clear()
+      timers.forEach((temporizador) => window.clearTimeout(temporizador))
+      timers.clear()
     }
   }, [])
 

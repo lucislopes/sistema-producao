@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+ <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+ <meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+ <title>Criar senha — Área do Cliente</title><link rel="stylesheet" href="./styles.css">
+</head>
+<body class="activation-page">
+ <main class="activation-card">
+  <p id="activation-company" class="eyebrow">ÁREA DO CLIENTE</p>
+  <h1>Crie sua senha.<br>Acompanhe seus pedidos.</h1>
+  <p>Confirme o documento cadastrado na empresa e escolha sua senha de acesso.</p>
+  <form id="activation-form" class="quote-form" method="post">
+   <label>CPF ou CNPJ cadastrado<input name="documento" type="text" inputmode="numeric" maxlength="18" required autocomplete="username"></label>
+   <label>Crie sua senha<input name="senha" type="password" minlength="10" maxlength="72" required autocomplete="new-password"></label>
+   <label>Confirme a senha<input name="confirmacao" type="password" minlength="10" maxlength="72" required autocomplete="new-password"></label>
+   <p class="form-note">Use pelo menos 10 caracteres. Este convite vale por 24 horas e pode ser usado uma vez.</p>
+   <button type="submit" class="button">Criar senha e ativar acesso</button>
+  </form>
+  <p id="activation-message" role="status" aria-live="polite"></p>
+  <a id="activation-login" href="./#area-cliente" class="button" hidden>Entrar na Área do Cliente</a>
+  <a href="./#area-cliente" class="activation-back">Já tenho senha. Entrar na minha área</a>
+ </main>
+ <script type="module" src="./ativar-acesso.js"></script>
+</body>
+</html>

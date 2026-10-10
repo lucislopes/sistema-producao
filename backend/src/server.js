@@ -1,8 +1,13 @@
+import empresaRelatoriosRoutes from './routes/empresaRelatorios.routes.js';
+import {iniciarLimpezaArtes} from './utils/artesTemporarias.js'
+import {marketingAdminRoutes,marketingPublicRoutes} from './routes/marketingSite.routes.js'
 import express from "express"
 import cors from "cors"
 import dotenv from "dotenv"
 
 import authRoutes from "./routes/auth.routes.js"
+import empresaIndicadoresRoutes from './routes/empresaIndicadores.routes.js'
+import siteRelatoriosRoutes from './routes/siteRelatorios.routes.js'
 import clientesRoutes from "./routes/clientes.routes.js"
 import funcionariosRoutes from "./routes/funcionarios.routes.js"
 import rotasEntregaRoutes from "./routes/rotasEntrega.routes.js"
@@ -31,6 +36,9 @@ import relatorioProgramacaoChapasRoutes from "./routes/relatorioProgramacaoChapa
 import relatoriosNovosRoutes from "./routes/relatoriosNovos.routes.js"
 import modoTVRoutes from "./routes/modoTV.routes.js"
 import acompanhamentoRoutes from "./routes/acompanhamento.routes.js"
+import { siteAdminRoutes, sitePublicRoutes } from "./routes/site.routes.js"
+import { comercialAdminRoutes, comercialPublicRoutes } from './routes/comercialSite.routes.js'
+import { uploadRoot } from "./utils/siteUpload.js"
 import { securityHeaders } from "./middlewares/security.middleware.js"
 import { errorMiddleware, rotaNaoEncontrada } from "./middlewares/error.middleware.js"
 
@@ -43,7 +51,11 @@ if (!process.env.JWT_SECRET) {
   throw new Error("JWT_SECRET não configurado")
 }
 
+import { iniciarLimpezaAnexos } from './utils/anexosOrcamento.js'
+import { prisma } from './lib/prisma.js'
 const app = express()
+iniciarLimpezaAnexos(prisma)
+iniciarLimpezaArtes()
 
 app.set("trust proxy", 1)
 app.disable("x-powered-by")
@@ -63,6 +75,28 @@ app.use(cors({
     return callback(new Error("Origem não permitida pelo CORS"))
   }
 }))
+app.use("/marketing-site", marketingAdminRoutes)
+app.use("/public", marketingPublicRoutes)
+app.use("/site", siteAdminRoutes)
+app.use("/public", sitePublicRoutes)
+app.use('/comercial-site', comercialAdminRoutes)
+app.use('/site-relatorios', siteRelatoriosRoutes)
+app.use('/empresa/relatorios', empresaRelatoriosRoutes)
+app.use('/empresa', empresaIndicadoresRoutes)
+app.use('/atendimento-site', comercialPublicRoutes)
+app.use("/uploads", (req,res,next) => {
+  if (!/^\/site\/(?:configuracao|produtos|categorias|banners)\/[a-f0-9-]{36}\.(?:png|jpg|webp)$/.test(req.path)) return res.status(404).json({error:"Imagem não encontrada"})
+  next()
+}, express.static(uploadRoot(), {
+  dotfiles: "deny", index: false, fallthrough: false,
+  setHeaders(res) {
+    res.setHeader("X-Content-Type-Options", "nosniff")
+    res.setHeader("Cache-Control", "public, max-age=86400")
+  }
+}), (error,req,res,next) => {
+  if(error.status === 404) return res.status(404).json({error:"Imagem não encontrada"})
+  next(error)
+})
 app.use(express.json({ limit: "10mb" }))
 app.use(express.urlencoded({ extended: true, limit: "10mb" }))
 app.use("/auth", authRoutes)

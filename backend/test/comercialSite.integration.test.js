@@ -1,0 +1,60 @@
+import 'dotenv/config';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import express from 'express';
+import jwt from 'jsonwebtoken';
+import { randomUUID, randomBytes } from 'node:crypto';
+import { prisma } from '../src/lib/prisma.js';
+import { comercialPublicRoutes,comercialAdminRoutes } from '../src/routes/comercialSite.routes.js';
+test('fluxo local: protocolo idempotente, conversão única, isolamento de cliente, recompra e revogação',{skip:process.env.RUN_SITE_DB_TESTS!=='1'},async()=>{
+ assert.ok(['localhost','127.0.0.1','[::1]'].includes(new URL(process.env.DATABASE_URL).hostname));
+ const admin=await prisma.usuario.findFirst({where:{funcionario:{funcao:'ADMIN',ativo:true}}});assert.ok(admin);
+ const token=jwt.sign({id:admin.id},process.env.JWT_SECRET,{expiresIn:'5m'});
+ const app=express();app.use('/public',comercialPublicRoutes);app.use('/admin',comercialAdminRoutes);const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const url=`http://127.0.0.1:${server.address().port}`;
+ const call=async(path,body,auth,method)=>{const r=await fetch(url+path,{method:method||(body?'POST':'GET'),headers:{'Content-Type':'application/json',...(auth?{Authorization:`Bearer ${auth}`}:{})},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,data:await r.json()};};
+ let client,pedido,quote;const chaves=[randomUUID(),randomUUID()];
+ try{
+  client=await prisma.cliente.create({data:{nome:'Teste comercial descartável',documento:'98765432100',telefone:'61995822399'}});
+  const b={chave:chaves[0],nome:'Teste comercial descartável',telefone:'61995822399',observacao:'Lista de teste',pecas:[{nome:'Lateral',material:'MDF',comprimento:1000,largura:500,quantidade:2,bordas:[]}],materiais:[]};
+  const created=await call('/public/orcamentos',b);assert.equal(created.status,201);const repeated=await call('/public/orcamentos',b);assert.equal(repeated.data.protocolo,created.data.protocolo);
+  quote=await prisma.orcamentoSite.findUnique({where:{chave:chaves[0]}});
+  const extras=Array.from({length:24},()=>randomUUID());chaves.push(...extras);
+  await prisma.orcamentoSite.createMany({data:extras.map(chave=>({chave,nome:client.nome,telefone:client.telefone,detalhes:quote.detalhes,status:'PERDIDO'}))});
+  const primeiraPagina=await call('/admin/orcamentos?status=PERDIDO',null,token);assert.equal(primeiraPagina.data.items.length,20);assert.equal(primeiraPagina.data.mais,true);assert.equal(primeiraPagina.data.items[0].detalhes,undefined);
+  const segundaPagina=await call('/admin/orcamentos?status=PERDIDO&pagina=1',null,token);assert.ok(segundaPagina.data.items.length>=4);assert.ok(!segundaPagina.data.items.some(p=>primeiraPagina.data.items.some(a=>a.id===p.id)));
+  assert.equal((await call(`/admin/orcamentos/${quote.id}`,null,token)).data.detalhes.pecas.length,1);
+  assert.equal((await call('/admin/orcamentos')).status,401);
+  assert.equal((await call(`/admin/orcamentos/${quote.id}`,{status:'APROVADO',notaInterna:'teste',proposta:'teste',valor:100,responsavelId:admin.funcionarioId},token,'PATCH')).status,200);
+  const convert={clienteId:client.id,vendedorId:admin.funcionarioId,dataEntrega:'2099-01-01',tipoEntrega:'CLIENTE_RETIRA'};
+  const converted=await call(`/admin/orcamentos/${quote.id}/converter`,convert,token);assert.equal(converted.status,200,JSON.stringify(converted.data));pedido=converted.data.pedidoId;
+  assert.equal((await call(`/admin/orcamentos/${quote.id}/converter`,convert,token)).data.pedidoId,pedido);
+  await prisma.pedido.update({where:{id:pedido},data:{status:'PRONTO_ENTREGA'}});
+  const avisos=await call('/admin/avisos',null,token);assert.ok(avisos.data.items.some(p=>p.id===pedido&&!p.avisadoEm));
+  assert.equal((await call(`/admin/avisos/${pedido}`,{},token)).status,200);
+  assert.ok((await call('/admin/avisos',null,token)).data.items.find(p=>p.id===pedido).avisadoEm);
+  assert.ok((await call('/admin/indicadores',null,token)).data.convertidos>=1);
+  assert.equal((await call(`/admin/pedidos/${pedido}/acesso`,{})).status,401);
+  const prepared=await call(`/admin/pedidos/${pedido}/acesso`,{},token);assert.equal(prepared.status,200,JSON.stringify(prepared.data));assert.equal(prepared.data.novoAcesso,true);assert.ok(prepared.data.whatsappUrl.startsWith('https://wa.me/5561995822399?text='));
+  assert.equal(new URL(prepared.data.link).pathname,'/ativar-acesso.html');assert.ok(prepared.data.texto.endsWith('\n\n'+prepared.data.link));assert.equal(new URL(prepared.data.whatsappUrl).searchParams.get('text'),prepared.data.texto);
+  const invite={status:200,data:{convite:new URL(prepared.data.link).hash.slice(1)}};
+  const senha=randomBytes(18).toString('hex');assert.equal((await call('/public/cliente/ativar',{convite:invite.data.convite,documento:'98765432100',senha})).status,200);
+  assert.equal((await call('/public/cliente/ativar',{convite:invite.data.convite,documento:'98765432100',senha})).status,400);
+  const login=await call('/public/cliente/login',{documento:'98765432100',senha});assert.equal(login.status,200);
+  const existing=await call(`/admin/pedidos/${pedido}/acesso`,{},token);assert.equal(existing.status,200);assert.equal(existing.data.novoAcesso,false);assert.equal(new URL(existing.data.link).hash,'#area-cliente');
+  assert.equal((await call('/public/cliente/login',{documento:'98765432100',senha})).status,200);
+  const pedidos=await call('/public/cliente/pedidos',null,login.data.token);assert.equal(pedidos.data.pedidos.length,1);assert.equal(pedidos.data.pedidos[0].id,pedido);
+  await prisma.pedido.createMany({data:Array.from({length:42},(_,i)=>({clienteId:client.id,vendedorId:admin.funcionarioId,tipoEntrega:'CLIENTE_RETIRA',tipoPedido:'COM_PRODUCAO',status:i<29?'ABERTO':'ENTREGUE',origemPedido:'INTERNO'}))});
+  const pagina0=await call('/public/cliente/pedidos',null,login.data.token),pagina1=await call('/public/cliente/pedidos?pagina=1',null,login.data.token),pagina2=await call('/public/cliente/pedidos?pagina=2',null,login.data.token);
+  assert.equal(pagina0.data.pedidos.length,20);assert.ok(pagina0.data.pedidos.every(p=>p.emAndamento));assert.equal(pagina1.data.pedidos.length,20);assert.equal(pagina2.data.pedidos.length,3);assert.equal(pagina2.data.mais,false);
+  assert.equal(new Set([...pagina0.data.pedidos,...pagina1.data.pedidos,...pagina2.data.pedidos].map(p=>p.id)).size,43);
+  assert.equal((await call('/public/cliente/pedidos/not-own',null,login.data.token)).status,404);
+  assert.equal((await call('/admin/orcamentos',null,login.data.token)).status,401);
+  assert.equal((await call(`/public/cliente/pedidos/${pedido}/recomprar`,{chave:chaves[1],telefone:'61995822399'},login.data.token)).status,201);
+  await call(`/admin/clientes/${client.id}/revogar`,{},token);assert.equal((await call('/public/cliente/pedidos',null,login.data.token)).status,401);
+ }finally{
+  await prisma.orcamentoSite.deleteMany({where:{chave:{in:chaves}}});
+  if(pedido){await prisma.avisoPedidoSite.deleteMany({where:{pedidoId:pedido}});await prisma.pedido.deleteMany({where:{clienteId:client.id}});}
+  if(client)await prisma.cliente.delete({where:{id:client.id}});
+  await new Promise(r=>server.close(r));await prisma.$disconnect();
+ }
+});

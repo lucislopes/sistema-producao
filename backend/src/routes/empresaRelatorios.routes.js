@@ -1,0 +1,21 @@
+import {consultarProducaoDiretoria} from '../utils/diretoriaProducao.js';
+import {consultarDiretoria,detalhesDiretoria} from '../utils/diretoriaIndicadores.js';
+import {prisma} from '../lib/prisma.js';
+import {Router} from 'express';
+import {authMiddleware} from '../middlewares/auth.middleware.js';
+import {acessoSite} from '../utils/siteMarketing.js';
+import {relatorioComercialVendedores,relatorioPontualidadeEntregas,relatorioPedidosParados} from '../controllers/relatoriosNovos.controller.js';
+const router=Router();
+router.use(authMiddleware,(req,res,next)=>{res.setHeader('Cache-Control','private, no-store');if(!acessoSite(req.user,'RELATORIOS_EMPRESA'))return res.status(403).json({error:'Sem permissão para relatórios da empresa.'});next()});
+router.use((req,res,next)=>{
+ const {dataInicio,dataFim,minimoDias}=req.query;
+ const valida=v=>/^\d{4}-\d{2}-\d{2}$/.test(v)&&!Number.isNaN(Date.parse(v))&&new Date(v).toISOString().slice(0,10)===v;
+ if(req.path!=='/pedidos-parados'&&(!valida(dataInicio)||!valida(dataFim)||dataFim<dataInicio||(Date.parse(dataFim)-Date.parse(dataInicio))/86400000>732))return res.status(400).json({error:'Informe um período válido de até 24 meses.'});
+ if(minimoDias!==undefined&&(!/^\d+$/.test(minimoDias)||Number(minimoDias)>3650))return res.status(400).json({error:'Quantidade de dias inválida.'});
+ next();
+});
+for(const [path,handler] of [['/diretoria/producao',consultarProducaoDiretoria],['/diretoria',consultarDiretoria],['/diretoria/pedidos',detalhesDiretoria]])router.get(path,async(req,res)=>{try{res.json(await handler(prisma,req.query))}catch(error){if(error.status)return res.status(error.status).json({error:error.message});console.error('Indicadores diretoria:',error.message);res.status(500).json({error:'Não foi possível consultar a visão da diretoria.'})}});
+router.get('/comercial-vendedores',relatorioComercialVendedores);
+router.get('/pontualidade-entregas',relatorioPontualidadeEntregas);
+router.get('/pedidos-parados',relatorioPedidosParados);
+export default router;

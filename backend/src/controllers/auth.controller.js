@@ -5,7 +5,10 @@ import { limparTentativasLogin } from "../middlewares/security.middleware.js"
 
 export async function login(req, res) {
   try {
-    const { email, senha } = req.body
+    const { email, senha } = req.body || {}
+    if(typeof email!=="string" || !email.trim() || email.length>254 || typeof senha!=="string" || !senha || senha.length>1024){
+      return res.status(400).json({error:"Informe e-mail e senha válidos"})
+    }
 
     const emailTratado = email?.trim().toLowerCase()
 
@@ -47,7 +50,8 @@ export async function login(req, res) {
       {
         id: usuario.id,
         funcionarioId: usuario.funcionario.id,
-        funcao: usuario.funcionario.funcao
+        funcao: usuario.funcionario.funcao,
+        permissoesSite: usuario.permissoesSite, somenteSite: usuario.somenteSite
       },
       process.env.JWT_SECRET,
       {
@@ -62,7 +66,8 @@ export async function login(req, res) {
         funcionarioId: usuario.funcionario.id,
         nome: usuario.funcionario.nome,
         email: usuario.email,
-        funcao: usuario.funcionario.funcao
+        funcao: usuario.funcionario.funcao,
+        permissoesSite: usuario.permissoesSite, somenteSite: usuario.somenteSite
       }
     })
   } catch (error) {
@@ -158,7 +163,8 @@ export async function usuarioAtual(req, res) {
         funcionarioId: usuario.funcionario.id,
         nome: usuario.funcionario.nome,
         email: usuario.email,
-        funcao: usuario.funcionario.funcao
+        funcao: usuario.funcionario.funcao,
+        permissoesSite: usuario.permissoesSite, somenteSite: usuario.somenteSite
       }
     })
   } catch (error) {

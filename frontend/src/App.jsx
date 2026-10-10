@@ -1,5 +1,10 @@
+import {EmpresaLayout} from './layouts/EmpresaLayout'
+import {EmpresaDashboard} from './pages/EmpresaDashboard'
+import {SiteDashboard} from './pages/SiteDashboard'
+import {MarketingSite} from './pages/MarketingSite'
+import {PermissoesSite} from './pages/PermissoesSite'
 import {
-  BrowserRouter,
+  BrowserRouter, Navigate,
   Routes,
   Route
 } from "react-router-dom"
@@ -32,6 +37,10 @@ const RelatorioProducao = lazyNamed(() => import("./pages/RelatorioProducao"), "
 const Alertas = lazyNamed(() => import("./pages/Alertas"), "Alertas")
 const ProdutividadeOperadores = lazyNamed(() => import("./pages/ProdutividadeOperadores"), "ProdutividadeOperadores")
 const ConfiguracaoEmpresa = lazyNamed(() => import("./pages/ConfiguracaoEmpresa"), "ConfiguracaoEmpresa")
+const ConfiguracaoSite = lazyNamed(() => import("./pages/ConfiguracaoSite"), "ConfiguracaoSite")
+const ConteudoSite = lazyNamed(() => import("./pages/ConteudoSite"), "ConteudoSite")
+const CatalogoSite = lazyNamed(() => import("./pages/CatalogoSite"), "CatalogoSite")
+const ComercialSite = lazyNamed(() => import('./pages/ComercialSite'), 'ComercialSite')
 const MinhaSenha = lazyNamed(() => import("./pages/MinhaSenha"), "MinhaSenha")
 const DashboardProducao = lazyNamed(() => import("./pages/dashboard/DashboardProducao"), "DashboardProducao")
 const DashboardExpedicao = lazyNamed(() => import("./pages/dashboard/DashboardExpedicao"), "DashboardExpedicao")
@@ -70,6 +79,20 @@ export default function App() {
       <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-600">Carregando...</div>}>
 
       <Routes>
+        <Route path="/empresa/login" element={<Login empresa />} />
+        <Route path="/empresa" element={<PrivateRoute><EmpresaLayout /></PrivateRoute>}>
+          <Route index element={<SiteDashboard />} />
+          <Route path="relatorios" element={<Navigate to="/empresa" replace />} />
+          <Route path="configuracao" element={<PrivateRoute sitePermission="CONFIGURACAO_SITE"><ConfiguracaoSite /></PrivateRoute>} />
+          <Route path="conteudo" element={<PrivateRoute sitePermission="CONTEUDO"><ConteudoSite /></PrivateRoute>} />
+          <Route path="produtos" element={<PrivateRoute sitePermission="CONTEUDO"><CatalogoSite key="empresa-produtos" tipo="produtos" /></PrivateRoute>} />
+          <Route path="categorias" element={<PrivateRoute sitePermission="CONTEUDO"><CatalogoSite key="empresa-categorias" tipo="categorias" /></PrivateRoute>} />
+          <Route path="publicacoes" element={<PrivateRoute sitePermission="PROMOCOES"><MarketingSite /></PrivateRoute>} />
+          <Route path="paginas" element={<PrivateRoute sitePermission="CONTEUDO"><MarketingSite key="empresa-paginas" paginas /></PrivateRoute>} />
+          <Route path="permissoes" element={<PrivateRoute roles={['ADMIN']}><PermissoesSite /></PrivateRoute>} />
+          <Route path="banners" element={<PrivateRoute sitePermission="CONTEUDO"><CatalogoSite key="empresa-banners" tipo="banners" /></PrivateRoute>} />
+          <Route path="comercial" element={<PrivateRoute roles={['ADMIN']}><ComercialSite /></PrivateRoute>} />
+        </Route>
         <Route path="/acompanhar" element={<AcompanharPedido />} />
 
         <Route
@@ -94,6 +117,7 @@ export default function App() {
             path="/dashboard"
             element={<Dashboard />}
           />
+          <Route path="/relatorios/visao-executiva" element={<PrivateRoute sitePermission="RELATORIOS_EMPRESA"><EmpresaDashboard relatorios /></PrivateRoute>} />
 
           <Route
             path="/clientes"
@@ -185,6 +209,15 @@ export default function App() {
           />
 
           <Route path="/minha-senha" element={<MinhaSenha />} />
+          <Route path="/site/configuracao" element={<Navigate to="/empresa/configuracao" replace />} />
+          <Route path="/site/conteudo" element={<Navigate to="/empresa/conteudo" replace />} />
+          <Route path="/site/produtos" element={<Navigate to="/empresa/produtos" replace />} />
+          <Route path="/site/categorias" element={<Navigate to="/empresa/categorias" replace />} />
+          <Route path="/site/publicacoes" element={<Navigate to="/empresa/publicacoes" replace />} />
+          <Route path="/site/paginas" element={<Navigate to="/empresa/paginas" replace />} />
+          <Route path="/site/permissoes" element={<Navigate to="/empresa/permissoes" replace />} />
+          <Route path="/site/banners" element={<Navigate to="/empresa/banners" replace />} />
+          <Route path="/site/comercial" element={<Navigate to="/empresa/comercial" replace />} />
           <Route path="/dashboard/producao" element={<DashboardProducao />} />
           <Route path="/dashboard/expedicao" element={<DashboardExpedicao />} />
           <Route path="/dashboard/comercial" element={<DashboardComercial />} />

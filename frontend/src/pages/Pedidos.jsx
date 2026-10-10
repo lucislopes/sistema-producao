@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { CapacidadeDiaria } from "../components/CapacidadeDiaria"
+import { AcessoClientePedido } from "../components/AcessoClientePedido"
 import { api } from "../services/api"
 import { Link, useNavigate } from "react-router-dom"
 import { AutocompleteCliente } from "../components/AutocompleteCliente"
@@ -220,6 +221,7 @@ export function Pedidos() {
   )
 
   const navigate = useNavigate()
+  const [pedidoParaAcesso, setPedidoParaAcesso] = useState(null)
 
   const usuarioLogado = JSON.parse(localStorage.getItem("@usuario") || "{}")
 
@@ -492,7 +494,10 @@ export function Pedidos() {
       limparFormulario()
       carregarPedidos()
 
-      if (tipoPedido === "COM_PRODUCAO" && pedidoSalvo?.id) {
+      if (!editandoId && isAdmin && pedidoSalvo?.id) {
+        setPedidoParaAcesso({ id: pedidoSalvo.id, producao: tipoPedido === "COM_PRODUCAO" })
+        setModoTela("LISTA")
+      } else if (tipoPedido === "COM_PRODUCAO" && pedidoSalvo?.id) {
         navigate(`/plano-corte-servico?pedidoId=${pedidoSalvo.id}`)
       } else {
         setModoTela("LISTA")
@@ -783,6 +788,7 @@ function aplicarRotaSelecionada(id) {
 
   return (
     <div>
+      {pedidoParaAcesso && <div className="mb-6 border rounded-xl p-4 bg-white"><p role="status" className="font-semibold">Pedido criado com sucesso.</p><AcessoClientePedido key={pedidoParaAcesso.id} pedidoId={pedidoParaAcesso.id}/><Button onClick={()=>{const salvo=pedidoParaAcesso;setPedidoParaAcesso(null);if(salvo.producao)navigate(`/plano-corte-servico?pedidoId=${salvo.id}`)}}>{pedidoParaAcesso.producao?'Continuar para o plano de corte':'Concluir'}</Button></div>}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
         <ResumoCard
           titulo="Total"

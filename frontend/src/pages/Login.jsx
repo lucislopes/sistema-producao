@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom"
 import { Button } from "../components/ui/Button"
 import { Input } from "../components/ui/Input"
 
-export function Login() {
+export function Login({empresa=false}) {
 
   const { login } = useContext(AuthContext)
   const navigate = useNavigate()
@@ -22,7 +22,7 @@ export function Login() {
     try {
 
       await login(email, senha)
-      navigate("/dashboard")
+      navigate(empresa?"/empresa":"/dashboard")
 
     } catch (error) {
       console.log(error)
@@ -43,11 +43,11 @@ export function Login() {
 
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">
-            Sistema Produção
+            {empresa?"Área da Empresa":"Sistema Produção"}
           </h1>
 
           <p className="text-gray-500 mt-2">
-            Gestão de Pedidos e Produção
+            {empresa?"Funcionários e diretoria · acesso autorizado":"Gestão de Pedidos e Produção"}
           </p>
         </div>
 

@@ -1,0 +1,26 @@
+export function iniciarAreaCliente(onRecomprar){
+ let token='',pagina=0,nomeCliente='';
+ const login=document.querySelector('#client-login'),activate=document.querySelector('#client-activate'),panel=document.querySelector('#client-panel'),list=document.querySelector('#client-orders'),message=document.querySelector('#client-message');
+ const convite=location.hash.match(/(?:&|\?)convite=([a-f0-9]{64})/)?.[1];
+ if(convite){const destino=new URL('ativar-acesso.html',location.href);destino.hash=convite;location.replace(destino.href);}
+ if(convite){activate.hidden=false;login.hidden=true;document.querySelector('#area-cliente').scrollIntoView();history.replaceState(null,'','#area-cliente');}
+ const text=(tag,value,parent,cls)=>{const el=document.createElement(tag);el.textContent=value;if(cls)el.className=cls;parent.append(el);return el;};
+ async function request(path,body){const response=await fetch(`/api/atendimento-site${path}`,{method:body?'POST':'GET',headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},...(body?{body:JSON.stringify(body)}:{}),cache:'no-store',signal:AbortSignal.timeout(20000)});const data=await response.json();if(!response.ok){if(response.status===401&&token){token='';panel.hidden=true;login.hidden=false;}throw new Error(data.error||'Não foi possível concluir.');}return data;}
+ async function guarded(form,fn){const button=form.querySelector('button');button.disabled=true;message.textContent='';try{await fn();}catch(e){message.textContent=e.message==='Failed to fetch'?'Não foi possível conectar. Tente novamente.':e.message;}finally{button.disabled=false;}}
+ activate.addEventListener('submit',event=>{event.preventDefault();guarded(activate,async()=>{if(activate.elements.senha.value!==activate.elements.confirmacao.value)throw new Error('As senhas precisam ser iguais.');await request('/cliente/ativar',{convite,documento:activate.elements.documento.value,senha:activate.elements.senha.value});activate.reset();activate.hidden=true;login.hidden=false;message.textContent='Acesso ativado. Entre com seu documento e sua senha.';});});
+ login.addEventListener('submit',event=>{event.preventDefault();guarded(login,async()=>{const data=await request('/cliente/login',{documento:login.elements.documento.value,senha:login.elements.senha.value});token=data.token;nomeCliente=data.nome;login.reset();login.hidden=true;panel.hidden=false;document.querySelector('#client-greeting').textContent=`Olá, ${data.nome}`;pagina=0;await load();});});
+ async function load(){const sessao=token;const data=await request(`/cliente/pedidos?pagina=${pagina}`);if(token!==sessao)return;list.replaceChildren();document.querySelector('#client-next').hidden=!data.mais;document.querySelector('#client-prev').hidden=pagina===0;
+  const orders=[...data.pedidos].sort((a,b)=>Number(b.emAndamento)-Number(a.emAndamento));
+  if(!orders.length)text('p','Nenhum pedido encontrado nesta página.',list);
+  for(const p of orders){const card=document.createElement('article');card.className='client-order';list.append(card);text('h3',`Pedido ${p.numero}`,card);text('p',p.status,card,`tracking-status tracking-status-${({'Pedido recebido':'received','Em separação':'preparing','Em produção':'producing','Produção concluída':'finished','Pronto para entrega ou retirada':'ready','Saiu para entrega':'shipping','Entregue':'delivered','Cancelado':'cancelled'})[p.status]||'received'}`);text('p',`Previsão: ${p.dataEntrega?new Date(p.dataEntrega).toLocaleDateString('pt-BR'):'Ainda não informada'}`,card);text('p',p.tipoEntrega,card);
+   const detailsButton=text('button','Ver detalhes',card,'button');detailsButton.type='button';const details=document.createElement('div');details.hidden=true;card.append(details);
+   detailsButton.addEventListener('click',()=>guarded(card,async()=>{const d=await request(`/cliente/pedidos/${encodeURIComponent(p.id)}`);details.replaceChildren();details.hidden=false;text('h3','Histórico',details);for(const h of d.historico)text('p',`${new Date(h.data).toLocaleString('pt-BR')} — ${h.descricao}`,details);if(!d.historico.length)text('p','Ainda não há atualizações.',details);const again=text('button','Revisar e solicitar novamente',details,'button yellow');again.type='button';again.addEventListener('click',()=>onRecomprar({pedidoId:p.id,numero:p.numero,nome:nomeCliente,...d.recompra}));}));
+  }
+ }
+ let navegando=false;
+ async function mudarPagina(delta){if(navegando)return;navegando=true;const anterior=pagina;const botoes=[document.querySelector('#client-next'),document.querySelector('#client-prev')];botoes.forEach(b=>b.disabled=true);pagina=Math.max(0,pagina+delta);try{await load()}catch(e){pagina=anterior;message.textContent=e.message}finally{navegando=false;botoes.forEach(b=>b.disabled=false)}}
+ document.querySelector('#client-next').addEventListener('click',()=>mudarPagina(1));
+ document.querySelector('#client-prev').addEventListener('click',()=>mudarPagina(-1));
+ document.querySelector('#client-logout').addEventListener('click',()=>{token='';list.replaceChildren();panel.hidden=true;login.hidden=false;message.textContent='Você saiu da Área do Cliente.';});
+ return {request,get token(){return token;}};
+}

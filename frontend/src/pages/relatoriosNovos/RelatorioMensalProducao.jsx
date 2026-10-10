@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
-import html2pdf from "html2pdf.js"
+import { useEffect, useMemo, useState } from "react"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 

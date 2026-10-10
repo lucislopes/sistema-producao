@@ -49,6 +49,61 @@ import {
 import { AuthContext } from "../contexts/AuthContext"
 import { BuscaGlobal } from "../components/BuscaGlobal"
 
+function MenuGrupo({ titulo, children, gruposAbertos, alternarGrupo }) {
+    const aberto = gruposAbertos[titulo]
+
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={() => alternarGrupo(titulo)}
+          className="
+            w-full flex items-center justify-between
+            text-xs uppercase text-gray-400 font-bold
+            mt-5 mb-2 hover:text-gray-200 transition
+          "
+        >
+          <span>{titulo}</span>
+
+          {aberto ? (
+            <ChevronDown size={15} />
+          ) : (
+            <ChevronRight size={15} />
+          )}
+        </button>
+
+        {aberto && (
+          <div className="flex flex-col gap-1">
+            {children}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+function MenuLink({ to, icon: Icon, children, fecharMenu }) {
+    return (
+      <NavLink
+        to={to}
+        onClick={fecharMenu}
+        className={({ isActive }) =>
+          `
+          text-sm px-3 py-2 rounded-lg transition
+          flex items-center gap-2
+          ${
+            isActive
+              ? "bg-gray-800 text-white font-semibold"
+              : "text-gray-100 hover:text-white hover:bg-gray-800"
+          }
+          `
+        }
+      >
+        {Icon && <Icon size={17} />}
+        <span>{children}</span>
+      </NavLink>
+    )
+  }
+
 export function MainLayout() {
   const { logout, usuario } = useContext(AuthContext)
   const navigate = useNavigate()
@@ -56,10 +111,10 @@ export function MainLayout() {
 
   const funcao = usuario?.funcao
 
-  const isAdmin = funcao === "ADMIN"
-  const isVendedor = funcao === "VENDEDOR"
-  const isOperador = funcao === "OPERADOR"
-  const isVendedorOperador = funcao === "VENDEDOR_OPERADOR"
+  const isAdmin = funcao === "ADMIN" && !usuario?.somenteSite
+  const isVendedor = funcao === "VENDEDOR" && !usuario?.somenteSite
+  const isOperador = funcao === "OPERADOR" && !usuario?.somenteSite
+  const isVendedorOperador = funcao === "VENDEDOR_OPERADOR" && !usuario?.somenteSite
 
   const [menuAberto, setMenuAberto] = useState(false)
   const [menuLateralAberto, setMenuLateralAberto] = useState(false)
@@ -71,7 +126,8 @@ export function MainLayout() {
     Relatórios: false,
     "Relatórios Novos": false,
     Cadastros: false,
-    Sistema: false
+    Sistema: false,
+    "Site / Marketing": false
   })
 
   const menuRef = useRef(null)
@@ -125,61 +181,6 @@ export function MainLayout() {
     }))
   }
 
-  function MenuGrupo({ titulo, children }) {
-    const aberto = gruposAbertos[titulo]
-
-    return (
-      <div>
-        <button
-          type="button"
-          onClick={() => alternarGrupo(titulo)}
-          className="
-            w-full flex items-center justify-between
-            text-xs uppercase text-gray-400 font-bold
-            mt-5 mb-2 hover:text-gray-200 transition
-          "
-        >
-          <span>{titulo}</span>
-
-          {aberto ? (
-            <ChevronDown size={15} />
-          ) : (
-            <ChevronRight size={15} />
-          )}
-        </button>
-
-        {aberto && (
-          <div className="flex flex-col gap-1">
-            {children}
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  function MenuLink({ to, icon: Icon, children }) {
-    return (
-      <NavLink
-        to={to}
-        onClick={() => setMenuLateralAberto(false)}
-        className={({ isActive }) =>
-          `
-          text-sm px-3 py-2 rounded-lg transition
-          flex items-center gap-2
-          ${
-            isActive
-              ? "bg-gray-800 text-white font-semibold"
-              : "text-gray-100 hover:text-white hover:bg-gray-800"
-          }
-          `
-        }
-      >
-        {Icon && <Icon size={17} />}
-        <span>{children}</span>
-      </NavLink>
-    )
-  }
-
   function tituloPagina() {
     const path = location.pathname
 
@@ -187,6 +188,7 @@ export function MainLayout() {
 
     const titulos = {
       "/dashboard": "Dashboard",
+      "/relatorios/visao-executiva": "Visão executiva",
       "/dashboard/producao": "Dashboard Produção",
       "/dashboard/expedicao": "Dashboard Expedição",
       "/dashboard/comercial": "Dashboard Comercial",
@@ -209,6 +211,12 @@ export function MainLayout() {
       "/relatorios/producao-mensal": "Relatório Mensal de Produção",
       "/produtividade-operadores": "Produtividade",
       "/configuracao-empresa": "Configurações",
+      "/site/configuracao": "Configuração do Site",
+      "/site/conteudo": "Textos e Imagem do Site",
+      "/site/produtos": "Produtos do Site",
+      "/site/categorias": "Categorias do Site",
+      "/site/banners": "Banners do Site",
+      "/site/comercial": "Atendimento e clientes",
       "/minha-senha": "Alterar Senha",
       "/relatorio-auditoria-frete": "Auditoria de Frete",
       "/relatorio-consumo-chapas": "Relatório Consumo de Chapas",
@@ -269,24 +277,24 @@ export function MainLayout() {
         </div>
 
         <nav className="flex flex-col">
-          <MenuGrupo titulo="Principal">
-            <MenuLink to="/dashboard" icon={LayoutDashboard}>
+          {!usuario?.somenteSite && <MenuGrupo gruposAbertos={gruposAbertos} alternarGrupo={alternarGrupo} titulo="Principal">
+            <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/dashboard" icon={LayoutDashboard}>
               Dashboard
             </MenuLink>
-          </MenuGrupo>
+          </MenuGrupo>}
 
         {/*
           {(isAdmin || isVendedor || isVendedorOperador) && (
-            <MenuGrupo titulo="Dashboards">
-              <MenuLink to="/dashboard/producao" icon={Factory}>
+            <MenuGrupo gruposAbertos={gruposAbertos} alternarGrupo={alternarGrupo} titulo="Dashboards">
+              <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/dashboard/producao" icon={Factory}>
                 Produção
               </MenuLink>
 
-              <MenuLink to="/dashboard/expedicao" icon={Truck}>
+              <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/dashboard/expedicao" icon={Truck}>
                 Expedição
               </MenuLink>
 
-              <MenuLink to="/dashboard/comercial" icon={BarChart3}>
+              <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/dashboard/comercial" icon={BarChart3}>
                 Comercial
               </MenuLink>
             </MenuGrupo>
@@ -294,31 +302,31 @@ export function MainLayout() {
         */}
 
           {(isAdmin || isVendedor || isVendedorOperador || isOperador) && (
-            <MenuGrupo titulo="Operação">
+            <MenuGrupo gruposAbertos={gruposAbertos} alternarGrupo={alternarGrupo} titulo="Operação">
               {(isAdmin || isVendedor || isVendedorOperador) && (
                 <>
-                  <MenuLink to="/pedidos" icon={ShoppingCart}>
+                  <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/pedidos" icon={ShoppingCart}>
                     Pedidos
                   </MenuLink>
 
                   {/*
-                  <MenuLink to="/planos-corte" icon={Scissors}>
+                  <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/planos-corte" icon={Scissors}>
                    Planos de Corte
                   </MenuLink>
                   */}
 
-                  <MenuLink to="/plano-corte-servico" icon={Scissors}>
+                  <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/plano-corte-servico" icon={Scissors}>
                     Planos de Corte e Serviços
                   </MenuLink>
                 </>
               )}
             {/*
-              <MenuLink to="/servicos-plano" icon={ListChecks}>
+              <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/servicos-plano" icon={ListChecks}>
                 Serviços do Plano
               </MenuLink>
             */}
               {(isAdmin || isVendedor || isVendedorOperador)  && (
-                <MenuLink to="/expedicao" icon={Truck}>
+                <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/expedicao" icon={Truck}>
                   Expedição
                 </MenuLink>
               )}
@@ -326,39 +334,40 @@ export function MainLayout() {
           )}
 
           {(isAdmin || isOperador || isVendedorOperador) && (
-            <MenuGrupo titulo="Produção">
+            <MenuGrupo gruposAbertos={gruposAbertos} alternarGrupo={alternarGrupo} titulo="Produção">
               {/*
-              <MenuLink to="/painel-operador" icon={Factory}>
+              <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/painel-operador" icon={Factory}>
                 Painel Operador
               </MenuLink>
               */}
 
-              <MenuLink to="/kanban" icon={Columns3}>
+              <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/kanban" icon={Columns3}>
                 Kanban
               </MenuLink>
-              <MenuLink to="/modo-tv" icon={MonitorPlay}>
+              <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/modo-tv" icon={MonitorPlay}>
                 Modo TV
               </MenuLink>
             </MenuGrupo>
           )}
 
           {(isAdmin || isVendedor || isVendedorOperador || isOperador) && (
-            <MenuGrupo titulo="Relatórios">
+            <MenuGrupo gruposAbertos={gruposAbertos} alternarGrupo={alternarGrupo} titulo="Relatórios">
+              {(isAdmin || usuario?.permissoesSite?.includes("RELATORIOS_EMPRESA")) && <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/relatorios/visao-executiva" icon={BarChart3}>Visão executiva</MenuLink>}
               {(isAdmin || isVendedor || isVendedorOperador) && (
                 <>
-                  <MenuLink to="/relatorio-expedicao" icon={FileText}>
+                  <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/relatorio-expedicao" icon={FileText}>
                     Relatório de Entrega
                   </MenuLink>
 
-                  <MenuLink to="/romaneio-entrega" icon={Truck}>
+                  <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/romaneio-entrega" icon={Truck}>
                     Romaneio de Entrega
                   </MenuLink>
 
-                  <MenuLink to="/relatorio-pedidos" icon={ClipboardList}>
+                  <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/relatorio-pedidos" icon={ClipboardList}>
                     Pedidos em Andamento
                   </MenuLink>
 
-                  <MenuLink to="/relatorio-pedidos-entregues" icon={PackageCheck}>
+                  <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/relatorio-pedidos-entregues" icon={PackageCheck}>
                     Pedidos Entregues
                   </MenuLink>
 
@@ -380,91 +389,92 @@ export function MainLayout() {
                 </>
               )}
 
-              <MenuLink to="/alertas" icon={Bell}>
+              <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/alertas" icon={Bell}>
                 Alertas
               </MenuLink>
 
               {(isAdmin || isVendedorOperador) && (
               <>
-                <MenuLink to="/relatorio-producao" icon={BarChart3}>
+                <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/relatorio-producao" icon={BarChart3}>
                   Produção
                 </MenuLink>
 
-                <MenuLink to="/produtividade-operadores" icon={Users}>
+                <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/produtividade-operadores" icon={Users}>
                   Produtividade
                 </MenuLink>
               </>
             )}
 
               {isAdmin && (
-                <MenuLink to="/relatorio-auditoria-frete" icon={DollarSign}>
+                <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/relatorio-auditoria-frete" icon={DollarSign}>
                   Auditoria de Frete
                 </MenuLink>
               )}
 
-              <MenuLink to="/relatorio-servicos" icon={ListChecks}>
+              <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/relatorio-servicos" icon={ListChecks}>
                 Serviços
               </MenuLink>
 
-              <MenuLink to="/relatorio-pendencias" icon={TriangleAlert}>
+              <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/relatorio-pendencias" icon={TriangleAlert}>
                 Pendências
               </MenuLink>
             </MenuGrupo>
           )}
 
           {(isAdmin || isVendedor || isVendedorOperador) && (
-            <MenuGrupo titulo="Relatórios Novos">
-              <MenuLink to="/relatorios-novos/comercial-vendedores" icon={TrendingUp}>
+            <MenuGrupo gruposAbertos={gruposAbertos} alternarGrupo={alternarGrupo} titulo="Relatórios Novos">
+              <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/relatorios-novos/comercial-vendedores" icon={TrendingUp}>
                 Comercial por Vendedor
               </MenuLink>
-              <MenuLink to="/relatorios-novos/pontualidade-entregas" icon={PackageCheck}>
+              <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/relatorios-novos/pontualidade-entregas" icon={PackageCheck}>
                 Pontualidade das Entregas
               </MenuLink>
-              <MenuLink to="/relatorios-novos/pedidos-parados" icon={TriangleAlert}>
+              <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/relatorios-novos/pedidos-parados" icon={TriangleAlert}>
                 Pedidos Parados
               </MenuLink>
-              <MenuLink to="/relatorios-novos/clientes" icon={ContactRound}>
+              <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/relatorios-novos/clientes" icon={ContactRound}>
                 Gerencial de Clientes
               </MenuLink>
-              <MenuLink to="/relatorios-novos/carteira-pedidos" icon={ShoppingCart}>
+              <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/relatorios-novos/carteira-pedidos" icon={ShoppingCart}>
                 Carteira de Pedidos
               </MenuLink>
-              <MenuLink to="/relatorios-novos/auditoria-cadastro" icon={ClipboardCheck}>
+              <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/relatorios-novos/auditoria-cadastro" icon={ClipboardCheck}>
                 Auditoria de Cadastro
               </MenuLink>
-              <MenuLink to="/relatorios/producao-mensal" icon={FileText}              >
+              <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/relatorios/producao-mensal" icon={FileText}              >
                 Produção Mensal
               </MenuLink>
             </MenuGrupo>
           )}
 
           {isAdmin && (
-            <MenuGrupo titulo="Cadastros">
-              <MenuLink to="/clientes" icon={Users}>
+            <MenuGrupo gruposAbertos={gruposAbertos} alternarGrupo={alternarGrupo} titulo="Cadastros">
+              <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/clientes" icon={Users}>
                 Clientes
               </MenuLink>
 
-              <MenuLink to="/funcionarios" icon={UserCog}>
+              <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/funcionarios" icon={UserCog}>
                 Funcionários
               </MenuLink>
 
-              <MenuLink to="/rotas-entrega" icon={MapPinned}>
+              <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/rotas-entrega" icon={MapPinned}>
                 Rotas de Entrega
               </MenuLink>
 
-              <MenuLink to="/tipos-servico" icon={Wrench}>
+              <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/tipos-servico" icon={Wrench}>
                 Tipos de Serviço
               </MenuLink>
             </MenuGrupo>
           )}
 
           {isAdmin && (
-            <MenuGrupo titulo="Sistema">
-              <MenuLink to="/configuracao-empresa" icon={Settings}>
+            <MenuGrupo gruposAbertos={gruposAbertos} alternarGrupo={alternarGrupo} titulo="Sistema">
+              <MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/configuracao-empresa" icon={Settings}>
                 Configurações
               </MenuLink>
             </MenuGrupo>
           )}
+          {(isAdmin || usuario?.permissoesSite?.length>0) && <MenuGrupo gruposAbertos={gruposAbertos} alternarGrupo={alternarGrupo} titulo="Área da Empresa"><MenuLink fecharMenu={() => setMenuLateralAberto(false)} to="/empresa" icon={MonitorPlay}>Gestão do site</MenuLink></MenuGrupo>}
         </nav>
 
         <div className="mt-10 border-t border-gray-700 pt-4">
@@ -528,7 +538,7 @@ export function MainLayout() {
           <div className="hidden flex-1 lg:block" />
 
           <div className="order-3 w-full lg:order-none lg:w-[380px]">
-            <BuscaGlobal />
+            {!usuario?.somenteSite && <BuscaGlobal />}
           </div>
 
           <div className="relative" ref={menuRef}>

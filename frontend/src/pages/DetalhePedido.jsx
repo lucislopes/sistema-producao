@@ -1,7 +1,10 @@
+import {OrigemComercialPedido} from '../components/OrigemComercialPedido'
+import {VinculoPedidoSite} from '../components/VinculoPedidoSite'
 import { useEffect, useState } from "react"
 import { useParams, Link } from "react-router-dom"
 import { api } from "../services/api"
 import { CabecalhoImpressao } from "../components/CabecalhoImpressao"
+import { AcessoClientePedido } from "../components/AcessoClientePedido"
 import { Button } from "../components/ui/Button"
 import { BadgeStatus } from "../components/ui/BadgeStatus"
 import { ErrorState, LoadingState } from "../components/ui/FeedbackState"
@@ -129,6 +132,7 @@ export function DetalhePedido() {
 
   return (
     <div>
+      {usuarioLogado.funcao === 'ADMIN' && <><AcessoClientePedido key={id} pedidoId={id} /><OrigemComercialPedido key={'comercial-'+id} pedidoId={id}/><VinculoPedidoSite key={'origem-'+id} pedidoId={id}/></>}
       <div className="flex justify-between items-center mb-6 no-print">
         <div>
           <h1 className="text-3xl font-bold">

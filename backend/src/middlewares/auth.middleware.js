@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken"
 import { prisma } from "../lib/prisma.js"
+import { rotaSomenteSite } from '../utils/siteMarketing.js'
 
 export async function authMiddleware(req, res, next) {
   try {
@@ -34,8 +35,10 @@ export async function authMiddleware(req, res, next) {
       ...decoded,
       funcionarioId: usuario.funcionario.id,
       funcao: usuario.funcionario.funcao
+      ,permissoesSite: usuario.permissoesSite, somenteSite: usuario.somenteSite
     }
 
+    if(usuario.somenteSite && !rotaSomenteSite(req.originalUrl.split('?')[0],usuario.permissoesSite)) return res.status(403).json({error:'Este usuário possui acesso somente ao site.'})
     next()
 
   } catch (error) {

@@ -69,7 +69,7 @@ api.interceptors.response.use(
 
       alert("Sessão expirada. Faça login novamente.")
 
-      window.location.href = "/"
+      window.location.href = window.location.pathname.startsWith("/empresa")?"/empresa/login":"/"
 
       return Promise.reject(error)
     }

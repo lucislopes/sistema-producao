@@ -59,7 +59,7 @@ test("consulta correta usa somente findMany/findUnique e não devolve documento"
     findUnique: async ({ where, select }) => {
       assert.deepEqual(where, { id: "a" })
       assert.equal(select.historicos.where, undefined)
-      assert.equal(select.historicos.take, undefined)
+      assert.equal(select.historicos.take, 100)
       assert.deepEqual(select.historicos.orderBy, { createdAt: "desc" })
       return { numeroPedido: 123, origemPedido: "INTERNO", status: "ABERTO", historicos: [] }
     }
