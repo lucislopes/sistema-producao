@@ -188,8 +188,8 @@ a,button,input,textarea,select{ -webkit-tap-highlight-color:transparent }
 }
 
 /* Quadros mais compactos e acessos aos pedidos lado a lado. */
-/* Três por linha, preservando a largura dos quadros da grade anterior de quatro. */
-.catalog .products,.service-list.service-photos{grid-template-columns:repeat(3,minmax(0,calc((100% - 54px)/4)));justify-content:center;gap:18px}
+/* Três por linha dentro da largura compartilhada do conteúdo. */
+.catalog .products,.service-list.service-photos{grid-template-columns:repeat(3,minmax(0,1fr));justify-content:center;gap:18px}
 .catalog .product .swatch{aspect-ratio:3/2}
 .catalog .product .product-details{padding:16px;gap:7px}
 .catalog .product .product-title h3{font-size:18px}
@@ -215,3 +215,27 @@ a,button,input,textarea,select{ -webkit-tap-highlight-color:transparent }
 @media(max-width:1000px){.catalog .products,.service-list.service-photos{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:800px){.catalog .products,.service-list.service-photos{grid-template-columns:repeat(2,minmax(0,1fr))}.customer-access{grid-template-columns:minmax(0,1fr);padding:36px 6%;gap:40px}}
 @media(max-width:520px){.catalog .products,.service-list.service-photos{grid-template-columns:minmax(0,1fr)}.catalog .product .swatch,.service-list.service-photos article>img{aspect-ratio:16/9}.service-list.service-photos article>div{padding:16px}.customer-access .quote-form{padding:20px}}
+
+/* Uma única referência lateral para todas as páginas do site público. */
+:root{--site-content-width:1280px;--site-gutter:max(5vw,calc((100% - var(--site-content-width))/2))}
+.topbar,.header,main>.section,.page-content,.customer-access,.value-strip,.hero.service-overview,.footer-main{padding-left:var(--site-gutter);padding-right:var(--site-gutter)}
+main>.section,.page-content{max-width:none;width:100%}
+.about{margin-left:var(--site-gutter);margin-right:var(--site-gutter)}
+.footer-bottom{margin-left:var(--site-gutter);margin-right:var(--site-gutter)}
+footer>.social-links{margin-left:var(--site-gutter);margin-right:var(--site-gutter)}
+.carousel-copy{padding-left:var(--site-gutter);max-width:calc(740px + var(--site-gutter))}
+.hero:not(.service-overview) .hero-copy{padding-left:var(--site-gutter)}
+.service-intro{margin-bottom:24px}
+.header nav{min-width:0;flex-wrap:wrap;justify-content:center;align-items:center;text-align:center;row-gap:12px}
+.header nav a{white-space:nowrap}
+.header>.brand,.header>.header-cta{flex-shrink:0}
+@media(min-width:801px) and (max-width:1250px){
+ .header:not(.page-header){flex-wrap:wrap;justify-content:center;gap:14px 24px}
+ .header:not(.page-header) #navigation{order:5;flex:0 0 100%;margin:0;gap:12px 24px;justify-content:center}
+}
+@media(max-width:800px){
+ :root{--site-gutter:6vw}
+ .header nav.open{padding-left:var(--site-gutter);padding-right:var(--site-gutter);text-align:center;align-items:stretch}
+ .hero:not(.service-overview) .hero-copy{padding-right:var(--site-gutter)}
+ .carousel-copy{padding-right:var(--site-gutter)}
+}
