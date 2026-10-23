@@ -255,8 +255,17 @@ document.querySelector('.hero').id='solucoes';
 const faixaBeneficios=document.querySelector('.value-strip');if(faixaBeneficios)faixaBeneficios.id='beneficios';
 const destaques=document.querySelector('.home-carousel');if(destaques)destaques.id='banners';
 const marcas=document.querySelector('.marketing-section:not(#promocoes)');if(marcas)marcas.id='marcas';
-aplicarOrdemSecoes(document.querySelector('main'),liveSettings?.conteudo?.ordemSecoes);
-aplicarVisibilidadeSecoes(document.querySelector('main'),liveSettings?.conteudo?.secoesDesativadas,document.querySelectorAll('a[href]'));
+// Abertura comercial: serviços, ferramentas do projeto, materiais e acesso aos pedidos.
+const ordemAbertura=[document.querySelector('.home-carousel')?'banners':'solucoes','servicos','softwares','catalogo','consultar-pedido','area-cliente'];
+aplicarOrdemSecoes(document.querySelector('main'),[...ordemAbertura,...(liveSettings?.conteudo?.ordemSecoes||[])]);
+// Marcas ficam temporariamente ocultas; o conteúdo cadastrado é preservado.
+aplicarVisibilidadeSecoes(document.querySelector('main'),[...(liveSettings?.conteudo?.secoesDesativadas||[]),'marcas'],document.querySelectorAll('a[href]'));
+const acessosCliente=document.createElement('div');
+acessosCliente.className='customer-access';
+const acompanhamento=document.querySelector('#consultar-pedido');
+acompanhamento.before(acessosCliente);
+acessosCliente.append(acompanhamento,document.querySelector('#area-cliente'));
+
 document.body.classList.remove('identity-loading');
 document.documentElement.style.setProperty('--primary', company.colors.primary);
 document.documentElement.style.setProperty('--accent', company.colors.accent);

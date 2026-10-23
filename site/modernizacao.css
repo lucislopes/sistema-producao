@@ -186,3 +186,31 @@ a,button,input,textarea,select{ -webkit-tap-highlight-color:transparent }
  .filters{gap:8px;flex-wrap:wrap}.filters button{padding:10px 14px}
  .mobile-actions a{min-height:48px;display:flex;align-items:center;justify-content:center;text-align:center}
 }
+
+/* Quadros mais compactos e acessos aos pedidos lado a lado. */
+.catalog .products,.service-list.service-photos{grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.catalog .product .swatch{aspect-ratio:3/2}
+.catalog .product .product-details{padding:16px;gap:7px}
+.catalog .product .product-title h3{font-size:18px}
+.service-list.service-photos{gap:18px}
+.service-list.service-photos article>img{aspect-ratio:3/2}
+.service-list.service-photos article>div{padding:16px}
+.service-list.service-photos article h3{font-size:18px;margin-bottom:7px}
+.service-list.service-photos article p{font-size:13px;line-height:1.55}
+.service-list.service-photos article .text-link{margin-top:12px}
+.service-list.service-photos article .service-select{margin-top:12px}
+.service-list:not(.service-photos) article{padding-top:20px;padding-bottom:20px}
+.customer-access{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px;padding:48px 7%;background:#eaf0e8}
+.customer-access>.tracking-section{display:flex;flex-direction:column;gap:22px;padding:0;min-width:0;border:0}
+.customer-access .quote-copy{padding-top:0}
+.customer-access .quote-copy h2{font-size:clamp(30px,3vw,42px)}
+.customer-access .quote-copy>p{font-size:14px;line-height:1.65}
+.customer-access .tracking-promise{margin-top:18px}
+.customer-access .quote-form{padding:24px}
+.customer-access .tracking-section>div:nth-child(2){margin-top:auto}
+.customer-access #client-panel{overflow-wrap:anywhere}
+.customer-access:has(>.secao-desativada){grid-template-columns:minmax(0,1fr)}
+.customer-access:has(>#consultar-pedido.secao-desativada):has(>#area-cliente.secao-desativada){display:none}
+@media(max-width:1000px){.catalog .products,.service-list.service-photos{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:800px){.catalog .products,.service-list.service-photos{grid-template-columns:repeat(2,minmax(0,1fr))}.customer-access{grid-template-columns:minmax(0,1fr);padding:36px 6%;gap:40px}}
+@media(max-width:520px){.catalog .products,.service-list.service-photos{grid-template-columns:minmax(0,1fr)}.catalog .product .swatch,.service-list.service-photos article>img{aspect-ratio:16/9}.service-list.service-photos article>div{padding:16px}.customer-access .quote-form{padding:20px}}
