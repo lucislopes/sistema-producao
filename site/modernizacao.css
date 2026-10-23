@@ -189,11 +189,11 @@ a,button,input,textarea,select{ -webkit-tap-highlight-color:transparent }
 
 /* Quadros mais compactos e acessos aos pedidos lado a lado. */
 /* Três por linha dentro da largura compartilhada do conteúdo. */
-.catalog .products,.service-list.service-photos{grid-template-columns:repeat(3,minmax(0,1fr));justify-content:center;gap:18px}
+.catalog .products,.service-list.service-photos{grid-template-columns:repeat(3,minmax(0,1fr));justify-content:center;gap:28px}
 .catalog .product .swatch{aspect-ratio:3/2}
 .catalog .product .product-details{padding:16px;gap:7px}
 .catalog .product .product-title h3{font-size:18px}
-.service-list.service-photos{gap:18px}
+.service-list.service-photos{gap:28px}
 .service-list.service-photos article>img{aspect-ratio:3/2}
 .service-list.service-photos article>div{padding:16px}
 .service-list.service-photos article h3{font-size:18px;margin-bottom:7px}
@@ -213,7 +213,7 @@ a,button,input,textarea,select{ -webkit-tap-highlight-color:transparent }
 .customer-access:has(>.secao-desativada){grid-template-columns:minmax(0,1fr)}
 .customer-access:has(>#consultar-pedido.secao-desativada):has(>#area-cliente.secao-desativada){display:none}
 @media(max-width:1000px){.catalog .products,.service-list.service-photos{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:800px){.catalog .products,.service-list.service-photos{grid-template-columns:repeat(2,minmax(0,1fr))}.customer-access{grid-template-columns:minmax(0,1fr);padding:36px 6%;gap:40px}}
+@media(max-width:800px){.catalog .products,.service-list.service-photos{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}.customer-access{grid-template-columns:minmax(0,1fr);padding:36px 6%;gap:40px}}
 @media(max-width:520px){.catalog .products,.service-list.service-photos{grid-template-columns:minmax(0,1fr)}.catalog .product .swatch,.service-list.service-photos article>img{aspect-ratio:16/9}.service-list.service-photos article>div{padding:16px}.customer-access .quote-form{padding:20px}}
 
 /* Uma única referência lateral para todas as páginas do site público. */
@@ -239,3 +239,8 @@ footer>.social-links{margin-left:var(--site-gutter);margin-right:var(--site-gutt
  .hero:not(.service-overview) .hero-copy{padding-right:var(--site-gutter)}
  .carousel-copy{padding-right:var(--site-gutter)}
 }
+
+/* Consulta direta compartilhada por materiais e serviços. */
+.service-list .product-whatsapp{display:flex;align-items:center;justify-content:center;min-height:46px;padding:11px 12px;border-radius:11px;background:var(--primary);color:white;font-size:13px;font-weight:750;text-align:center}
+.service-list .product-whatsapp:hover{background:#126b3c}
+.service-list .product-actions{padding-top:16px}

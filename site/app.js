@@ -255,8 +255,8 @@ document.querySelector('.hero').id='solucoes';
 const faixaBeneficios=document.querySelector('.value-strip');if(faixaBeneficios)faixaBeneficios.id='beneficios';
 const destaques=document.querySelector('.home-carousel');if(destaques)destaques.id='banners';
 const marcas=document.querySelector('.marketing-section:not(#promocoes)');if(marcas)marcas.id='marcas';
-// Abertura comercial: serviços, ferramentas do projeto, materiais e acesso aos pedidos.
-const ordemAbertura=[document.querySelector('.home-carousel')?'banners':'solucoes','servicos','softwares','catalogo','consultar-pedido','area-cliente'];
+// Abertura comercial: serviços, materiais, ferramentas do projeto e contato Cortecloud.
+const ordemAbertura=[document.querySelector('.home-carousel')?'banners':'solucoes','servicos','catalogo','softwares','orcamento','consultar-pedido','area-cliente'];
 aplicarOrdemSecoes(document.querySelector('main'),[...ordemAbertura,...(liveSettings?.conteudo?.ordemSecoes||[])]);
 // Marcas ficam temporariamente ocultas; o conteúdo cadastrado é preservado.
 aplicarVisibilidadeSecoes(document.querySelector('main'),[...(liveSettings?.conteudo?.secoesDesativadas||[]),'marcas'],document.querySelectorAll('a[href]'));
@@ -323,7 +323,7 @@ function renderProducts(filter = materialFilter, equipment = false) {
       const summary=document.createElement('summary');summary.textContent='Mais informações';
       const text=document.createElement('p');text.textContent=product.description;text.className='configured-text';disclosure.append(summary,text);details.append(disclosure);
     }
-    const actions=document.createElement('div');actions.className='product-actions';const zap=contatoProduto({titulo:product.name,preco:product.price},company.whatsapp);if(zap){const link=document.createElement('a');link.href=zap;link.target='_blank';link.rel='noopener noreferrer';link.className='product-whatsapp';link.textContent='Consultar no WhatsApp ↗';link.setAttribute('aria-label','Consultar '+product.name+' no WhatsApp');actions.append(link)}actions.append(button);details.append(actions);if(selected.has(product.id)){button.textContent='✓ Incluído · adicionar mais';article.classList.add('product-selected')}
+    const actions=document.createElement('div');actions.className='product-actions';const zap=contatoProduto({titulo:product.name,preco:product.price},company.whatsapp);if(zap){const link=document.createElement('a');link.href=zap;link.target='_blank';link.rel='noopener noreferrer';link.className='product-whatsapp';link.textContent='Consultar no WhatsApp ↗';link.setAttribute('aria-label','Consultar '+product.name+' no WhatsApp');actions.append(link)}if(equipment)actions.append(button);details.append(actions);if(equipment&&selected.has(product.id)){button.textContent='✓ Incluído · adicionar mais';article.classList.add('product-selected')}
   }
   if(equipment&&!visible.length&&!query&&equipmentFilter==='TODOS'){
     for(const [name,description,symbol] of [['Máquinas para produção','Consulte equipamentos e especificações para sua operação.','⚙'],['Ferramentas profissionais','Converse sobre as ferramentas para sua rotina de trabalho.','⌁'],['Acessórios e consumíveis','Encontre orientação para escolher os itens do seu projeto.','✧']]){
@@ -348,7 +348,7 @@ function renderSelected() {
     input.setAttribute('aria-label', `Quantidade de ${product.name}`);
     input.addEventListener('change', () => { const value = Math.max(1, Math.min(9999, Math.floor(Number(input.value) || 1))); selected.set(id, value); input.value = value; form.dispatchEvent(new Event('input')); });
     const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'remove-item'; remove.textContent = '×'; remove.setAttribute('aria-label', `Remover ${product.name}`);
-    remove.addEventListener('click', () => { selected.delete(id); renderSelected();document.querySelectorAll('.product').forEach(card=>{if(card.dataset.productId===id){card.classList.remove('product-selected');card.querySelector('.add-product').textContent='Adicionar ao orçamento +'}}); form.dispatchEvent(new Event('input')); });
+    remove.addEventListener('click', () => { selected.delete(id); renderSelected();document.querySelectorAll('.product').forEach(card=>{if(card.dataset.productId===id){card.classList.remove('product-selected');const addButton=card.querySelector('.add-product');if(addButton)addButton.textContent='Adicionar ao orçamento +'}}); form.dispatchEvent(new Event('input')); });
     row.append(name, input, remove); container.append(row);
   }
 }
@@ -374,10 +374,16 @@ function atualizarFluxoOrcamento(){
 }
 for(const article of document.querySelectorAll('.service-list article')){
  if(article.hidden)continue;
- const button=document.createElement('button');button.type='button';button.className='service-select button';button.textContent='Incluir na solicitação +';button.setAttribute('aria-pressed','false');
- const title=article.querySelector('h3').textContent;button.setAttribute('aria-label','Incluir '+title+' na solicitação');const condition=document.createElement('span');condition.className='service-condition';condition.textContent='Sob orçamento';const note=document.createElement('p');note.className='service-quote-note';note.textContent='Valor conforme medidas, material e acabamento.';article.querySelector('div').append(condition,note);
- button.addEventListener('click',()=>{if(selectedServices.has(title)){selectedServices.delete(title);button.textContent='Incluir na solicitação +';button.setAttribute('aria-pressed','false');}else{selectedServices.add(title);button.textContent='✓ Incluído · clique para remover';button.setAttribute('aria-pressed','true');}article.classList.toggle('service-selected',selectedServices.has(title));button.setAttribute('aria-label',(selectedServices.has(title)?'Remover ':'Incluir ')+title+' da solicitação');form.dispatchEvent(new Event('input'));toast(`${title}: ${selectedServices.has(title)?'adicionado':'removido'}.`);});
- article.querySelector('div').append(button);
+ const title=article.querySelector('h3').textContent;
+ const content=article.querySelector('div');
+ const note=document.createElement('p');note.className='service-quote-note';note.textContent='Valor conforme medidas, material e acabamento.';
+ content.append(note);
+ const zap=linkOrcamentoWhatsApp(company.whatsapp,`Olá! Tenho interesse no serviço: ${title}. Pode confirmar o valor e as condições?`);
+ if(zap){
+  const actions=document.createElement('div');actions.className='product-actions';
+  const link=document.createElement('a');link.href=zap;link.target='_blank';link.rel='noopener noreferrer';link.className='product-whatsapp';link.textContent='Consultar no WhatsApp ↗';link.setAttribute('aria-label','Consultar '+title+' no WhatsApp');
+  actions.append(link);content.append(actions);
+ }
 }
 const projectFiles=document.querySelector('#project-files');
 const attachmentResult=document.querySelector('#attachment-result');
