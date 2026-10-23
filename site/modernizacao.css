@@ -188,7 +188,8 @@ a,button,input,textarea,select{ -webkit-tap-highlight-color:transparent }
 }
 
 /* Quadros mais compactos e acessos aos pedidos lado a lado. */
-.catalog .products,.service-list.service-photos{grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+/* Três por linha, preservando a largura dos quadros da grade anterior de quatro. */
+.catalog .products,.service-list.service-photos{grid-template-columns:repeat(3,minmax(0,calc((100% - 54px)/4)));justify-content:center;gap:18px}
 .catalog .product .swatch{aspect-ratio:3/2}
 .catalog .product .product-details{padding:16px;gap:7px}
 .catalog .product .product-title h3{font-size:18px}
