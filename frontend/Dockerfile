@@ -7,6 +7,7 @@ RUN npm install
 
 COPY frontend/ ./
 COPY site/config.js site/imagensCatalogo.js /app/site/
+COPY site/assets/logo-tone.svg /app/site/assets/logo-tone.svg
 
 ARG VITE_API_URL=/api
 ENV VITE_API_URL=$VITE_API_URL

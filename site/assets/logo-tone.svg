@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <filter id="amarelo" color-interpolation-filters="sRGB" x="0" y="0" width="100%" height="100%">
+    <!-- Seleciona o amarelo pelo excesso de vermelho, preservando verde e branco. -->
+    <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  2 -1 -1 0 0" result="selecao"/>
+    <feComposite in="selecao" in2="SourceAlpha" operator="in" result="mascara"/>
+    <feFlood flood-color="#ff8500" flood-opacity="0.95" result="tom"/>
+    <feComposite in="tom" in2="mascara" operator="in" result="amareloFechado"/>
+    <feComposite in="amareloFechado" in2="SourceGraphic" operator="over"/>
+  </filter>
+</svg>

@@ -2,7 +2,7 @@ import {linkOrcamentoWhatsApp} from './whatsapp.js';
 export function resumoOferta(item){
  const titulo=String(item.titulo||'Oferta').trim().slice(0,150);
  const preco=item.preco!==null&&item.preco!==undefined&&item.preco!==''&&Number.isFinite(Number(item.preco))?` — preço anunciado: ${Number(item.preco).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`:'';
- return `Tenho interesse na oferta: ${titulo}${preco}.`;
+ return `Tenho interesse na oferta: ${titulo}${preco}${preco&&item.condicaoPagamento?` (${String(item.condicaoPagamento).slice(0,100)})`:''}.`;
 }
 export function contatoOferta(item,numero){return linkOrcamentoWhatsApp(numero,`Olá! ${resumoOferta(item)}\nPode confirmar a disponibilidade e as condições?`)}
 export function incluirOferta(observacao,resumo,max=3000){

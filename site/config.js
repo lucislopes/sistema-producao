@@ -1,6 +1,6 @@
 // Configuração da prévia. Na integração, estes dados virão da API.
 export const company = {
-  name: 'Ferramad', logo: './assets/logo.webp', whatsapp: '',
+  name: 'Ferramad', logo: './assets/logo-ferramad-original.png', whatsapp: '',
   colors: { primary: '#084f2b', accent: '#ffbd16' },
 };
 // O proxy local e o Nginx em produção usam este caminho relativo.
@@ -92,4 +92,16 @@ export function aplicarVisibilidadeSecoes(main,desativadas=[],links=[]) {
     const alvo=/^(?:\.\/index\.html|index\.html|\/index\.html|\/)?#([^?]+)$/.exec(href)?.[1];
     link.classList.toggle('secao-desativada',ocultas.has(alvo));
   }
+}
+
+export const tamanhosSiteCampos=[
+ ['logoDesktop','Logo no computador',120,280,190],['logoMobile','Logo no celular',120,240,190],
+ ['bannerDesktop','Altura do banner no computador',400,800,650],['bannerMobile','Altura do banner no celular',360,650,470],
+ ['fotosDesktop','Altura das fotos das seções no computador',180,600,340],['fotosMobile','Altura das fotos das seções no celular',160,440,240]
+];
+export function aplicarTamanhosSite(tamanhos={},root=document.documentElement){
+ for(const [key,,min,max]of tamanhosSiteCampos){const n=tamanhos?.[key];const css='--site-'+key.replace(/[A-Z]/g,l=>'-'+l.toLowerCase());
+  if(typeof n==='number'&&Number.isFinite(n)&&n>=min&&n<=max)root.style.setProperty(css,n+'px');else root.style.removeProperty(css);
+ }
+ root.classList.toggle('site-fotos-personalizadas',Number.isFinite(tamanhos?.fotosDesktop)||Number.isFinite(tamanhos?.fotosMobile));
 }

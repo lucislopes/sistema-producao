@@ -14,13 +14,13 @@ test('promoções alternam em 10 segundos, controles pausam, e uma única oferta
  const orig={document:global.document,setInterval:global.setInterval,clearInterval:global.clearInterval,matchMedia:global.matchMedia};let callback,intervalo,criadas=0;
  const banner=new Element('section');global.document={hidden:false,createElement:tag=>new Element(tag),querySelector:()=>banner,addEventListener(){}};global.matchMedia=()=>({matches:false});global.setInterval=(fn,ms)=>{callback=fn;intervalo=ms;criadas++;return 1};global.clearInterval=()=>{callback=null};
  try{
-  const box=montarPromocaoBanner([{id:'a',titulo:'MDF',imagemUrl:'a.jpg',preco:100,precoAnterior:150},{id:'b',titulo:'Máquina',imagemUrl:'b.jpg',preco:null}]);
-  const [,img,title,old,price,link,controls]=box.children,[prev,count,next,pause]=controls.children;
-  assert.equal(intervalo,10000);assert.equal(title.textContent,'MDF');assert.equal(link.href,'#oferta-a');callback();assert.equal(title.textContent,'Máquina');assert.equal(old.hidden,true);assert.equal(price.textContent,'Consulte as condições');assert.equal(count.textContent,'2 / 2');assert.equal(img.src,'b.jpg');
+  const box=montarPromocaoBanner([{id:'a',titulo:'MDF',imagemUrl:'a.jpg',preco:100,precoAnterior:150,condicaoPagamento:'À vista'},{id:'b',titulo:'Máquina',imagemUrl:'b.jpg',preco:null}]);
+  const [,img,title,old,price,terms,link,controls]=box.children,[prev,count,next,pause]=controls.children;
+  assert.equal(terms.textContent,'À vista');assert.equal(intervalo,10000);assert.equal(title.textContent,'MDF');assert.equal(link.href,'#oferta-a');callback();assert.equal(title.textContent,'Máquina');assert.equal(old.hidden,true);assert.equal(price.textContent,'Consulte as condições');assert.equal(count.textContent,'2 / 2');assert.equal(img.src,'b.jpg');
   pause.onclick();assert.equal(callback,null);assert.equal(pause.attributes['aria-pressed'],'true');prev.onclick();assert.equal(title.textContent,'MDF');assert.equal(callback,null);pause.onclick();assert.equal(typeof callback,'function');
   global.document.hidden=true;callback();assert.equal(title.textContent,'MDF');global.document.hidden=false;next.onclick();assert.equal(title.textContent,'Máquina');
-  const independente=montarPromocaoBanner([{id:'x',titulo:'Independente',preco:50}],{conteudo:{secoesDesativadas:['promocoes']}});assert.ok(independente);assert.equal(independente.children[5].href,'./pagina.html?tipo=PROMOCAO#oferta-x');
-  const antes=criadas,unica=montarPromocaoBanner([{titulo:'Única',preco:50}]);assert.equal(criadas,antes);assert.equal(unica.children[6].hidden,true);
+  const independente=montarPromocaoBanner([{id:'x',titulo:'Independente',preco:50}],{conteudo:{secoesDesativadas:['promocoes']}});assert.ok(independente);assert.equal(independente.children[6].href,'./pagina.html?tipo=PROMOCAO#oferta-x');
+  const antes=criadas,unica=montarPromocaoBanner([{titulo:'Única',preco:50}]);assert.equal(criadas,antes);assert.equal(unica.children[7].hidden,true);
   assert.equal(montarPromocaoBanner([{titulo:'Oculta'}],{conteudo:{promocoesNoBanner:false}}),undefined);
  }finally{Object.assign(global,orig)}
 });

@@ -8,6 +8,7 @@ import { Button } from '../components/ui/Button'
 import { useUnsavedChanges } from '../hooks/useUnsavedChanges'
 import { UploadImagemSite } from '../components/UploadImagemSite'
 import { ArmazenamentoSite } from '../components/ArmazenamentoSite'
+import { TamanhosImagensSite } from '../components/TamanhosImagensSite'
 import { PreviaSite } from '../components/PreviaSite'
 
 export function ConfiguracaoSite() {
@@ -84,6 +85,7 @@ export function ConfiguracaoSite() {
         <div className="rounded-xl p-5" style={{ backgroundColor: dados.corPrimaria, color: '#fff' }}><p className="font-semibold">{dados.nomePublicoSite || dados.nome || 'Sua empresa'}</p><span className="inline-block rounded-lg px-4 py-2 mt-3 text-gray-900 font-semibold" style={{ backgroundColor: dados.corDestaque }}>Solicitar orçamento</span><p className="text-sm mt-3">Prévia das cores. Verifique a leitura dos textos ao escolher a combinação.</p></div>
       </fieldset>
       <fieldset disabled={salvando} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 space-y-5"><legend className="sr-only">Redes sociais</legend><h2 className="text-lg font-semibold text-gray-800">Redes sociais da empresa</h2><p className="text-sm text-gray-600">Cole o endereço completo do perfil. Apenas as redes preenchidas aparecem no topo e no rodapé do site. Deixe em branco para ocultar. Esses links são independentes da conexão para publicar no Instagram.</p><div className="grid md:grid-cols-2 gap-4">{[['instagram','Instagram','instagram.com/suaempresa/'],['facebook','Facebook','facebook.com/suaempresa/'],['youtube','YouTube','youtube.com/@suaempresa'],['linkedin','LinkedIn','linkedin.com/company/suaempresa/'],['tiktok','TikTok','tiktok.com/@suaempresa'],['x','X (Twitter)','x.com/suaempresa'],['pinterest','Pinterest','pinterest.com/suaempresa/'],['telegram','Telegram','t.me/suaempresa'],['threads','Threads','threads.com/@suaempresa']].map(([key,label,placeholder])=><label key={key} className="text-sm font-medium text-gray-700">{label}<Input type="url" maxLength={2048} value={dados.redesSociais?.[key]??(key==='instagram'?dados.instagramUrl:'')??''} placeholder={'https://'+placeholder} onChange={e=>setDados(a=>({...a,redesSociais:{...a.redesSociais,[key]:e.target.value},...(key==='instagram'?{instagramUrl:e.target.value}:{})}))}/></label>)}</div><p className="text-xs text-gray-500">O ícone de WhatsApp usa o número cadastrado em Identidade da empresa. Não é necessário preencher novamente.</p></fieldset>
+      <fieldset disabled={salvando}><TamanhosImagensSite value={dados.ajustesImagens?.tamanhosSite} onChange={v=>alterar('ajustesImagens',{...dados.ajustesImagens,tamanhosSite:v})} logoUrl={dados.logoUrl} imagemUrl={dados.imagemHomeUrl||dados.conteudo?.imagemSobreUrl} cor={dados.corPrimaria}/></fieldset>
       <PreviaSite configuracao={{...dados,nome:dados.nomePublicoSite||dados.nome}} />
       <Button type="submit" loading={salvando} disabled={enviandoLogo}><Save size={16} />Salvar configuração do site</Button>
     </form>}

@@ -244,3 +244,42 @@ footer>.social-links{margin-left:var(--site-gutter);margin-right:var(--site-gutt
 .service-list .product-whatsapp{display:flex;align-items:center;justify-content:center;min-height:46px;padding:11px 12px;border-radius:11px;background:var(--primary);color:white;font-size:13px;font-weight:750;text-align:center}
 .service-list .product-whatsapp:hover{background:#126b3c}
 .service-list .product-actions{padding-top:16px}
+
+/* A marca com contato precisa de largura e do arquivo completo, sem recorte. */
+.header .brand{flex:0 0 190px;max-width:100%;background:transparent;padding:0}
+.header .brand img{width:100%;height:auto;object-fit:contain!important;object-position:center!important;transform:none!important}
+.footer-main .brand{display:block;flex:0 0 260px;max-width:100%;background:transparent;padding:0}
+.footer-main .brand img{width:100%;height:auto;object-fit:contain!important;object-position:center!important;transform:none!important}
+.header-phone strong{font-size:17px}
+@media(min-width:801px) and (max-width:1250px){
+ .header:not(.page-header){flex-wrap:wrap;justify-content:center;gap:14px 24px}
+ .header:not(.page-header) #navigation{order:5;flex:0 0 100%;margin:0;gap:12px 24px}
+}
+@media(max-width:800px){
+ .header{gap:12px}
+ .header .brand{flex-basis:190px;max-width:calc(100% - 60px)}
+ .header-phone{margin-left:0;flex:1 1 auto;padding:6px 0}
+ .header-phone span{display:block;font-size:11px}
+ .header-phone strong{font-size:17px}
+ .footer-main .brand{flex-basis:260px}
+}
+/* A imagem da marca possui transparência própria. */
+.header .brand img,.footer-main .brand img{mix-blend-mode:normal}
+.offer-payment{display:block;font-size:14px;font-weight:650;line-height:1.45;color:var(--primary);margin:4px 0 12px;overflow-wrap:anywhere}
+.banner-offer .offer-payment{font-size:14px;margin:0 0 12px}
+
+/* Cabeçalho compacto e amarelo mais fechado, sem redesenhar as letras. */
+.header{gap:20px;padding-top:10px;padding-bottom:10px}
+.header nav{gap:16px;font-size:13px}
+.header .brand img,.footer-main .brand img{filter:url("./assets/logo-tone.svg#amarelo")}
+@media(min-width:1251px){.header:not(.page-header){flex-wrap:nowrap}.header:not(.page-header) #navigation{order:0;flex:1 1 auto;margin:0;row-gap:8px}}
+@media(max-width:800px){.header{gap:10px}.header nav{font-size:15px}}
+/* Dimensões configuráveis; limites preservam a navegação e o espaço no celular. */
+.header .brand{flex-basis:var(--site-logo-desktop,190px)}
+.carousel-slide{min-height:var(--site-banner-desktop,clamp(470px,54vw,650px))}
+.site-fotos-personalizadas .section-photo img,.site-fotos-personalizadas .about-mark.has-photo img{height:var(--site-fotos-desktop,340px);min-height:0;aspect-ratio:auto}
+@media(max-width:800px){
+ .header .brand{flex-basis:var(--site-logo-mobile,190px)}
+ .carousel-slide{min-height:var(--site-banner-mobile,470px)}
+ .site-fotos-personalizadas .section-photo img,.site-fotos-personalizadas .about-mark.has-photo img{height:var(--site-fotos-mobile,240px)}
+}

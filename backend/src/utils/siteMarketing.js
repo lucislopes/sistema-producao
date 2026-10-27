@@ -35,6 +35,7 @@ export function validarMarketing(b, pagina=false) {
   d.arte={categoria:a.categoria||'MATERIAIS',modelo:a.modelo||'editorial',corPrimaria:/^#[0-9a-f]{6}$/i.test(a.corPrimaria||'')?a.corPrimaria:'#084f2b',corDestaque:/^#[0-9a-f]{6}$/i.test(a.corDestaque||'')?a.corDestaque:'#ffbd16',logoUrl:url(a.logoUrl),chamada:texto(a.chamada,120)||'Fale com nossa equipe',legenda:texto(a.legenda,1800)||'',hashtags:texto(a.hashtags,300)||''};
   for(const [key,min,max,fallback] of [['zoomImagem',1,2.4,1],['posicaoX',0,1,.5],['posicaoY',0,1,.5]]){const value=a[key]==null?fallback:Number(a[key]);if(!Number.isFinite(value)||value<min||value>max)falhar('Enquadramento da imagem inválido.');d.arte[key]=value;}
   if(a.galeria!=null&&(!Array.isArray(a.galeria)||a.galeria.length>8))falhar('Use até 8 fotos adicionais na galeria.');
+  for(const [key,max] of [['condicaoPagamento',100],['rodapeEndereco',180],['rodapeTelefone',30]])d.arte[key]=texto(a[key],max)||'';
   d.arte.galeria=[...new Set((a.galeria||[]).map(v=>{const image=url(v);if(!image)falhar('Imagem da galeria inválida.');return image}))];
   d.arte.capaSiteUrl=url(a.capaSiteUrl);
   if(a.ajustesGaleria!==undefined){

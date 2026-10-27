@@ -15,12 +15,13 @@ test('banco local: grava identidade, publica dados permitidos, desativa e preser
       const original = await tx.configuracaoEmpresa.findFirst();
       const facade = { configuracaoEmpresa: tx.configuracaoEmpresa, configuracaoSite: tx.configuracaoSite, $transaction: fn => fn(tx) };
       const handlers = criarHandlersConfiguracaoSite(facade, bloquearAgenda);
-      const payload = { nome: 'Empresa de teste do portal', telefone: '', email: '', logoUrl: '', ativo: true, corPrimaria: '#084f2b', corDestaque: '#ffbd16', whatsapp: '', instagramUrl: '', siteUrl: 'http://127.0.0.1:5180', sistemaUrl: 'http://localhost:5173' };
+      const payload = { ajustesImagens:{tamanhosSite:{logoDesktop:200,logoMobile:160,bannerDesktop:600,bannerMobile:400,fotosDesktop:320,fotosMobile:200}}, nome: 'Empresa de teste do portal', telefone: '', email: '', logoUrl: '', ativo: true, corPrimaria: '#084f2b', corDestaque: '#ffbd16', whatsapp: '', instagramUrl: '', siteUrl: 'http://127.0.0.1:5180', sistemaUrl: 'http://localhost:5173' };
       const saved = response(); await handlers.salvar({ body: payload }, saved, error => { throw error });
       assert.equal(saved.statusCode, 200); assert.equal(saved.data.nome, payload.nome);
       const atual = await tx.configuracaoEmpresa.findFirst();
       if (original) for (const key of ['id','cnpj','endereco','cidade','estado','limiteFretesEmpresaDia','limiteFretesClienteDia','limiteChapasDia']) assert.deepEqual(atual[key], original[key]);
       const published = response(); await handlers.publico({}, published, error => { throw error });
+      assert.deepEqual(published.data.ajustesImagens.tamanhosSite,payload.ajustesImagens.tamanhosSite);
       assert.equal(published.data.sistemaUrl, 'http://localhost:5173/');
       assert.equal('limiteChapasDia' in published.data, false); assert.equal('cnpj' in published.data, false);
       const invalid = response(); await handlers.salvar({ body: { ...payload, sistemaUrl:'javascript:alert(1)' } }, invalid, error => { throw error });

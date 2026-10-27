@@ -1,5 +1,5 @@
 import {imagemCatalogo} from './imagensCatalogo.js';
-import {resolverConteudo,aplicarAjusteImagem} from './config.js';
+import {resolverConteudo,aplicarAjusteImagem,aplicarTamanhosSite} from './config.js';
 import {aplicarOrdemSecoes,aplicarVisibilidadeSecoes} from './config.js';
 import {contatoProduto,adicionarOfertaAoFormulario} from './ofertas.js';
 import {mostrarRedes} from './redes.js';
@@ -47,6 +47,7 @@ async function carregarIdentidade() {
   settings = resolverConteudo(settings, livePages);
   company.name = settings.nome;
   liveSettings = settings;
+  aplicarTamanhosSite(settings.ajustesImagens?.tamanhosSite);
   if(settings.telefone){
     const telefone=document.createElement('a');telefone.className='header-phone';telefone.href='tel:'+settings.telefone.replace(/[^\d+]/g,'');telefone.setAttribute('aria-label','Ligar para '+settings.telefone);
     const label=document.createElement('span');label.textContent='Fale com a equipe';const numero=document.createElement('strong');numero.textContent=settings.telefone;telefone.append(label,numero);
@@ -65,7 +66,7 @@ async function carregarIdentidade() {
   document.querySelector('[name="description"]').content = `MDF, corte sob medida e acabamentos para marceneiros. Conheça ${company.name} e prepare sua solicitação de orçamento.`;
   document.querySelector('[property="og:title"]').content = `${company.name} — Do painel ao seu próximo projeto`;
   document.querySelector('[name="theme-color"]').content = company.colors.primary;
-  document.querySelectorAll('img[src="./assets/logo.webp"]').forEach(image => {
+  document.querySelectorAll('img[src="./assets/logo-ferramad-original.png"]').forEach(image => {
     image.alt = company.name; aplicarAjusteImagem(image,settings.ajustesImagens?.logoUrl);
     if (company.logo) image.src = company.logo;
     else { const name = document.createElement('strong'); name.textContent = company.name; image.replaceWith(name); }

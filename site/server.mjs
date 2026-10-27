@@ -59,4 +59,4 @@ http.createServer(async (req, res) => {
     const content = await readFile(target);
     res.writeHead(200, { 'Content-Type': types[path.extname(target)] || 'application/octet-stream', 'X-Content-Type-Options': 'nosniff' }); res.end(content);
   } catch { res.writeHead(404); res.end('Não encontrado'); }
-}).listen(5180, '127.0.0.1', () => console.log('Ferramad: http://127.0.0.1:5180'));
+}).listen(Number(process.env.SITE_PORT) || 5180, '127.0.0.1', function () { console.log('Ferramad: http://127.0.0.1:' + this.address().port); });
